@@ -1,0 +1,33 @@
+[package]
+name = "se050"
+version = "0.0.1"
+authors = ["Nitrokey GmbH <info@nitrokey.com>"]
+
+edition = "2021"
+repository = "https://github.com/robertstojicptb/se050"
+license = "Apache-2.0 OR MIT"
+description = "Driver for NXP SE050"
+
+[dependencies]
+bitflags = "2.3.2"
+byteorder = { version = "1", default-features = false }
+crc16 = "0.4"
+delog = "0.1"
+embedded-hal = "*"
+heapless = "0.7"
+hex-literal = "0.4.1"
+iso7816 = "0.1.1"
+
+[features]
+default = []
+
+log-all = []
+log-debug = []
+log-info = []
+log-warn = []
+log-error = []
+log-none = []
+
+[patch.crates-io]
+iso7816 = { path = "../iso7816" }
+delog = { git = "https://github.com/sosthene-nitrokey/delog.git", rev = "41901aa4d44e64f729a4d5ec5638c3911b8184a9" }
