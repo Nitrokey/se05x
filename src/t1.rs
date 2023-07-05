@@ -485,6 +485,16 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         }
     }
 
+    pub fn receive_apdu(&mut self, buffer: &mut [u8]) -> Result<usize, Error> {
+        match self.receive_data(buffer)? {
+            DataReceived::IBlocks(len) => Ok(len),
+            DataReceived::SBlock { .. } => {
+                error!("Got unexpected S-block");
+                Err(Error::Unknown)
+            }
+        }
+    }
+
     pub fn resync(&mut self) -> Result<(), Error> {
         let header = [self.nad_hd2se, Pcb::S(SBlock::ResyncRequest).to_byte(), 0];
         let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
