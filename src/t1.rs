@@ -1,6 +1,7 @@
 use embedded_hal::blocking::delay::DelayUs;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use hex_literal::hex;
+use iso7816::command::writer::IntoWriter;
 use iso7816::command::Writer;
 
 pub type Crc = crc16::State<crc16::X_25>;
@@ -677,6 +678,13 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> Writer for FrameSender<'writer, Tw
     type Error = Error;
     fn write(&mut self, data: &[u8]) -> Result<usize, Self::Error> {
         self.write_data(data)
+    }
+}
+
+impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> IntoWriter for &'writer mut T1oI2C<Twi, D> {
+    type Writer = FrameSender<'writer, Twi, D>;
+    fn into_writer(self, to_write: usize) -> Result<Self::Writer, <Self::Writer as Writer>::Error> {
+        Ok(FrameSender::new(self, to_write))
     }
 }
 

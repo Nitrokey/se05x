@@ -6,4 +6,5 @@ delog::generate_macros!();
 mod macros;
 
 pub mod constants;
+pub mod se050;
 pub mod t1;
