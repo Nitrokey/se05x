@@ -301,7 +301,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         }
     }
 
-    pub fn receive_data(&mut self, mut buffer: &mut [u8]) -> Result<DataReceived, Error> {
+    pub fn receive_data(&mut self, buffer: &mut [u8]) -> Result<DataReceived, Error> {
         let mut header_buffer = [0; HEADER_LEN];
         let mut written = 0;
         let mut crc_buf = [0; TRAILER_LEN];
@@ -367,6 +367,10 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             if !more {
                 return Ok(DataReceived::IBlocks(written));
             }
+            if seq != self.iseq_rcv {
+                warn!("Got bad seq");
+            }
+            self.iseq_rcv = !seq;
 
             let frame = [
                 self.nad_hd2se,
@@ -395,16 +399,10 @@ pub struct FrameSender<'writer, Twi, D> {
 }
 
 impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
-    fn current_frame_count(&self) -> usize {
-        self.written / MAX_FRAME_DATA_LEN
+    fn current_offset(&self) -> usize {
+        self.written % MAX_FRAME_DATA_LEN
     }
-    fn total_frame_count(&self) -> usize {
-        if self.data % MAX_FRAME_DATA_LEN == 0 {
-            self.data / MAX_FRAME_DATA_LEN
-        } else {
-            (self.data / MAX_FRAME_DATA_LEN) + 1
-        }
-    }
+
     pub fn new(writer: &'writer mut T1oI2C<Twi, D>, data: usize) -> Self {
         Self {
             writer,
@@ -425,7 +423,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
 
         let mut rem = data;
         while !rem.is_empty() {
-            let current_offset = self.written % MAX_FRAME_DATA_LEN;
+            let current_offset = self.current_offset();
             let available_in_frame = MAX_FRAME_DATA_LEN - current_offset;
             let chunk_len = available_in_frame.min(rem.len());
             let (chunk, next_rem) = rem.split_at(chunk_len);
@@ -446,7 +444,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     }
 
     pub fn send_current_frame(&mut self) -> Result<(), Error> {
-        let data_len = self.written % MAX_FRAME_DATA_LEN;
+        let data_len = self.current_offset();
         let is_last = self.written == self.data;
         let pcb = Pcb::I(self.writer.iseq_snd, !is_last).to_byte();
 
