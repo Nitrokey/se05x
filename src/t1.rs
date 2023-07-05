@@ -1,5 +1,6 @@
 use embedded_hal::blocking::delay::DelayUs;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+use hex_literal::hex;
 use iso7816::command::Writer;
 
 pub type Crc = crc16::State<crc16::X_25>;
@@ -9,18 +10,116 @@ use core::ops::Not;
 
 use crate::macros::enum_u8;
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct T1SCode(u8);
+pub struct Atr<'a> {
+    /// Protocol version only `01` is supported
+    pub pver: u8,
+    /// VendorID,
+    pub vid: &'a [u8; 5],
+    /// Block waiting time
+    pub bwt: u16,
+    /// Maximum Information Field Size of the SE
+    pub ifsc: u16,
+    /// Maximum I2C clock frequency (kHz)
+    pub mcf: u16,
+    pub config: u8,
+    /// Minimum polling time (ms)
+    pub mpot: u8,
+    /// Secure element guard time (microseconds)
+    pub segt: u16,
+    /// Wake-up time (microseconds)
+    pub wut: u16,
+    pub historical_bytes: &'a [u8],
+}
 
-impl T1SCode {
-    pub const RESYNC: Self = Self(0);
-    pub const IFS: Self = Self(1);
-    pub const ABORT: Self = Self(2);
-    pub const WTX: Self = Self(3);
-    pub const END_APDU_SESSION: Self = Self(5);
-    pub const CHIP_RESET: Self = Self(6);
-    pub const GET_ATR: Self = Self(7);
-    pub const INTERFACE_SOFT_RESET: Self = Self(15);
+impl<'a> Default for Atr<'a> {
+    fn default() -> Self {
+        Self {
+            pver: 1,
+            vid: &hex!("FFFFFFFFFF"),
+            bwt: 0,
+            ifsc: MAX_FRAME_DATA_LEN as _,
+            mcf: 0,
+            config: 0,
+            mpot: 1,
+            segt: SEGT_US as _,
+            wut: 0,
+            historical_bytes: &[],
+        }
+    }
+}
+
+impl<'a> Atr<'a> {
+    /// If fails to parse, returns default values
+    pub fn parse(data: &'a [u8]) -> Result<Self, Error> {
+        if data.len() < 7 {
+            error!("ATR Error 1");
+            return Err(Error::Unknown);
+        }
+        let pver = data[0];
+        let vid = (&data[1..][..5]).try_into().unwrap();
+        let dllp_len = data[6];
+
+        let rem = &data[7..];
+
+        if rem.len() < dllp_len as usize || dllp_len < 2 {
+            error!("ATR Error 2");
+            return Err(Error::Unknown);
+        }
+        let (dllp, rem) = rem.split_at(dllp_len as usize);
+
+        let [bwt1, bwt2, ifsc1, ifsc2, ..] = dllp else {
+            error!("ATR Error 3");
+            return Err(Error::Unknown);
+        };
+        let bwt = u16::from_be_bytes([*bwt1, *bwt2]);
+        let ifsc = u16::from_be_bytes([*ifsc1, *ifsc2]);
+
+        if rem.is_empty() {
+            error!("ATR Error 4");
+            return Err(Error::Unknown);
+        }
+
+        let plid_len = rem[0];
+        let rem = &rem[1..];
+        if rem.len() < plid_len as usize {
+            error!("ATR Error 6");
+            return Err(Error::Unknown);
+        }
+        let (plid, rem) = rem.split_at(plid_len as usize);
+        let [mcf1,mcf2, config, mpot,_rfu1, _rfu2,_rfu3,segt1,segt2,wut1,wut2,..] = plid else {
+            error!("ATR Error 7");
+            return Err(Error::Unknown);
+        };
+        let mcf = u16::from_be_bytes([*mcf1, *mcf2]);
+        let segt = u16::from_be_bytes([*segt1, *segt2]);
+        let wut = u16::from_be_bytes([*wut1, *wut2]);
+
+        if rem.is_empty() {
+            error!("ATR Error 8");
+            return Err(Error::Unknown);
+        }
+        let hb_len = rem[0];
+        let rem = &rem[1..];
+        if rem.len() < hb_len as usize {
+            error!("ATR Error 9");
+            return Err(Error::Unknown);
+        }
+
+        let historical_bytes = &rem[..hb_len as usize];
+
+        Ok(Self {
+            pver,
+            vid,
+            bwt,
+            ifsc,
+            mcf,
+            config: *config,
+            mpot: *mpot,
+            segt,
+            wut,
+            historical_bytes,
+        })
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -46,24 +145,25 @@ pub enum Pcb {
 }
 
 enum_u8!(
+    #[rustfmt::skip]
     #[derive(PartialEq, Eq, Clone, Copy, Debug)]
     pub enum SBlock {
-        ResyncRequest = 0b11000000,
-        ResyncResponse = 0b11100000,
-        IfsRequest = 0b11000001,
-        IfsResponse = 0b11100001,
-        AbortRequest = 0b11000010,
-        AbortResponse = 0b11100010,
-        WtxRequest = 0b11000011,
-        WtxResponse = 0b11100011,
-        InterfaceSoftResetRequest = 0b11001111,
+        ResyncRequest =              0b11000000,
+        ResyncResponse =             0b11100000,
+        IfsRequest =                 0b11000001,
+        IfsResponse =                0b11100001,
+        AbortRequest =               0b11000010,
+        AbortResponse =              0b11100010,
+        WtxRequest =                 0b11000011,
+        WtxResponse =                0b11100011,
+        InterfaceSoftResetRequest =  0b11001111,
         InterfaceSoftResetResponse = 0b11101111,
-        EndOfApduSessionRequest = 0b11000101,
-        EndOfApduSessionResponse = 0b11100101,
-        SeChipResetRequest = 0b11000110,
-        SeChipResetResponse = 0b11100110,
-        GetAtrRequest = 0b11000111,
-        GetAtrResponse = 0b11100111,
+        EndOfApduSessionRequest =    0b11000101,
+        EndOfApduSessionResponse =   0b11100101,
+        SeChipResetRequest =         0b11000110,
+        SeChipResetResponse =        0b11100110,
+        GetAtrRequest =              0b11000111,
+        GetAtrResponse =             0b11100111,
     }
 );
 
@@ -219,20 +319,22 @@ pub struct T1oI2C<Twi, D> {
     /// microseconds
     mpot: u32,
     delay: D,
+    segt: u32,
 }
 
-const TWI_RETRIES: usize = 128;
-const TWI_RETRY_DELAY_MS: u32 = 2;
-const TWI_RETRY_DELAY_US: u32 = TWI_RETRY_DELAY_MS * 1000;
-/// SGET value in microseconds
+// const TWI_RETRIES: usize = 128;
+// const TWI_RETRY_DELAY_MS: u32 = 2;
+// const TWI_RETRY_DELAY_US: u32 = TWI_RETRY_DELAY_MS * 1000;
+/// SEGT value in microseconds
 /// Minimun time between reading attempts
-const SGET_US: u32 = 10;
+const SEGT_US: u32 = 10;
 
 /// See table 4 of UM1225
 const NAD_HD_TO_SE: u8 = 0x5A;
 /// See table 4 of UM1225
 const NAD_SE_TO_HD: u8 = 0x5A;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DataReceived {
     /// Received one or more IBlocks
     ///
@@ -260,6 +362,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             iseq_snd: Seq::ZERO,
             iseq_rcv: Seq::ZERO,
             mpot: DMPOT_MS * 1000,
+            segt: SEGT_US as _,
             delay,
         }
     }
@@ -380,6 +483,57 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             let [crc1, crc2] = Crc::calculate(&frame).to_le_bytes();
             self.write(&[frame[0], frame[1], frame[2], crc1, crc2])?;
         }
+    }
+
+    pub fn resync(&mut self) -> Result<(), Error> {
+        let header = [self.nad_hd2se, Pcb::S(SBlock::ResyncRequest).to_byte(), 0];
+        let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
+        self.write(&[header[0], header[1], header[2], crc1, crc2])?;
+        self.delay.delay_us(self.segt);
+        let data = self.receive_data(&mut [])?;
+        if !matches!(
+            data,
+            DataReceived::SBlock {
+                block: SBlock::ResyncResponse,
+                i_data: 0,
+                s_data: 0
+            }
+        ) {
+            error!("Got unexpected error: {data:?}");
+            return Err(Error::BadPcb);
+        }
+        Ok(())
+    }
+
+    // TODO: find proper length for buffer
+    pub fn interface_soft_reset<'buf>(
+        &mut self,
+        buffer: &'buf mut [u8; 64],
+    ) -> Result<Atr<'buf>, Error> {
+        let header = [self.nad_hd2se, Pcb::S(SBlock::ResyncRequest).to_byte(), 0];
+        let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
+        self.write(&[header[0], header[1], header[2], crc1, crc2])?;
+        self.delay.delay_us(self.segt);
+        let data = self.receive_data(buffer)?;
+        let received = if let DataReceived::SBlock {
+            block: SBlock::ResyncResponse,
+            i_data: 0,
+            s_data,
+        } = data
+        {
+            s_data
+        } else {
+            error!("Got unexpected error: {data:?}");
+            return Err(Error::BadPcb);
+        };
+        let atr = Atr::parse(&buffer[..received]);
+        if let Ok(atr) = &atr {
+            self.mpot = atr.mpot.into();
+            self.segt = atr.segt.into();
+        };
+        self.iseq_snd = Seq::ZERO;
+        self.iseq_rcv = Seq::ZERO;
+        Ok(atr.unwrap_or_default())
     }
 }
 
