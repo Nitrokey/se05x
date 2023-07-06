@@ -24,6 +24,7 @@ pub struct Atr<'a> {
     /// Maximum Information Field Size of the SE
     pub ifsc: u16,
     /// Maximum I2C clock frequency (kHz)
+    pub plid: u8,
     pub mcf: u16,
     pub config: u8,
     /// Minimum polling time (ms)
@@ -42,6 +43,7 @@ impl<'a> Default for Atr<'a> {
             vid: &hex!("FFFFFFFFFF"),
             bwt: 0,
             ifsc: MAX_FRAME_DATA_LEN as _,
+            plid: 0,
             mcf: 0,
             config: 0,
             mpot: 1,
@@ -80,19 +82,20 @@ impl<'a> Atr<'a> {
         let bwt = u16::from_be_bytes([*bwt1, *bwt2]);
         let ifsc = u16::from_be_bytes([*ifsc1, *ifsc2]);
 
-        if rem.is_empty() {
+        if rem.len() < 2 {
             error!("ATR Error 4");
             return Err(Error::Unknown);
         }
 
-        let plid_len = rem[0];
-        let rem = &rem[1..];
-        if rem.len() < plid_len as usize {
+        let plid = rem[0];
+        let plp_len = rem[1];
+        let rem = &rem[2..];
+        if rem.len() < plp_len as usize {
             error!("ATR Error 6");
             return Err(Error::Unknown);
         }
-        let (plid, rem) = rem.split_at(plid_len as usize);
-        let [mcf1,mcf2, config, mpot,_rfu1, _rfu2,_rfu3,segt1,segt2,wut1,wut2,..] = plid else {
+        let (plp, rem) = rem.split_at(plp_len as usize);
+        let [mcf1, mcf2, config, mpot,_rfu1, _rfu2,_rfu3,segt1,segt2,wut1,wut2,..] = plp else {
             error!("ATR Error 7");
             return Err(Error::Unknown);
         };
@@ -118,6 +121,7 @@ impl<'a> Atr<'a> {
             vid,
             bwt,
             ifsc,
+            plid,
             mcf,
             config: *config,
             mpot: *mpot,
@@ -740,8 +744,38 @@ mod tests {
 
     #[test]
     fn atr() {
-        let atr: [u8; 0x23] =
-            hex!("00a0000003960403e800fe020b03e80801000000006400000a4a434f5034204154504f");
-        assert_eq!(Atr::parse(&atr).unwrap(), Atr::default());
+        let atr: [u8; 0x23] = hex!(
+                "00" // protocol version
+                "a000000396" // vendor id
+                "04" // DLLP length
+                    "03e8" // BWT = 03E8 = 1s
+                    "00fe" // IFSC = 00FE = default
+                "02" //PLID
+                "0b"// PLP length
+                    "03e8" // Max frequency: 1MHz
+                    "08" // Config: HS mode supported
+                    "01" // MPOT  = 1 ms
+                    "000000" // RFU
+                    "0064" // SEGT = 100ms
+                    "0000" // WUT = 0ms
+                "0a" // len of historical bytes
+                    "4a434f5034204154504f"
+        );
+        assert_eq!(
+            Atr::parse(&atr).unwrap(),
+            Atr {
+                pver: 0,
+                vid: &hex!("a000000396"),
+                bwt: 1000,
+                ifsc: 0xFE,
+                plid: 2,
+                mcf: 1000,
+                config: 0x08,
+                mpot: 1,
+                segt: 100,
+                wut: 0,
+                historical_bytes: &hex!("4a434f5034204154504f")
+            }
+        );
     }
 }

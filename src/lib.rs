@@ -1,5 +1,3 @@
-#![no_std]
-
 extern crate delog;
 delog::generate_macros!();
 
