@@ -18,13 +18,25 @@ pub enum Error {
     Status(Status),
 }
 
+impl From<Error> for Status {
+    fn from(value: Error) -> Self {
+        match value {
+            Error::Status(status) => status,
+            _ => {
+                error!("Unknown error {value:?}");
+                Status::ERROR
+            }
+        }
+    }
+}
+
 impl From<t1::Error> for Error {
     fn from(value: t1::Error) -> Self {
         Self::T1(value)
     }
 }
 
-pub const APP_ID: &[u8] = &hex!("A0000003965453000000010300000000");
+pub const APP_ID: [u8; 0x10] = hex!("A0000003965453000000010300000000");
 
 impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
@@ -56,7 +68,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
     pub fn enable(&mut self) -> Result<(), Error> {
         self.t1.resync()?;
         self.t1.interface_soft_reset(&mut [0; 64])?;
-        let select_apdu = CommandBuilder::new(ZERO_CLA, 0xA4.into(), 0x04, 0x00, APP_ID, 0x00);
+        let select_apdu = CommandBuilder::new(ZERO_CLA, 0xA4.into(), 0x04, 0x00, &APP_ID, 7);
         let mut sender = self.t1.into_writer(select_apdu.required_len(true))?;
         select_apdu.serialize_into(&mut sender, true)?;
         let mut resp_buffer = [0; 9];

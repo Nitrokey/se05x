@@ -11,6 +11,9 @@ use core::ops::Not;
 
 use crate::macros::enum_u8;
 
+mod i2cimpl;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Atr<'a> {
     /// Protocol version only `01` is supported
     pub pver: u8,
@@ -52,12 +55,14 @@ impl<'a> Default for Atr<'a> {
 impl<'a> Atr<'a> {
     /// If fails to parse, returns default values
     pub fn parse(data: &'a [u8]) -> Result<Self, Error> {
+        // let atr = hex!("00a0000003960403e800fe020b03e80801000000006400000a4a434f5034204154504f");
+        debug!("Parsing atr: {data:02x?}");
         if data.len() < 7 {
             error!("ATR Error 1");
             return Err(Error::Unknown);
         }
         let pver = data[0];
-        let vid = (&data[1..][..5]).try_into().unwrap();
+        let vid: &[u8; 5] = (&data[1..][..5]).try_into().unwrap();
         let dllp_len = data[6];
 
         let rem = &data[7..];
@@ -253,6 +258,10 @@ impl Pcb {
             return Ok(Self::R(seq, error));
         }
 
+        if let Ok(sblock) = value.try_into() {
+            return Ok(Self::S(sblock));
+        }
+
         Err(Error::BadPcb)
     }
 }
@@ -333,7 +342,7 @@ const SEGT_US: u32 = 10;
 /// See table 4 of UM1225
 const NAD_HD_TO_SE: u8 = 0x5A;
 /// See table 4 of UM1225
-const NAD_SE_TO_HD: u8 = 0x5A;
+const NAD_SE_TO_HD: u8 = 0xA5;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DataReceived {
@@ -410,6 +419,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         let mut written = 0;
         let mut crc_buf = [0; TRAILER_LEN];
         loop {
+            trace!("Receive data loop, currently written {written}");
             match self.read(&mut header_buffer) {
                 Ok(()) => {}
                 Err(Error::AddressNack) => {
@@ -429,13 +439,15 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             let current_buf = &mut buffer[written..][..len as usize];
 
             debug!("Received header: {:02x?}", header_buffer);
-            self.read(current_buf)?;
-            written += len as usize;
             if nad != self.nad_se2hd {
                 error!("Received bad nad: {:02x}", nad);
                 return Err(Error::BadAddress);
             }
 
+            if len != 0 {
+                self.read(current_buf)?;
+                written += len as usize;
+            }
             self.read(&mut crc_buf)?;
 
             let pcb = Pcb::parse(pcb).map_err(|_| Error::BadPcb)?;
@@ -486,17 +498,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         }
     }
 
-    pub fn receive_apdu(&mut self, buffer: &mut [u8]) -> Result<usize, Error> {
-        match self.receive_data(buffer)? {
-            DataReceived::IBlocks(len) => Ok(len),
-            DataReceived::SBlock { .. } => {
-                error!("Got unexpected S-block");
-                Err(Error::Unknown)
-            }
-        }
-    }
-
     pub fn resync(&mut self) -> Result<(), Error> {
+        trace!("Resync");
         let header = [self.nad_hd2se, Pcb::S(SBlock::ResyncRequest).to_byte(), 0];
         let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
         self.write(&[header[0], header[1], header[2], crc1, crc2])?;
@@ -521,13 +524,18 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         &mut self,
         buffer: &'buf mut [u8; 64],
     ) -> Result<Atr<'buf>, Error> {
-        let header = [self.nad_hd2se, Pcb::S(SBlock::ResyncRequest).to_byte(), 0];
+        trace!("Interface Soft Reset");
+        let header = [
+            self.nad_hd2se,
+            Pcb::S(SBlock::InterfaceSoftResetRequest).to_byte(),
+            0,
+        ];
         let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
         self.write(&[header[0], header[1], header[2], crc1, crc2])?;
         self.delay.delay_us(self.segt);
         let data = self.receive_data(buffer)?;
         let received = if let DataReceived::SBlock {
-            block: SBlock::ResyncResponse,
+            block: SBlock::InterfaceSoftResetResponse,
             i_data: 0,
             s_data,
         } = data
@@ -578,6 +586,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     }
 
     pub fn write_data(&mut self, data: &[u8]) -> Result<usize, Error> {
+        debug!("Writing data: {:02x?}", data);
         if data.is_empty() {
             return Ok(0);
         }
@@ -594,7 +603,8 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             let (chunk, next_rem) = rem.split_at(chunk_len);
             rem = next_rem;
             self.written += chunk_len;
-            self.current_frame_buffer[HEADER_LEN..][..chunk_len].copy_from_slice(chunk);
+            self.current_frame_buffer[HEADER_LEN + current_offset..][..chunk_len]
+                .copy_from_slice(chunk);
 
             if chunk_len == available_in_frame {
                 // frame is full
@@ -620,6 +630,12 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
         let trailer =
             Crc::calculate(&self.current_frame_buffer[..HEADER_LEN + data_len]).to_le_bytes();
         self.current_frame_buffer[HEADER_LEN + data_len..][..TRAILER_LEN].copy_from_slice(&trailer);
+        trace!(
+            "Sending:\n\tHeader: {:02x?}\n\tData: {:02x?}\n\tTrailer: {:02x?}",
+            &self.current_frame_buffer[..HEADER_LEN],
+            &self.current_frame_buffer[HEADER_LEN..][..data_len],
+            &self.current_frame_buffer[HEADER_LEN + data_len..][..TRAILER_LEN],
+        );
         self.writer
             .write(&self.current_frame_buffer[..data_len + HEADER_LEN + TRAILER_LEN])?;
 
@@ -720,5 +736,12 @@ mod tests {
 
         assert_round_trip(0b10010010, Pcb::R(Seq::ONE, RBlockError::OtherError));
         assert_round_trip(0b10000010, Pcb::R(Seq::ZERO, RBlockError::OtherError));
+    }
+
+    #[test]
+    fn atr() {
+        let atr: [u8; 0x23] =
+            hex!("00a0000003960403e800fe020b03e80801000000006400000a4a434f5034204154504f");
+        assert_eq!(Atr::parse(&atr).unwrap(), Atr::default());
     }
 }
