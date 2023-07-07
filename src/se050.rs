@@ -1,9 +1,11 @@
+use core::{array::TryFromSliceError, convert::Infallible};
+
 use bitflags::bitflags;
 use embedded_hal::blocking::delay::DelayUs;
 use hex_literal::hex;
 use iso7816::{
     command::{
-        class::{Class, ZERO_CLA},
+        class::{NO_SM_CLA, ZERO_CLA},
         writer::IntoWriter,
         CommandBuilder, DataSource, DataStream, Writer,
     },
@@ -13,6 +15,7 @@ use iso7816::{
 
 use crate::t1::{self, DataReceived, FrameSender, I2CForT1, T1oI2C};
 pub mod commands;
+pub mod policies;
 
 pub struct Se050<Twi, D> {
     t1: T1oI2C<Twi, D>,
@@ -24,6 +27,17 @@ pub enum Error {
     T1(t1::Error),
     Status(Status),
     Tlv,
+}
+
+impl From<Infallible> for Error {
+    fn from(value: Infallible) -> Self {
+        match value {}
+    }
+}
+impl From<TryFromSliceError> for Error {
+    fn from(_value: TryFromSliceError) -> Self {
+        Self::Unknown
+    }
 }
 
 impl From<Error> for Status {
@@ -187,6 +201,47 @@ impl<W: Writer> Se050Command<W> for Select {
     type Response<'a> = Atr;
 }
 
+pub struct ProcessSessionCmd<C> {
+    pub session_id: SessionId,
+    pub apdu: C,
+}
+
+impl<C: DataSource> ProcessSessionCmd<C> {
+    fn command(&self) -> CommandBuilder<'_, C> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_PROCESS,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            &self.apdu,
+            u16::MAX,
+        )
+    }
+}
+
+impl<C: DataSource> DataSource for ProcessSessionCmd<C> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl<W: Writer, C: DataStream<W>> DataStream<W> for ProcessSessionCmd<C> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer, C: Se050Command<W>> Se050Command<W> for ProcessSessionCmd<C> {
+    type Response<'a> = C::Response<'a>;
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct SessionId(pub [u8; 8]);
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ObjectId(pub [u8; 4]);
 
@@ -230,6 +285,22 @@ impl ObjectId {
     /// An authentication object which grants access to the
     /// SetLockState command
     pub const RESTRICT: ObjectId = ObjectId(hex!("7FFF020A"));
+}
+
+impl TryFrom<&[u8]> for ObjectId {
+    type Error = TryFromSliceError;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let tmp = value.try_into()?;
+        Ok(Self(tmp))
+    }
+}
+
+impl TryFrom<&[u8]> for SessionId {
+    type Error = TryFromSliceError;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let tmp = value.try_into()?;
+        Ok(Self(tmp))
+    }
 }
 
 pub const TAG_SESSION_ID: Tag = Tag::from_u8(0x10);
