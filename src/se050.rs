@@ -7,6 +7,7 @@ use iso7816::{
         writer::IntoWriter,
         CommandBuilder, DataSource, DataStream, Writer,
     },
+    tlv::Tag,
     Instruction, Status,
 };
 
@@ -102,7 +103,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
 
 bitflags! {
     #[derive(Debug,Clone,Copy)]
-    struct AppletConfig: u16 {
+    pub struct AppletConfig: u16 {
         const ECDAA = 0x0001;
         const ECDSA_ECDH_ECDHE = 0x0002;
         const EDDSA = 0x0004;
@@ -126,12 +127,12 @@ bitflags! {
 pub struct Select;
 #[derive(Debug, Clone, Copy)]
 pub struct Atr {
-    major: u8,
-    minor: u8,
-    patch: u8,
-    secure_box_major: u8,
-    secure_box_minor: u8,
-    applet_config: AppletConfig,
+    pub major: u8,
+    pub minor: u8,
+    pub patch: u8,
+    pub secure_box_major: u8,
+    pub secure_box_minor: u8,
+    pub applet_config: AppletConfig,
 }
 
 impl Atr {
@@ -185,3 +186,361 @@ impl<W: Writer> DataStream<W> for Select {
 impl<W: Writer> Se050Command<W> for Select {
     type Response<'a> = Atr;
 }
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct ObjectId(pub [u8; 4]);
+
+impl ObjectId {
+    /// Invalid object ID.
+    /// Can be used in policy to configure no-session access
+    pub const INVALID: ObjectId = ObjectId(hex!("00000000"));
+    /// An authentication object which allows the user to switch
+    /// LockState of the applet. The LockState defines whether the
+    /// applet is transport locked or not.
+    pub const TRANSPORT: ObjectId = ObjectId(hex!("7FFF0200"));
+    /// A device unique NIST P-256 key pair rwhich contains SK.SE.ECKA
+    /// and PK.SE.ECKA in ECKey session context.
+    pub const KP_ECKEY_USER: ObjectId = ObjectId(hex!("7FFF0201"));
+    /// A device unique NIST P-256 key pair which contains SK.SE.ECKA
+    /// and PK.SE.ECKA in ECKey session context; A constant card
+    /// challenge (all zeroes) is applicable.
+    pub const KP_ECKEY_IMPORT: ObjectId = ObjectId(hex!("7FFF0202"));
+    // Reserved Key @ location 0x7FFF0203
+    /// An authentication object which allows the user to change the
+    /// applet variant.
+    pub const FEATURE: ObjectId = ObjectId(hex!("7FFF0204"));
+    /// An authentication object which allows the user to delete all
+    /// objects, except trust provisioned by NXP objects.
+    pub const FACTORY_RESET: ObjectId = ObjectId(hex!("7FFF0205"));
+    /// A BinaryFile Secure Object which holds the device unique
+    ///  ID. This file cannot be overwritten or deleted.
+    pub const UNIQUE_ID: ObjectId = ObjectId(hex!("7FFF0206"));
+    /// An authentication object which allows the user to change the
+    /// platform SCP requirements, i.e. make platform SCP mandatory or
+    /// not, using SetPlatformSCPRequest. Mandatory means full security,
+    /// i.e. command & response MAC and encryption. Only SCP03 will be
+    /// sufficient.
+    pub const PLATFORM_SCP: ObjectId = ObjectId(hex!("7FFF0207"));
+    /// An authentication object which grants access to the I2C master
+    /// feature. If the credential is not present, access to I2C master
+    /// is allowed in general. Otherwise, a session using this
+    /// credential shall be established and I2CM commands shall be sent
+    /// within this session.
+    pub const I2CM_ACCESS: ObjectId = ObjectId(hex!("7FFF0208"));
+    /// An authentication object which grants access to the
+    /// SetLockState command
+    pub const RESTRICT: ObjectId = ObjectId(hex!("7FFF020A"));
+}
+
+pub const TAG_SESSION_ID: Tag = Tag::from_u8(0x10);
+pub const TAG_POLICY: Tag = Tag::from_u8(0x11);
+pub const TAG_MAX_ATTEMPTS: Tag = Tag::from_u8(0x12);
+pub const TAG_IMPORT_AUTH_DATA: Tag = Tag::from_u8(0x13);
+pub const TAG_IMPORT_AUTH_KEY_ID: Tag = Tag::from_u8(0x14);
+pub const TAG_1: Tag = Tag::from_u8(0x41);
+pub const TAG_2: Tag = Tag::from_u8(0x42);
+pub const TAG_3: Tag = Tag::from_u8(0x43);
+pub const TAG_4: Tag = Tag::from_u8(0x44);
+pub const TAG_5: Tag = Tag::from_u8(0x45);
+pub const TAG_6: Tag = Tag::from_u8(0x46);
+pub const TAG_7: Tag = Tag::from_u8(0x47);
+pub const TAG_8: Tag = Tag::from_u8(0x48);
+pub const TAG_9: Tag = Tag::from_u8(0x49);
+pub const TAG_10: Tag = Tag::from_u8(0x4A);
+
+pub const INS_TRANSIENT: Instruction = Instruction::Unknown(0x80);
+pub const INS_AUTH_OBJECT: Instruction = Instruction::Unknown(0x40);
+pub const INS_ATTEST: Instruction = Instruction::Unknown(0x20);
+
+pub const INS_WRITE: Instruction = Instruction::Unknown(0x01);
+pub const INS_READ: Instruction = Instruction::Unknown(0x02);
+pub const INS_CRYPTO: Instruction = Instruction::Unknown(0x03);
+pub const INS_MGMT: Instruction = Instruction::Unknown(0x04);
+pub const INS_PROCESS: Instruction = Instruction::Unknown(0x05);
+pub const INS_IMPORT_EXTERNAL: Instruction = Instruction::Unknown(0x06);
+
+/// Highest bit not used
+pub const P1_UNUSED: u8 = 0x80;
+/// 2 MSBit for key type
+pub const P1_MASK_KEY_TYPE: u8 = 0x60;
+/// 5 LSBit for credential type
+pub const P1_MASK_CRED_TYPE: u8 = 0x1F;
+
+/// Key pair (private key + public key)
+pub const P1_KEY_PAIR: u8 = 0x60;
+/// Private key
+pub const P1_PRIVATE: u8 = 0x40;
+/// Public key
+pub const P1_PUBLIC: u8 = 0x20;
+
+pub const P1_DEFAULT: u8 = 0x00;
+pub const P1_EC: u8 = 0x01;
+pub const P1_RSA: u8 = 0x02;
+pub const P1_AES: u8 = 0x03;
+pub const P1_DES: u8 = 0x04;
+pub const P1_HMAC: u8 = 0x05;
+pub const P1_BINARY: u8 = 0x06;
+pub const P1_USERID: u8 = 0x07;
+pub const P1_COUNTER: u8 = 0x08;
+pub const P1_PCR: u8 = 0x09;
+pub const P1_CURVE: u8 = 0x0B;
+pub const P1_SIGNATURE: u8 = 0x0C;
+pub const P1_MAC: u8 = 0x0D;
+pub const P1_CIPHER: u8 = 0x0E;
+pub const P1_TLS: u8 = 0x0F;
+pub const P1_CRYPTO_OBJ: u8 = 0x10;
+
+pub const P2_DEFAULT: u8 = 0x00;
+pub const P2_GENERATE: u8 = 0x03;
+pub const P2_CREATE: u8 = 0x04;
+pub const P2_SIZE: u8 = 0x07;
+pub const P2_SIGN: u8 = 0x09;
+pub const P2_VERIFY: u8 = 0x0A;
+pub const P2_INIT: u8 = 0x0B;
+pub const P2_UPDATE: u8 = 0x0C;
+pub const P2_FINAL: u8 = 0x0D;
+pub const P2_ONESHOT: u8 = 0x0E;
+pub const P2_DH: u8 = 0x0F;
+pub const P2_DIVERSIFY: u8 = 0x10;
+pub const P2_AUTH_FIRST_PART2: u8 = 0x12;
+pub const P2_AUTH_NONFIRST_PART2: u8 = 0x13;
+pub const P2_DUMP_KEY: u8 = 0x14;
+pub const P2_CHANGE_KEY_PART1: u8 = 0x15;
+pub const P2_CHANGE_KEY_PART2: u8 = 0x16;
+pub const P2_KILL_AUTH: u8 = 0x17;
+pub const P2_IMPORT: u8 = 0x18;
+pub const P2_EXPORT: u8 = 0x19;
+pub const P2_SESSION_CREATE: u8 = 0x1B;
+pub const P2_SESSION_CLOSE: u8 = 0x1C;
+pub const P2_SESSION_REFRESH: u8 = 0x1E;
+pub const P2_SESSION_POLICY: u8 = 0x1F;
+pub const P2_VERSION: u8 = 0x20;
+pub const P2_MEMORY: u8 = 0x22;
+pub const P2_LIST: u8 = 0x25;
+pub const P2_TYPE: u8 = 0x26;
+pub const P2_EXIST: u8 = 0x27;
+pub const P2_DELETE_OBJECT: u8 = 0x28;
+pub const P2_DELETE_ALL: u8 = 0x2A;
+pub const P2_SESSION_USERID: u8 = 0x2C;
+pub const P2_HKDF: u8 = 0x2D;
+pub const P2_PBKDF: u8 = 0x2E;
+pub const P2_I2CM: u8 = 0x30;
+pub const P2_I2CM_ATTESTED: u8 = 0x31;
+pub const P2_MAC: u8 = 0x32;
+pub const P2_UNLOCK_CHALLENGE: u8 = 0x33;
+pub const P2_CURVE_LIST: u8 = 0x34;
+pub const P2_SIGN_ECDAA: u8 = 0x35;
+pub const P2_ID: u8 = 0x36;
+pub const P2_ENCRYPT_ONESHOT: u8 = 0x37;
+pub const P2_DECRYPT_ONESHOT: u8 = 0x38;
+pub const P2_ATTEST: u8 = 0x3A;
+pub const P2_ATTRIBUTES: u8 = 0x3B;
+pub const P2_CPLC: u8 = 0x3C;
+pub const P2_TIME: u8 = 0x3D;
+pub const P2_TRANSPORT: u8 = 0x3E;
+pub const P2_VARIANT: u8 = 0x3F;
+pub const P2_PARAM: u8 = 0x40;
+pub const P2_DELETE_CURVE: u8 = 0x41;
+pub const P2_ENCRYPT: u8 = 0x42;
+pub const P2_DECRYPT: u8 = 0x43;
+pub const P2_VALIDATE: u8 = 0x44;
+pub const P2_GENERATE_ONESHOT: u8 = 0x45;
+pub const P2_VALIDATE_ONESHOT: u8 = 0x46;
+pub const P2_CRYPTO_LIST: u8 = 0x47;
+pub const P2_RANDOM: u8 = 0x49;
+pub const P2_TLS_PMS: u8 = 0x4A;
+pub const P2_TLS_PRF_CLI_HELLO: u8 = 0x4B;
+pub const P2_TLS_PRF_SRV_HELLO: u8 = 0x4C;
+pub const P2_TLS_PRF_CLI_RND: u8 = 0x4D;
+pub const P2_TLS_PRF_SRV_RND: u8 = 0x4E;
+pub const P2_RAW: u8 = 0x4F;
+pub const P2_IMPORT_EXT: u8 = 0x51;
+pub const P2_SCP: u8 = 0x52;
+pub const P2_AUTH_FIRST_PART1: u8 = 0x53;
+pub const P2_AUTH_NONFIRST_PART1: u8 = 0x54;
+
+pub const TYPE_EC_KEY_PAIR: u8 = 0x01;
+pub const TYPE_EC_PRIV_KEY: u8 = 0x02;
+pub const TYPE_EC_PUB_KEY: u8 = 0x03;
+pub const TYPE_RSA_KEY_PAIR: u8 = 0x04;
+pub const TYPE_RSA_KEY_PAIR_CRT: u8 = 0x05;
+pub const TYPE_RSA_PRIV_KEY: u8 = 0x06;
+pub const TYPE_RSA_PRIV_KEY_CRT: u8 = 0x07;
+pub const TYPE_RSA_PUB_KEY: u8 = 0x08;
+pub const TYPE_AES_KEY: u8 = 0x09;
+pub const TYPE_DES_KEY: u8 = 0x0A;
+pub const TYPE_BINARY_FILE: u8 = 0x0B;
+pub const TYPE_USERID: u8 = 0x0C;
+pub const TYPE_COUNTER: u8 = 0x0D;
+pub const TYPE_PCR: u8 = 0x0F;
+pub const TYPE_CURVE: u8 = 0x10;
+pub const TYPE_HMAC_KEY: u8 = 0x11;
+
+pub const DIGEST_NO_HASH: u8 = 0x00;
+pub const DIGEST_SHA: u8 = 0x01;
+pub const DIGEST_SHA224: u8 = 0x07;
+pub const DIGEST_SHA256: u8 = 0x04;
+pub const DIGEST_SHA384: u8 = 0x05;
+pub const DIGEST_SHA512: u8 = 0x06;
+
+pub const HMAC_SHA1: u8 = 0x18;
+pub const HMAC_SHA256: u8 = 0x19;
+pub const HMAC_SHA384: u8 = 0x1A;
+pub const HMAC_SHA512: u8 = 0x1B;
+///  (ISO9797 M2 padding)
+pub const CMAC_128: u8 = 0x31;
+pub const DES_MAC4_ISO9797_M2: u8 = 0x05;
+pub const DES_MAC4_ISO9797_1_M2_ALG3: u8 = 0x13;
+pub const DES_MAC4_ISO9797_M1: u8 = 0x03;
+pub const DES_MAC4_ISO9797_1_M1_ALG3: u8 = 0x2F;
+pub const DES_MAC8_ISO9797_M2: u8 = 0x06;
+pub const DES_MAC8_ISO9797_1_M2_ALG3: u8 = 0x14;
+pub const DES_MAC8_ISO9797_1_M1_ALG3: u8 = 0x04;
+// pub const DES_MAC8_ISO9797_1_M1_ALG3: u8 = 0x30;
+pub const CMAC128: u8 = 0x31;
+pub const DES_CMAC8: u8 = 0x7A;
+pub const AES_CMAC16: u8 = 0x66;
+
+pub const NIST_P192: u8 = 0x01;
+pub const NIST_P224: u8 = 0x02;
+pub const NIST_P256: u8 = 0x03;
+pub const NIST_P384: u8 = 0x04;
+pub const NIST_P521: u8 = 0x05;
+pub const BRAINPOOL160: u8 = 0x06;
+pub const BRAINPOOL192: u8 = 0x07;
+pub const BRAINPOOL224: u8 = 0x08;
+pub const BRAINPOOL256: u8 = 0x09;
+pub const BRAINPOOL320: u8 = 0x0A;
+pub const BRAINPOOL384: u8 = 0x0B;
+pub const BRAINPOOL512: u8 = 0x0C;
+pub const SECP160K1: u8 = 0x0D;
+pub const SECP192K1: u8 = 0x0E;
+pub const SECP224K1: u8 = 0x0F;
+pub const SECP256K1: u8 = 0x10;
+pub const TPM_ECC_BN_P256: u8 = 0x11;
+pub const ID_ECC_ED_25519: u8 = 0x40;
+pub const ID_ECC_MONT_DH_25519: u8 = 0x41;
+
+pub const CURVE_PARAM_A: u8 = 0x01;
+pub const CURVE_PARAM_B: u8 = 0x02;
+pub const CURVE_PARAM_G: u8 = 0x04;
+pub const CURVE_PARAM_N: u8 = 0x08;
+pub const CURVE_PARAM_PRIME: u8 = 0x10;
+
+pub const TRANSIENT_LOCK: u8 = 0x01;
+pub const PERSISTENT_LOCK: u8 = 0x02;
+
+pub const LOCKED: u8 = 0x01;
+
+pub const RESULT_SUCCESS: u8 = 0x01;
+pub const RESULT_FAILURE: u8 = 0x02;
+
+pub const PERSISTENT: u8 = 0x01;
+pub const TRANSIENT: u8 = 0x02;
+
+pub const NOT_SET: u8 = 0x01;
+pub const SET: u8 = 0x02;
+
+/// Persistent memory
+pub const MEM_PERSISTENT: u8 = 0x01;
+/// Transient memory, clear on reset
+pub const MEM_TRANSIENT_RESET: u8 = 0x02;
+/// Transient memory, clear on deselect
+pub const MEM_TRANSIENT_DESELECT: u8 = 0x03;
+
+/// Generated outside the module.
+pub const ORIGIN_EXTERNAL: u8 = 0x01;
+/// Generated inside the module.
+pub const ORIGIN_INTERNAL: u8 = 0x02;
+/// Trust provisioned by NXP
+pub const ORIGIN_PROVISIONED: u8 = 0x03;
+
+/// EDDSA Pure (using SHA512 as digest)
+pub const SIG_ED25519PURE: u8 = 0xA3;
+
+/// Message input must be pre-hashed (using SHA256)
+pub const SIG_ECDAA: u8 = 0xF4;
+
+/// RFC8017: RSASSA-PSS
+pub const RSA_SHA1_PKCS1_PSS: u8 = 0x15;
+/// RFC8017: RSASSA-PSS
+pub const RSA_SHA224_PKCS1_PSS: u8 = 0x2B;
+/// RFC8017: RSASSA-PSS
+pub const RSA_SHA256_PKCS1_PSS: u8 = 0x2C;
+/// RFC8017: RSASSA-PSS
+pub const RSA_SHA384_PKCS1_PSS: u8 = 0x2D;
+/// RFC8017: RSASSA-PSS
+pub const RSA_SHA512_PKCS1_PSS: u8 = 0x2E;
+/// RFC8017: RSASSA-PKCS1-v1_5
+pub const RSA_SHA1_PKCS1: u8 = 0x0A;
+/// RFC8017: RSASSA-PKCS1-v1_5
+pub const RSA_SHA_224_PKCS1: u8 = 0x27;
+/// RFC8017: RSASSA-PKCS1-v1_5
+pub const RSA_SHA_256_PKCS1: u8 = 0x28;
+/// RFC8017: RSASSA-PKCS1-v1_5
+pub const RSA_SHA_384_PKCS1: u8 = 0x29;
+/// RFC8017: RSASSA-PKCS1-v1_5
+pub const RSA_SHA_512_PKCS1: u8 = 0x2A;
+
+/// Plain RSA, padding required on host.
+pub const RSA_NO_PAD: u8 = 0x0C;
+/// RFC8017: RSAES-PKCS1-v1_5
+pub const RSA_PKCS1: u8 = 0x0A;
+/// RFC8017: RSAES-OAEP (using SHA1 as digest)
+pub const RSA_PKCS1_OAEP: u8 = 0x0F;
+
+/// Modulus
+pub const RSA_COMP_MOD: u8 = 0x00;
+/// Public key exponent
+pub const RSA_COMP_PUB_EXP: u8 = 0x01;
+/// Private key exponent
+pub const RSA_COMP_PRIV_EXP: u8 = 0x02;
+/// CRT component p
+pub const RSA_COMP_P: u8 = 0x03;
+/// CRT component q
+pub const RSA_COMP_Q: u8 = 0x04;
+/// CRT component dp
+pub const RSA_COMP_DP: u8 = 0x05;
+/// CRT component dq
+pub const RSA_COMP_DQ: u8 = 0x06;
+/// CRT component q_inv
+pub const RSA_COMP_INVQ: u8 = 0x07;
+
+/// Typically using DESKey identifiers
+pub const DES_CBC_NOPAD: u8 = 0x01;
+/// Typically using DESKey identifiers
+pub const DES_CBC_ISO9797_M1: u8 = 0x02;
+/// Typically using DESKey identifiers
+pub const DES_CBC_ISO9797_M2: u8 = 0x03;
+/// NOT SUPPORTED
+pub const DES_CBC_PKCS5: u8 = 0x04;
+/// Typically using DESKey identifiers
+pub const DES_ECB_NOPAD: u8 = 0x05;
+/// NOT SUPPORTED
+pub const DES_ECB_ISO9797_M1: u8 = 0x06;
+/// NOT SUPPORTED
+pub const DES_ECB_ISO9797_M2: u8 = 0x07;
+/// NOT SUPPORTED
+pub const DES_ECB_PKCS5: u8 = 0x08;
+/// Typically using AESKey identifiers
+pub const AES_ECB_NOPAD: u8 = 0x0E;
+/// Typically using AESKey identifiers
+pub const AES_CBC_NOPAD: u8 = 0x0D;
+/// Typically using AESKey identifiers
+pub const AES_CBC_ISO9797_M1: u8 = 0x16;
+/// Typically using AESKey identifiers
+pub const AES_CBC_ISO9797_M2: u8 = 0x17;
+/// NOT SUPPORTED
+pub const AES_CBC_PKCS5: u8 = 0x18;
+/// Typically using AESKey identifiers
+pub const AES_CTR: u8 = 0xF0;
+
+/// No more data available
+pub const NO_MORE: u8 = 0x01;
+/// More data available
+pub const MORE: u8 = 0x02;
+
+/// Platform SCP is required (full enc & MAC)
+pub const SCP_REQUIRED: u8 = 0x01;
+/// No platform SCP required.
+pub const SCP_NOT_REQUIRED: u8 = 0x02;
