@@ -21,7 +21,7 @@ pub struct Se050<Twi, D> {
     t1: T1oI2C<Twi, D>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     Unknown,
     T1(t1::Error),
@@ -177,7 +177,7 @@ impl<'a> TryFrom<&[u8]> for Atr {
 }
 
 impl Select {
-    fn command(&self) -> CommandBuilder<'static, [u8]> {
+    fn command(&self) -> CommandBuilder<&'static [u8]> {
         CommandBuilder::new(ZERO_CLA, 0xA4.into(), 0x04, 0x00, &APP_ID, 7)
     }
 }
@@ -207,7 +207,7 @@ pub struct ProcessSessionCmd<C> {
 }
 
 impl<C: DataSource> ProcessSessionCmd<C> {
-    fn command(&self) -> CommandBuilder<'_, C> {
+    fn command(&self) -> CommandBuilder<&C> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_PROCESS,

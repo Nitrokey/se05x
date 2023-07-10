@@ -292,7 +292,7 @@ where
     type Error = <T as Read<u8>>::Error;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     Unknown,
     AddressNack,
