@@ -104,14 +104,14 @@ impl<'data, W: Writer> Se050Command<W> for ExchangeSessionData<'data> {
 
 #[derive(Clone, Debug)]
 pub struct RefreshSession {
-    pub policy: SessionPolicy,
+    pub policy: Option<SessionPolicy>,
 }
 
 impl RefreshSession {
-    fn data(&self) -> Tlv<SessionPolicy> {
+    fn data(&self) -> Tlv<Option<SessionPolicy>> {
         Tlv::new(TAG_POLICY, self.policy)
     }
-    fn command(&self) -> CommandBuilder<Tlv<SessionPolicy>> {
+    fn command(&self) -> CommandBuilder<Tlv<Option<SessionPolicy>>> {
         CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_REFRESH, self.data(), 0)
     }
 }
@@ -265,7 +265,7 @@ pub struct WriteEcKey<'data> {
     pub transient: bool,
     pub is_auth: bool,
     pub key_type: Option<P1KeyType>,
-    pub policy: SessionPolicy,
+    pub policy: Option<SessionPolicy>,
     pub max_attempts: Option<Be<u16>>,
     pub object_id: Option<ObjectId>,
     pub curve: Option<EcCurve>,
@@ -274,10 +274,10 @@ pub struct WriteEcKey<'data> {
 }
 
 impl<'data> WriteEcKey<'data> {
-    fn data(&self) -> (Tlv<SessionPolicy>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<EcCurve>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>) {
+    fn data(&self) -> (Tlv<Option<SessionPolicy>>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<EcCurve>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>) {
         (Tlv::new(TAG_POLICY, self.policy), Tlv::new(TAG_MAX_ATTEMPTS, self.max_attempts), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.curve), Tlv::new(TAG_3, self.private_key), Tlv::new(TAG_4, self.public_key))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<SessionPolicy>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<EcCurve>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>)> {
+    fn command(&self) -> CommandBuilder<(Tlv<Option<SessionPolicy>>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<EcCurve>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
         let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
         let p1: u8 = self.key_type.map(|v| v | P1_EC ).unwrap_or(P1_EC);
@@ -301,6 +301,96 @@ impl<'data, W: Writer> DataStream<W> for WriteEcKey<'data> {
 }
 
 impl<'data, W: Writer> Se050Command<W> for WriteEcKey<'data> {
+    type Response<'rdata> = ();
+}
+
+#[derive(Clone, Debug)]
+pub struct WriteRsaKey<'data> {
+    pub transient: bool,
+    pub is_auth: bool,
+    pub key_type: Option<P1KeyType>,
+    pub policy: Option<SessionPolicy>,
+    pub max_attempts: Option<Be<u16>>,
+    pub object_id: Option<ObjectId>,
+    pub key_size: Option<Be<u16>>,
+    pub p: Option<&'data [u8]>,
+    pub q: Option<&'data [u8]>,
+    pub dp: Option<&'data [u8]>,
+    pub dq: Option<&'data [u8]>,
+    pub inv_q: Option<&'data [u8]>,
+    pub e: Option<&'data [u8]>,
+    pub d: Option<&'data [u8]>,
+    pub n: Option<&'data [u8]>,
+}
+
+impl<'data> WriteRsaKey<'data> {
+    fn data(&self) -> (Tlv<Option<SessionPolicy>>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<Be<u16>>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>) {
+        (Tlv::new(TAG_POLICY, self.policy), Tlv::new(TAG_MAX_ATTEMPTS, self.max_attempts), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.key_size), Tlv::new(TAG_3, self.p), Tlv::new(TAG_4, self.q), Tlv::new(TAG_5, self.dp), Tlv::new(TAG_6, self.dq), Tlv::new(TAG_7, self.inv_q), Tlv::new(TAG_8, self.e), Tlv::new(TAG_9, self.d), Tlv::new(TAG_10, self.n))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<Option<SessionPolicy>>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<Be<u16>>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>)> {
+        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
+        let p1: u8 = self.key_type.map(|v| v | P1_RSA ).unwrap_or(P1_RSA);
+
+        CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
+    }
+}
+
+impl<'data> DataSource for WriteRsaKey<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for WriteRsaKey<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for WriteRsaKey<'data> {
+    type Response<'rdata> = ();
+}
+
+#[derive(Clone, Debug)]
+pub struct GenRsaKey {
+    pub transient: bool,
+    pub is_auth: bool,
+    pub policy: Option<SessionPolicy>,
+    pub max_attempts: Option<Be<u16>>,
+    pub object_id: Option<ObjectId>,
+    pub key_size: Option<Be<u16>>,
+}
+
+impl GenRsaKey {
+    fn data(&self) -> (Tlv<Option<SessionPolicy>>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<Be<u16>>>) {
+        (Tlv::new(TAG_POLICY, self.policy), Tlv::new(TAG_MAX_ATTEMPTS, self.max_attempts), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.key_size))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<Option<SessionPolicy>>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<Be<u16>>>)> {
+        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
+
+        CommandBuilder::new(NO_SM_CLA, ins, P1_RSA | P1_KEY_PAIR, P2_RAW, self.data(), 0)
+    }
+}
+
+impl DataSource for GenRsaKey {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for GenRsaKey {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for GenRsaKey {
     type Response<'rdata> = ();
 }
 

@@ -32,7 +32,7 @@ p1 = "P1_DEFAULT"
 p2 = "P2_SESSION_REFRESH"
 
 [refresh_session.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy"}
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
 
 [refresh_session.response]
 
@@ -85,12 +85,49 @@ maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
 p2 = "P2_DEFAULT"
 
 [write_ec_key.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy"}
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
 TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
 TAG_2 = { name = "curve", type = "Option<EcCurve>"}
 TAG_3 = { name = "private_key", type = "Option<&'data [u8]>"}
 TAG_4 = { name = "public_key", type = "Option<&'data [u8]>"}
+
+[write_rsa_key]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+maybe_auth = true
+p1 = "P1_RSA"
+maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
+p2 = "P2_DEFAULT"
+
+[write_rsa_key.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "key_size", type = "Option<Be<u16>>"}
+TAG_3 = { name = "p", type = "Option<&'data [u8]>"}
+TAG_4 = { name = "q", type = "Option<&'data [u8]>"}
+TAG_5 = { name = "dp", type = "Option<&'data [u8]>"}
+TAG_6 = { name = "dq", type = "Option<&'data [u8]>"}
+TAG_7 = { name = "inv_q", type = "Option<&'data [u8]>"}
+TAG_8 = { name = "e", type = "Option<&'data [u8]>"}
+TAG_9 = { name = "d", type = "Option<&'data [u8]>"}
+TAG_10 = { name = "n", type = "Option<&'data [u8]>"}
+
+[gen_rsa_key]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+maybe_auth = true
+p1 = "P1_RSA | P1_KEY_PAIR"
+p2 = "P2_RAW"
+
+[gen_rsa_key.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "key_size", type = "Option<Be<u16>>"}
 
 
 [get_random]
