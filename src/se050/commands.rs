@@ -264,6 +264,7 @@ impl<W: Writer> Se050Command<W> for SetLockState {
 pub struct WriteEcKey<'data> {
     pub transient: bool,
     pub is_auth: bool,
+    pub key_type: Option<P1KeyType>,
     pub policy: SessionPolicy,
     pub max_attempts: Option<Be<u16>>,
     pub object_id: Option<ObjectId>,
@@ -277,10 +278,11 @@ impl<'data> WriteEcKey<'data> {
         (Tlv::new(TAG_POLICY, self.policy), Tlv::new(TAG_MAX_ATTEMPTS, self.max_attempts), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.curve), Tlv::new(TAG_3, self.private_key), Tlv::new(TAG_4, self.public_key))
     }
     fn command(&self) -> CommandBuilder<(Tlv<SessionPolicy>, Tlv<Option<Be<u16>>>, Tlv<Option<ObjectId>>, Tlv<Option<EcCurve>>, Tlv<Option<&'data [u8]>>, Tlv<Option<&'data [u8]>>)> {
-        let ins = if self.transient { INS_WRITE & INS_TRANSIENT } else { INS_WRITE };
-        let ins = if self.is_auth { ins & INS_AUTH_OBJECT } else { ins };
+        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
+        let p1: u8 = self.key_type.map(|v| v | P1_EC ).unwrap_or(P1_EC);
 
-        CommandBuilder::new(NO_SM_CLA, ins, P1_EC, P2_DEFAULT, self.data(), 0)
+        CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
     }
 }
 

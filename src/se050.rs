@@ -769,6 +769,24 @@ macro_rules! enum_data {
             }
         }
 
+        impl<T : Into<$repr>> core::ops::BitOr<T> for $name {
+            type Output = $repr;
+        	fn bitor(self, rhs: T) -> $repr {
+        		let a: $repr = self.into();
+        		let b: $repr = rhs.into();
+        		a | b
+            }
+        }
+
+        impl<T : Into<$repr>> core::ops::BitAnd<T> for $name {
+            type Output = $repr;
+        	fn bitand(self, rhs: T) -> $repr {
+        		let a: $repr = self.into();
+        		let b: $repr = rhs.into();
+        		a & b
+            }
+        }
+
     };
 }
 
