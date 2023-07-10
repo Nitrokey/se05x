@@ -14,7 +14,10 @@ use iso7816::{
 };
 
 use crate::t1::{self, DataReceived, FrameSender, I2CForT1, T1oI2C};
+
+#[rustfmt::skip]
 pub mod commands;
+
 pub mod policies;
 
 pub struct Se050<Twi, D> {
