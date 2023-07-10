@@ -19,12 +19,12 @@ def data_for_arg(arg, name):
 
 def ty_for_arg(arg, name):
     if name == "then":
-        return f'{arg["type"]}'
+        return f'{arg.get("type", DEFAULT_TYPE)}'
         
     if data.get("optional", False):
-        return f'Option<Tlv<{arg["type"]}>>'
+        return f'Option<Tlv<{arg.get("type", DEFAULT_TYPE)}>>'
     else:
-        return f'Tlv<{arg["type"]}>'
+        return f'Tlv<{arg.get("type", DEFAULT_TYPE)}>'
 
 PARSE_PATTERN = """
         let (%s, rem) = loop {
@@ -36,6 +36,8 @@ PARSE_PATTERN = """
             }
         };
 """
+
+DEFAULT_TYPE = "&'data [u8]"
 
 def parse_for_resp(arg, name, outfile):
     tab = " "*8
@@ -60,13 +62,31 @@ outfile.write("// Generated Automatically by `generate_commands.py DO NOT MODIFY
 outfile.write("use super::policies::*;\n")
 outfile.write("use super::*;\n")
 outfile.write("use iso7816::command::{CommandBuilder, ExpectedLen};\n")
-outfile.write("use iso7816::tlv::{Tlv, take_do};\n")
+outfile.write("use iso7816::tlv::{take_do, Tlv};\n")
 
 for command, v in data.items():
     outfile.write("\n")
     name = camel_case(command) 
-    payload_has_lifetime = v.get("contains_arbitrary_payload", True)
-    response_has_lifetime = v.get("contains_arbitrary_response", True)
+
+    payload_has_lifetime = False
+    for a in v["payload"].values():
+        if "type" not in a:
+            payload_has_lifetime = True
+            break
+        if "'data" in a["type"]:
+            payload_has_lifetime = True
+            break
+
+    response_has_lifetime = False
+    if "response" in v:
+        for a in v["response"].values():
+            if "type" not in a:
+                response_has_lifetime = True
+                break
+            if "'data" in a["type"]:
+                response_has_lifetime = True
+                break
+
     payload_lifetime = ""
     if payload_has_lifetime:
         payload_lifetime = "<'data>"
@@ -75,14 +95,28 @@ for command, v in data.items():
     if response_has_lifetime:
         response_lifetime = "<'data>"
 
-    outfile.write("#[derive(Clone, Debug)]")
-    outfile.write(f'pub struct {name}{payload_lifetime} {{')
+    cla = v["cla"]
+    ins = v["ins"]
+    p1 = v["p1"]
+    p2 = v["p2"]
+    le = v.get("le", 0)
 
-    if "payload" in v:
-        outfile.write("\n")
+    outfile.write("#[derive(Clone, Debug)]\n")
+    outfile.write(f'pub struct {name}{payload_lifetime} {{\n')
+
+    pre_ins = None
+
+    if v.get("maybe_transient", False):
+        outfile.write("    pub transient: bool,\n")
+        pre_ins = f'        let ins = if self.transient {{ {ins} & INS_TRANSIENT }} else {{ {ins} }};\n'
+        ins = "ins"
+    if v.get("maybe_auth", False):
+        pre_ins += f'        let ins = if self.is_auth {{ {ins} & INS_AUTH_OBJECT }} else {{ {ins} }};\n'
+        ins = "ins"
+        outfile.write("    pub is_auth: bool,\n")
 
     for arg in v["payload"].values():
-        outfile.write(f'    pub {arg["name"]}: {arg["type"]},\n')
+        outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
     outfile.write("}\n\n")
 
     if payload_has_lifetime:
@@ -95,15 +129,15 @@ for command, v in data.items():
     if len(v["payload"].values()) != 1:
         tup_ty = f'({tup_ty})'
         tup_val = f'({tup_val})'
-    cla = v["cla"]
-    ins = v["ins"]
-    p1 = v["p1"]
-    p2 = v["p2"]
-    le = v["le"]
+
+
+    
     outfile.write(f'    fn data(&self) -> {tup_ty} {{\n')
     outfile.write(f'        {tup_val}\n')
     outfile.write("    }\n")
     outfile.write(f'    fn command(&self) -> CommandBuilder<{tup_ty}> {{\n')
+    if pre_ins is not None: 
+        outfile.write(f'{pre_ins}\n')
     outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1}, {p2}, self.data(), {le})\n')
     outfile.write("    }\n")
 
@@ -130,28 +164,28 @@ for command, v in data.items():
     outfile.write('    }\n')
     outfile.write("}\n")
    
-    outfile.write("#[derive(Clone, Debug)]")
-    outfile.write(f'pub struct {name}Response{response_lifetime} {{')
-
     if "response" in v:
-        outfile.write("\n")
+        outfile.write("#[derive(Clone, Debug)]\n")
+        outfile.write(f'pub struct {name}Response{response_lifetime} {{\n')
 
-    for arg in v["response"].values():
-        outfile.write(f'    pub {arg["name"]}: {arg["type"]},\n')
-    outfile.write("}\n")
+        for arg in v["response"].values():
+            outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
+        outfile.write("}\n")
 
-    outfile.write(f'\nimpl<\'data> TryFrom<&\'data [u8]> for {name}Response{response_lifetime} {{')
-    outfile.write("    type Error = Error;\n")
-    outfile.write("    fn try_from(rem: &'data [u8]) -> Result<Self, Error> {\n")
-    for arg_name, arg in v["response"].items():
-         parse_for_resp(arg, arg_name, outfile)
-    outfile.write("        let _ = rem;\n")
-    outfile.write(f'        Ok(Self {{ {", ".join([arg["name"] for arg in v["response"].values()])} }})\n')
-    outfile.write("    }\n")
-    outfile.write("}\n")
+        outfile.write(f'\nimpl<\'data> Se050Response<\'data> for {name}Response{response_lifetime} {{\n')
+        outfile.write("    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {\n")
+        for arg_name, arg in v["response"].items():
+             parse_for_resp(arg, arg_name, outfile)
+        outfile.write("        let _ = rem;\n")
+        outfile.write(f'        Ok(Self {{ {", ".join([arg["name"] for arg in v["response"].values()])} }})\n')
+        outfile.write("    }\n")
+        outfile.write("}\n")
 
+    outfile.write("\n")
     outfile.write(f'impl{bound} Se050Command<W> for {name}{payload_lifetime} {{\n')
-    if response_has_lifetime:
+    if "response" not in "v": 
+        outfile.write(f'    type Response<\'rdata> = ();\n')
+    elif response_has_lifetime:
         outfile.write(f'    type Response<\'rdata> = {name}Response<\'rdata>;\n')
     else:
         outfile.write(f'    type Response<\'rdata> = {name}Response;\n')

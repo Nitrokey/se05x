@@ -15,7 +15,6 @@ use iso7816::{
 
 use crate::t1::{self, DataReceived, FrameSender, I2CForT1, T1oI2C};
 
-#[rustfmt::skip]
 pub mod commands;
 
 pub mod policies;
@@ -69,8 +68,18 @@ impl From<t1::Error> for Error {
     }
 }
 
+pub trait Se050Response<'a>: Sized {
+    fn from_response(data: &'a [u8]) -> Result<Self, Error>;
+}
+
+impl<'a> Se050Response<'a> for () {
+    fn from_response(_data: &'a [u8]) -> Result<Self, Error> {
+        Ok(())
+    }
+}
+
 pub trait Se050Command<W: Writer>: DataStream<W> {
-    type Response<'a>: TryFrom<&'a [u8], Error = Error>;
+    type Response<'a>: Se050Response<'a>;
 }
 
 pub const APP_ID: [u8; 0x10] = hex!("A0000003965453000000010300000000");
@@ -123,7 +132,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         if status != Status::SUCCESS {
             return Err(Error::Status(status));
         }
-        response.try_into()
+        C::Response::from_response(response)
     }
 }
 
@@ -181,10 +190,9 @@ impl Atr {
     }
 }
 
-impl TryFrom<&[u8]> for Atr {
-    type Error = Error;
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Self::parse(value)
+impl<'a> Se050Response<'a> for Atr {
+    fn from_response(data: &'a [u8]) -> Result<Self, Error> {
+        Self::parse(data)
     }
 }
 
@@ -705,3 +713,155 @@ impl<W: Writer> DataStream<W> for Be<u32> {
         writer.write_all(&self.0.to_be_bytes())
     }
 }
+
+macro_rules! enum_data {
+    (
+        #[$outer:meta]
+        #[repr($repr:tt)]
+        $vis:vis enum $name:ident {
+            $($var:ident = $num:tt),+
+            $(,)*
+        }
+    ) => {
+        #[$outer]
+        #[repr($repr)]
+        $vis enum $name {
+            $(
+                $var = $num,
+            )*
+        }
+
+        impl From<$name> for $repr {
+            fn from(val: $name) -> $repr {
+                match val {
+                    $(
+                         $name::$var => $num,
+                    )*
+                }
+            }
+        }
+
+        impl TryFrom<$repr> for $name {
+            type Error = ();
+            fn try_from(val: $repr) -> ::core::result::Result<Self, ()> {
+                match val {
+                    $(
+                        $num => Ok($name::$var),
+                    )*
+                    _ => Err(())
+                }
+            }
+        }
+
+        impl DataSource for $name {
+            fn len(&self) -> usize {
+                $repr::default().to_be_bytes().len()
+            }
+            fn is_empty(&self) -> bool {
+                false
+            }
+        }
+
+        impl<W:Writer> DataStream<W> for $name {
+            fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+                let val: $repr = (*self).into();
+                writer.write_all(&val.to_be_bytes())
+            }
+        }
+
+    };
+}
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum LockIndicator {
+        Transient = TRANSIENT_LOCK,
+        Persistent = PERSISTENT_LOCK,
+    }
+);
+
+#[derive(Debug, Clone, Copy)]
+pub enum LockState {
+    Locked,
+    Unlocked,
+}
+
+impl From<LockState> for u8 {
+    fn from(value: LockState) -> Self {
+        match value {
+            LockState::Locked => LOCKED,
+            LockState::Unlocked => 0x02,
+        }
+    }
+}
+
+impl From<u8> for LockState {
+    fn from(value: u8) -> Self {
+        match value {
+            LOCKED => LockState::Locked,
+            _ => LockState::Unlocked,
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for LockState {
+    type Error = Error;
+    fn try_from(value: &[u8]) -> Result<Self, Error> {
+        if let [b] = value {
+            Ok((*b).into())
+        } else {
+            Err(Error::Tlv)
+        }
+    }
+}
+impl DataSource for LockState {
+    fn len(&self) -> usize {
+        1
+    }
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl<W: Writer> DataStream<W> for LockState {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&[(*self).into()])
+    }
+}
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum P1KeyType {
+        KeyPair = P1_KEY_PAIR,
+        Private = P1_PRIVATE,
+        Public = P1_PUBLIC,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum EcCurve {
+        NistP192 = NIST_P192,
+        NistP224 = NIST_P224,
+        NistP256 = NIST_P256,
+        NistP384 = NIST_P384,
+        NistP521 = NIST_P521,
+        Brainpool160 = BRAINPOOL160,
+        Brainpool192 = BRAINPOOL192,
+        Brainpool224 = BRAINPOOL224,
+        Brainpool256 = BRAINPOOL256,
+        Brainpool320 = BRAINPOOL320,
+        Brainpool384 = BRAINPOOL384,
+        Brainpool512 = BRAINPOOL512,
+        Secp160k1 = SECP160K1,
+        Secp192k1 = SECP192K1,
+        Secp224k1 = SECP224K1,
+        Secp256k1 = SECP256K1,
+        TpmEccBnP256 = TPM_ECC_BN_P256,
+        IdEccEd25519 = ID_ECC_ED_25519,
+        IdEccMontDh25519 = ID_ECC_MONT_DH_25519,
+    }
+);

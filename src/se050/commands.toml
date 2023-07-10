@@ -4,8 +4,6 @@ ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
 p2 = "P2_DEFAULT"
 le = 0x0C
-contains_arbitrary_payload = false
-contains_arbitrary_response = false
 
 [create_session.payload]
 TAG_1 = { name = "object_id", type = "ObjectId"}
@@ -19,14 +17,80 @@ cla = "NO_SM_CLA"
 ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
 p2 = "P2_SESSION_POLICY"
-le = 0x00
 
 [exchange_session_data.payload]
 TAG_1 = { name = "session_policy", type = "SessionPolicy"}
-then = { name = "c_mac", type = "&'data [u8]"}
+then = { name = "c_mac"}
 
 [exchange_session_data.response]
-then = { name = "r_mac", type = "&'data [u8]"}
+then = { name = "r_mac"}
+
+[refresh_session]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_SESSION_REFRESH"
+
+[refresh_session.payload]
+TAG_POLICY = { name = "policy", type = "SessionPolicy"}
+
+[refresh_session.response]
+
+[close_session]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_SESSION_CLOSE"
+
+[close_session.payload]
+[close_session.response]
+
+[verify_session_user_id]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_SESSION_USERID"
+
+[verify_session_user_id.payload]
+TAG_1 = { name = "user_id"}
+
+[verify_session_user_id.response]
+
+
+# TODO ScpInitializeUpdate
+# TODO ScpExternalAuthenticate
+# TODO ECKeySessionInternalAuthenticate
+# TODO ECKeySessionGetECKAPublicKey
+
+[set_lock_state]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_TRANSPORT"
+
+[set_lock_state.payload]
+TAG_1 = { name = "lock_indicator", type = "LockIndicator"}
+TAG_2 = { name = "lock_state", type = "LockState"}
+
+# TODO SetPlatformSCPRequest
+# TODO SetAppletFeatures
+
+[write_ec_key]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+maybe_auth = true
+p1 = "P1_EC"
+maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
+p2 = "P2_DEFAULT"
+
+[write_ec_key.payload]
+TAG_POLICY = { name = "policy", type = "SessionPolicy"}
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "curve", type = "Option<EcCurve>"}
+TAG_3 = { name = "private_key", type = "Option<&'data [u8]>"}
+TAG_4 = { name = "public_key", type = "Option<&'data [u8]>"}
 
 
 [get_random]
@@ -35,10 +99,9 @@ ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
 p2 = "P2_RANDOM"
 le = "ExpectedLen::Max"
-contains_arbitrary_payload = false
 
 [get_random.payload]
 TAG_1 = { name = "length", type = "Be<u16>" }
 
 [get_random.response]
-TAG_1 = { name = "data", type = "&'data [u8]" }
+TAG_1 = { name = "data" }
