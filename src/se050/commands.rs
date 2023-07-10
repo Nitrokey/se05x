@@ -2,7 +2,7 @@
 
 use super::policies::*;
 use super::*;
-use iso7816::command::CommandBuilder;
+use iso7816::command::{CommandBuilder, ExpectedLen};
 use iso7816::tlv::{Tlv, take_do};
 
 #[derive(Clone, Debug)]pub struct CreateSession {
@@ -105,7 +105,7 @@ impl GetRandom {
         Tlv::new(TAG_1, self.length)
     }
     fn command(&self) -> CommandBuilder<Tlv<Be<u16>>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_RANDOM, self.data(), 0)
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_RANDOM, self.data(), ExpectedLen::Max)
     }
 }
 

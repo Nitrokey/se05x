@@ -34,7 +34,7 @@ cla = "NO_SM_CLA"
 ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
 p2 = "P2_RANDOM"
-le = 0x00
+le = "ExpectedLen::Max"
 contains_arbitrary_payload = false
 
 [get_random.payload]

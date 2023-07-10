@@ -59,7 +59,7 @@ outfile.write("// Generated Automatically by `generate_commands.py DO NOT MODIFY
 
 outfile.write("use super::policies::*;\n")
 outfile.write("use super::*;\n")
-outfile.write("use iso7816::command::CommandBuilder;\n")
+outfile.write("use iso7816::command::{CommandBuilder, ExpectedLen};\n")
 outfile.write("use iso7816::tlv::{Tlv, take_do};\n")
 
 for command, v in data.items():

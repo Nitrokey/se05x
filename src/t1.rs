@@ -25,6 +25,7 @@ pub struct Atr<'a> {
     pub ifsc: u16,
     /// Maximum I2C clock frequency (kHz)
     pub plid: u8,
+    /// Maximal I2C Clock Frequency
     pub mcf: u16,
     pub config: u8,
     /// Minimum polling time (ms)
@@ -61,7 +62,7 @@ impl<'a> Atr<'a> {
         debug!("Parsing atr: {data:02x?}");
         if data.len() < 7 {
             error!("ATR Error 1");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
         let pver = data[0];
         let vid: &[u8; 5] = (&data[1..][..5]).try_into().unwrap();
@@ -71,20 +72,20 @@ impl<'a> Atr<'a> {
 
         if rem.len() < dllp_len as usize || dllp_len < 2 {
             error!("ATR Error 2");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
         let (dllp, rem) = rem.split_at(dllp_len as usize);
 
         let [bwt1, bwt2, ifsc1, ifsc2, ..] = dllp else {
             error!("ATR Error 3");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         };
         let bwt = u16::from_be_bytes([*bwt1, *bwt2]);
         let ifsc = u16::from_be_bytes([*ifsc1, *ifsc2]);
 
         if rem.len() < 2 {
             error!("ATR Error 4");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
 
         let plid = rem[0];
@@ -92,12 +93,12 @@ impl<'a> Atr<'a> {
         let rem = &rem[2..];
         if rem.len() < plp_len as usize {
             error!("ATR Error 6");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
         let (plp, rem) = rem.split_at(plp_len as usize);
         let [mcf1, mcf2, config, mpot,_rfu1, _rfu2,_rfu3,segt1,segt2,wut1,wut2,..] = plp else {
             error!("ATR Error 7");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         };
         let mcf = u16::from_be_bytes([*mcf1, *mcf2]);
         let segt = u16::from_be_bytes([*segt1, *segt2]);
@@ -105,13 +106,13 @@ impl<'a> Atr<'a> {
 
         if rem.is_empty() {
             error!("ATR Error 8");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
         let hb_len = rem[0];
         let rem = &rem[1..];
         if rem.len() < hb_len as usize {
             error!("ATR Error 9");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
 
         let historical_bytes = &rem[..hb_len as usize];
@@ -301,6 +302,7 @@ pub enum Error {
     BadPcb,
     BadAddress,
     ReceptionBuffer,
+    Line(u32),
 }
 
 impl fmt::Display for Error {
@@ -313,6 +315,7 @@ impl fmt::Display for Error {
             Self::BadPcb => f.write_str("Received invalid PCB"),
             Self::BadAddress => f.write_str("Bad address"),
             Self::ReceptionBuffer => f.write_str("Reception buffer is too small"),
+            Self::Line(l) => write!(f, "Error comming from line: {l}"),
         }
     }
 }
@@ -382,25 +385,29 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     }
 
     pub fn write(&mut self, data: &[u8]) -> Result<(), Error> {
+        trace!("Writing");
         match self.twi.write(self.se_address, data) {
             Ok(_) => return Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(err) => {
-                warn!("Unknown error when writing: {:?}", err);
-                Err(Error::Unknown)
+                warn!("Got error");
+                warn!("{:?}", err);
+                Err(Error::Line(line!()))
             }
         }
     }
 
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        trace!("Reading");
         match self.twi.read(self.se_address, buffer) {
             Ok(_) => return Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(err) => {
-                warn!("Unknown error when writing: {:?}", err);
-                Err(Error::Unknown)
+                warn!("Got error");
+                warn!("{:?}", err);
+                Err(Error::Line(line!()))
             }
         }
     }
@@ -412,8 +419,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(err) => {
-                warn!("Unknown error when writing: {:?}", err);
-                Err(Error::Unknown)
+                warn!("Unknown error when writing & reading: {:?}", err);
+                Err(Error::Line(line!()))
             }
         }
     }
@@ -422,18 +429,22 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         let mut header_buffer = [0; HEADER_LEN];
         let mut written = 0;
         let mut crc_buf = [0; TRAILER_LEN];
-        loop {
-            trace!("Receive data loop, currently written {written}");
-            match self.read(&mut header_buffer) {
+        for i in 0..128 {
+            trace!("receive_data loop {written}, {i}, {}", buffer.len());
+            let read = self.read(&mut header_buffer);
+            match read {
                 Ok(()) => {}
                 Err(Error::AddressNack) => {
-                    self.delay.delay_us(self.mpot);
+                    self.wait_mpot();
                     continue;
                 }
-                Err(err) => return Err(err),
+                Err(err) => {
+                    return Err(err);
+                }
             }
 
             let [nad, pcb, len] = header_buffer;
+            debug!("Received header: {:02x?}", header_buffer);
 
             if buffer.len() < len as usize {
                 error!("Buffer too small");
@@ -442,7 +453,6 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
 
             let current_buf = &mut buffer[written..][..len as usize];
 
-            debug!("Received header: {:02x?}", header_buffer);
             if nad != self.nad_se2hd {
                 error!("Received bad nad: {:02x}", nad);
                 return Err(Error::BadAddress);
@@ -480,18 +490,19 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
                 }
                 Pcb::R(_, _) => {
                     error!("Got unexpected R-Block in receive");
-                    return Err(Error::Unknown);
+                    return Err(Error::Line(line!()));
                 }
                 Pcb::I(seq, more) => (seq, more),
             };
-            if !more {
-                return Ok(DataReceived::IBlocks(written));
-            }
+
             if seq != self.iseq_rcv {
                 warn!("Got bad seq");
             }
             self.iseq_rcv = !seq;
 
+            if !more {
+                return Ok(DataReceived::IBlocks(written));
+            }
             let frame = [
                 self.nad_hd2se,
                 Pcb::R(!seq, RBlockError::NoError).to_byte(),
@@ -500,14 +511,18 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             let [crc1, crc2] = Crc::calculate(&frame).to_le_bytes();
             self.write(&[frame[0], frame[1], frame[2], crc1, crc2])?;
         }
+        error!("Failed to read after 128 tries");
+        Err(Error::Line(line!()))
     }
 
     pub fn resync(&mut self) -> Result<(), Error> {
         trace!("Resync");
         let header = [self.nad_hd2se, Pcb::S(SBlock::ResyncRequest).to_byte(), 0];
         let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
-        self.write(&[header[0], header[1], header[2], crc1, crc2])?;
-        self.delay.delay_us(self.segt);
+        let frame = [header[0], header[1], header[2], crc1, crc2];
+        debug!("Sending: {frame:02x?}");
+        self.write(&frame)?;
+        self.wait_segt();
         let data = self.receive_data(&mut [])?;
         if !matches!(
             data,
@@ -536,7 +551,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         ];
         let [crc1, crc2] = Crc::calculate(&header).to_le_bytes();
         self.write(&[header[0], header[1], header[2], crc1, crc2])?;
-        self.delay.delay_us(self.segt);
+        self.wait_segt();
         let data = self.receive_data(buffer)?;
         let received = if let DataReceived::SBlock {
             block: SBlock::InterfaceSoftResetResponse,
@@ -551,12 +566,21 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         };
         let atr = Atr::parse(&buffer[..received]);
         if let Ok(atr) = &atr {
-            self.mpot = atr.mpot.into();
+            let mpot: u32 = atr.mpot.into();
+            self.mpot = 1000 * mpot;
             self.segt = atr.segt.into();
         };
         self.iseq_snd = Seq::ZERO;
         self.iseq_rcv = Seq::ZERO;
         Ok(atr.unwrap_or_default())
+    }
+
+    pub fn wait_segt(&mut self) {
+        self.delay.delay_us(self.segt)
+    }
+
+    pub fn wait_mpot(&mut self) {
+        self.delay.delay_us(self.mpot)
     }
 }
 
@@ -596,7 +620,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
         }
         if data.len() + self.written > self.data {
             error!("Writing more data than expected");
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         }
 
         let mut rem = data;
@@ -619,6 +643,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             }
         }
 
+        debug!("Written {}", data.len());
         Ok(data.len())
     }
 
@@ -640,8 +665,23 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             &self.current_frame_buffer[HEADER_LEN..][..data_len],
             &self.current_frame_buffer[HEADER_LEN + data_len..][..TRAILER_LEN],
         );
-        self.writer
-            .write(&self.current_frame_buffer[..data_len + HEADER_LEN + TRAILER_LEN])?;
+        for _ in 0..128 {
+            match self
+                .writer
+                .write(&self.current_frame_buffer[..data_len + HEADER_LEN + TRAILER_LEN])
+            {
+                Ok(()) => break,
+                // Err(Error::DataNack) => {
+                //     self.writer.wait_segt();
+                //     continue;
+                // }
+                Err(Error::AddressNack) => {
+                    self.writer.wait_segt();
+                    continue;
+                }
+                Err(e) => return Err(e),
+            }
+        }
 
         if is_last {
             // No R-BLOCK expected for non chained I block
@@ -649,6 +689,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
         }
 
         let mut resp_buf = [0u8; 5];
+        self.writer.wait_segt();
         self.writer.read(&mut resp_buf)?;
         debug!("Got R-Block: {:02x?}", resp_buf);
         let [nad, pcb, len, crc1, crc2] = resp_buf;

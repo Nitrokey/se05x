@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use iso7816::command::{DataSource, DataStream, Writer};
 
 use crate::se050::ObjectId;
 
@@ -6,15 +7,15 @@ bitflags! {
     #[derive(Clone, Copy,PartialEq,Eq, Debug)]
     pub struct ObjectPolicyFlags: u32 {
         /// Reserved for future use
-        const RFU1                                       = 0b10000000_00000000_00000000_00000000;
+        const RFU1                            = 0b10000000_00000000_00000000_00000000;
         /// Reserved for future use
-        const RFU2                                       = 0b01000000_00000000_00000000_00000000;
+        const RFU2                            = 0b01000000_00000000_00000000_00000000;
         /// Explicitely forbid all  operations
-        const FORBID_ALL                             = 0b00100000_00000000_00000000_00000000;
+        const FORBID_ALL                      = 0b00100000_00000000_00000000_00000000;
         /// Allow signature or MAC  generation
-        const ALLOW_SIGN                             = 0b00010000_00000000_00000000_00000000;
+        const ALLOW_SIGN                      = 0b00010000_00000000_00000000_00000000;
         /// Allow signature or MAC  verification
-        const ALLOW_VERIFY                           = 0b00001000_00000000_00000000_00000000;
+        const ALLOW_VERIFY                    = 0b00001000_00000000_00000000_00000000;
         /// Allow key agreement
         const ALLOW_KA                        = 0b00000100_00000000_00000000_00000000;
         /// Allow encryption
@@ -182,5 +183,21 @@ impl SessionPolicy {
         } else {
             self.flags.bits().to_be_bytes().into_iter().collect()
         }
+    }
+}
+
+impl DataSource for SessionPolicy {
+    fn len(&self) -> usize {
+        self.to_bytes().len()
+    }
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl<W: Writer> DataStream<W> for SessionPolicy {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        let bytes = self.to_bytes();
+        writer.write_all(&bytes)
     }
 }

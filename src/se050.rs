@@ -27,6 +27,7 @@ pub struct Se050<Twi, D> {
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
     Unknown,
+    Line(u32),
     T1(t1::Error),
     Status(Status),
     Tlv,
@@ -47,10 +48,17 @@ impl From<Error> for Status {
     fn from(value: Error) -> Self {
         match value {
             Error::Status(status) => status,
-            _ => {
-                error!("Unknown error {value:?}");
-                Status::ERROR
-            }
+            Error::Unknown => Status(0x0000),
+            Error::Tlv => Status(0x0001),
+            Error::T1(t1::Error::Unknown) => Status(0x0002),
+            Error::T1(t1::Error::AddressNack) => Status(0x0003),
+            Error::T1(t1::Error::DataNack) => Status(0x0004),
+            Error::T1(t1::Error::BadCrc) => Status(0x0005),
+            Error::T1(t1::Error::BadPcb) => Status(0x0006),
+            Error::T1(t1::Error::BadAddress) => Status(0x0007),
+            Error::T1(t1::Error::ReceptionBuffer) => Status(0x0008),
+            Error::T1(t1::Error::Line(l)) => Status(0x1000 + l.min(0x0FFF) as u16),
+            Error::Line(l) => Status(0x2000 + l.min(0x0FFF) as u16),
         }
     }
 }
@@ -110,6 +118,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
     ) -> Result<<C as Se050Command<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
         let mut sender = self.t1.into_writer(command.len())?;
         command.to_writer(&mut sender)?;
+        self.t1.wait_segt();
         let (response, status) = self.receive_apdu(response_buf)?;
         if status != Status::SUCCESS {
             return Err(Error::Status(status));
@@ -172,7 +181,7 @@ impl Atr {
     }
 }
 
-impl<'a> TryFrom<&[u8]> for Atr {
+impl TryFrom<&[u8]> for Atr {
     type Error = Error;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         Self::parse(value)
@@ -306,6 +315,37 @@ impl TryFrom<&[u8]> for SessionId {
     }
 }
 
+impl DataSource for ObjectId {
+    fn len(&self) -> usize {
+        4
+    }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl DataSource for SessionId {
+    fn len(&self) -> usize {
+        8
+    }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl<W: Writer> DataStream<W> for SessionId {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0)
+    }
+}
+impl<W: Writer> DataStream<W> for ObjectId {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0)
+    }
+}
+
 pub const TAG_SESSION_ID: Tag = Tag::from_u8(0x10);
 pub const TAG_POLICY: Tag = Tag::from_u8(0x11);
 pub const TAG_MAX_ATTEMPTS: Tag = Tag::from_u8(0x12);
@@ -328,6 +368,7 @@ pub const INS_ATTEST: Instruction = Instruction::Unknown(0x20);
 
 pub const INS_WRITE: Instruction = Instruction::Unknown(0x01);
 pub const INS_READ: Instruction = Instruction::Unknown(0x02);
+pub const INS_READ_ATTEST: Instruction = Instruction::Unknown(0x02 | 0x20);
 pub const INS_CRYPTO: Instruction = Instruction::Unknown(0x03);
 pub const INS_MGMT: Instruction = Instruction::Unknown(0x04);
 pub const INS_PROCESS: Instruction = Instruction::Unknown(0x05);
@@ -618,3 +659,49 @@ pub const MORE: u8 = 0x02;
 pub const SCP_REQUIRED: u8 = 0x01;
 /// No platform SCP required.
 pub const SCP_NOT_REQUIRED: u8 = 0x02;
+
+/// Big-endian encoded integer
+#[derive(Clone, Copy, Debug)]
+pub struct Be<I>(pub I);
+
+impl<I> From<I> for Be<I> {
+    fn from(value: I) -> Self {
+        Self(value)
+    }
+}
+
+impl DataSource for Be<u8> {
+    fn len(&self) -> usize {
+        1
+    }
+}
+
+impl DataSource for Be<u16> {
+    fn len(&self) -> usize {
+        2
+    }
+}
+
+impl DataSource for Be<u32> {
+    fn len(&self) -> usize {
+        4
+    }
+}
+
+impl<W: Writer> DataStream<W> for Be<u8> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0.to_be_bytes())
+    }
+}
+
+impl<W: Writer> DataStream<W> for Be<u16> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0.to_be_bytes())
+    }
+}
+
+impl<W: Writer> DataStream<W> for Be<u32> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0.to_be_bytes())
+    }
+}
