@@ -9,10 +9,10 @@ p2 = "P2_SESSION_CREATE"
 le = 0x0C
 
 [create_session.payload]
-TAG_1 = { name = "object_id", type = "ObjectId"}
+TAG_1 = { name = "object_id", type = "ObjectId" }
 
 [create_session.response]
-TAG_1 = { name = "session_id", type = "SessionId"}
+TAG_1 = { name = "session_id", type = "SessionId" }
 
 
 [exchange_session_data]
@@ -22,12 +22,12 @@ p1 = "P1_DEFAULT"
 p2 = "P2_SESSION_POLICY"
 
 [exchange_session_data.payload]
-TAG_1 = { name = "session_policy", type = "SessionPolicy"}
+TAG_1 = { name = "session_policy", type = "SessionPolicy" }
 # Default type is &'data [u8]
-then = { name = "c_mac"}
+then = { name = "c_mac" }
 
 [exchange_session_data.response]
-then = { name = "r_mac"}
+then = { name = "r_mac" }
 
 [refresh_session]
 cla = "NO_SM_CLA"
@@ -56,7 +56,7 @@ p1 = "P1_DEFAULT"
 p2 = "P2_SESSION_USERID"
 
 [verify_session_user_id.payload]
-TAG_1 = { name = "user_id"}
+TAG_1 = { name = "user_id" }
 
 [verify_session_user_id.response]
 
@@ -73,8 +73,8 @@ p1 = "P1_DEFAULT"
 p2 = "P2_TRANSPORT"
 
 [set_lock_state.payload]
-TAG_1 = { name = "lock_indicator", type = "TransientIndicator"}
-TAG_2 = { name = "lock_state", type = "LockState"}
+TAG_1 = { name = "lock_indicator", type = "TransientIndicator" }
+TAG_2 = { name = "lock_state", type = "LockState" }
 
 # TODO SetPlatformSCPRequest
 # TODO SetAppletFeatures
@@ -146,7 +146,7 @@ TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 TAG_2 = { name = "kek_id", type = "ObjectId", optional = true }
-TAG_3 = { name = "value"}
+TAG_3 = { name = "value" }
 
 [write_binary]
 cla = "NO_SM_CLA"
