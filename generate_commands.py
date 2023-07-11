@@ -68,6 +68,13 @@ for command, v in data.items():
     outfile.write("\n")
     name = camel_case(command) 
 
+    cla = v["cla"]
+    ins = v["ins"]
+    p1 = v["p1"]
+    p1_val = p1
+    p2 = v["p2"]
+    le = v.get("le", 0)
+
     payload_has_lifetime = False
     for a in v["payload"].values():
         if "type" not in a:
@@ -95,11 +102,6 @@ for command, v in data.items():
     if response_has_lifetime:
         response_lifetime = "<'data>"
 
-    cla = v["cla"]
-    ins = v["ins"]
-    p1 = v["p1"]
-    p2 = v["p2"]
-    le = v.get("le", 0)
 
     outfile.write("#[derive(Clone, Debug)]\n")
     outfile.write(f'pub struct {name}{payload_lifetime} {{\n')
@@ -114,12 +116,20 @@ for command, v in data.items():
         pre_ins += f'        let ins = if self.is_auth {{ {ins} | INS_AUTH_OBJECT }} else {{ {ins} }};\n'
         ins = "ins"
         outfile.write("    pub is_auth: bool,\n")
+    if not isinstance(p1, str):
+        outfile.write(f'    pub {p1["name"]}: {p1["type"]},\n')
+        pre_ins += f'        let p1: u8 = self.{p1["name"]}.into();\n'
+        p1_val = "p1"
 
     if "maybe_p1_mask" in v:
         a = v["maybe_p1_mask"]
         outfile.write(f'    pub {a["name"]}: Option<{a["type"]}>,\n')
-        pre_ins += f'        let p1: u8 = self.{a["name"]}.map(|v| v | {p1} ).unwrap_or({p1});\n'
-        p1 = "p1"
+        pre_ins += f'        let p1: u8 = self.{a["name"]}.map(|v| v | {p1_val} ).unwrap_or({p1});\n'
+        p1_val = "p1"
+
+
+
+        
 
     for arg in v["payload"].values():
         outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
@@ -144,7 +154,7 @@ for command, v in data.items():
     outfile.write(f'    fn command(&self) -> CommandBuilder<{tup_ty}> {{\n')
     if pre_ins != "": 
         outfile.write(f'{pre_ins}\n')
-    outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1}, {p2}, self.data(), {le})\n')
+    outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, self.data(), {le})\n')
     outfile.write("    }\n")
 
     outfile.write("}\n")

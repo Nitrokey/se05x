@@ -579,6 +579,19 @@ pub const ORIGIN_INTERNAL: u8 = 0x02;
 /// Trust provisioned by NXP
 pub const ORIGIN_PROVISIONED: u8 = 0x03;
 
+/// NOT SUPPORTED
+pub const SIG_ECDSA_PLAIN: u8 = 0x09;
+/// ECDSA with a SHA-1 digest as input.
+pub const SIG_ECDSA_SHA: u8 = 0x11;
+/// ECDSA with a SHA224 digest as input.
+pub const SIG_ECDSA_SHA_224: u8 = 0x25;
+/// ECDSA with a SHA256 digest as input.
+pub const SIG_ECDSA_SHA_256: u8 = 0x21;
+/// ECDSA with a SHA384 digest as input.
+pub const SIG_ECDSA_SHA_384: u8 = 0x22;
+/// ECDSA with a SHA512 digest as input.
+pub const SIG_ECDSA_SHA_512: u8 = 0x26;
+
 /// EDDSA Pure (using SHA512 as digest)
 pub const SIG_ED25519PURE: u8 = 0xA3;
 
@@ -684,16 +697,19 @@ impl DataSource for Be<u8> {
         1
     }
 }
-
 impl DataSource for Be<u16> {
     fn len(&self) -> usize {
         2
     }
 }
-
 impl DataSource for Be<u32> {
     fn len(&self) -> usize {
         4
+    }
+}
+impl DataSource for Be<u64> {
+    fn len(&self) -> usize {
+        8
     }
 }
 
@@ -702,16 +718,57 @@ impl<W: Writer> DataStream<W> for Be<u8> {
         writer.write_all(&self.0.to_be_bytes())
     }
 }
-
 impl<W: Writer> DataStream<W> for Be<u16> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
         writer.write_all(&self.0.to_be_bytes())
     }
 }
-
 impl<W: Writer> DataStream<W> for Be<u32> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
         writer.write_all(&self.0.to_be_bytes())
+    }
+}
+impl<W: Writer> DataStream<W> for Be<u64> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0.to_be_bytes())
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Be<u8> {
+    type Error = Error;
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
+        Ok(u8::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)?)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Be<u16> {
+    type Error = Error;
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
+        Ok(u16::from_be_bytes(*arr)
+            .try_into()
+            .map_err(|_| Error::Tlv)?)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Be<u32> {
+    type Error = Error;
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
+        Ok(u32::from_be_bytes(*arr)
+            .try_into()
+            .map_err(|_| Error::Tlv)?)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Be<u64> {
+    type Error = Error;
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
+        Ok(u64::from_be_bytes(*arr)
+            .try_into()
+            .map_err(|_| Error::Tlv)?)
     }
 }
 
@@ -751,6 +808,14 @@ macro_rules! enum_data {
                     )*
                     _ => Err(())
                 }
+            }
+        }
+
+        impl<'a> TryFrom<&'a [u8]> for $name {
+            type Error = Error;
+            fn try_from(val: &'a [u8]) -> ::core::result::Result<Self, Error> {
+                let arr: &'a _ = val.try_into().map_err(|_| Error::Tlv)?;
+                Ok($repr::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)?)
             }
         }
 
@@ -794,7 +859,7 @@ macro_rules! enum_data {
 enum_data!(
     #[derive(Debug, Clone, Copy)]
     #[repr(u8)]
-    pub enum LockIndicator {
+    pub enum TransientIndicator {
         Transient = TRANSIENT_LOCK,
         Persistent = PERSISTENT_LOCK,
     }
@@ -882,5 +947,133 @@ enum_data!(
         TpmEccBnP256 = TPM_ECC_BN_P256,
         IdEccEd25519 = ID_ECC_ED_25519,
         IdEccMontDh25519 = ID_ECC_MONT_DH_25519,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum SymmKeyType {
+        Aes = P1_AES,
+        Des = P1_DES,
+        Hmac = P1_HMAC,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u16)]
+    pub enum CounterSize {
+        B1 = 1,
+        B2 = 2,
+        B3 = 3,
+        B4 = 4,
+        B5 = 5,
+        B6 = 6,
+        B7 = 7,
+        B8 = 8,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum RsaKeyComponent {
+        Mod = RSA_COMP_MOD,
+        PubExp = RSA_COMP_PUB_EXP,
+        PrivExp = RSA_COMP_PRIV_EXP,
+        P = RSA_COMP_P,
+        Q = RSA_COMP_Q,
+        Dp = RSA_COMP_DP,
+        Dq = RSA_COMP_DQ,
+        InvQ = RSA_COMP_INVQ,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum AttestationAlgo {
+        // NOT SUPPORTED
+        // ECdsaPlain = SIG_ECDSA_PLAIN,
+        ECdsaSha = SIG_ECDSA_SHA,
+        ECdsaSha224 = SIG_ECDSA_SHA_224,
+        ECdsaSha256 = SIG_ECDSA_SHA_256,
+        ECdsaSha384 = SIG_ECDSA_SHA_384,
+        ECdsaSha512 = SIG_ECDSA_SHA_512,
+        RsaSha1Pkcs1Pss = RSA_SHA1_PKCS1_PSS,
+        RsaSha224Pkcs1Pss = RSA_SHA224_PKCS1_PSS,
+        RsaSha256Pkcs1Pss = RSA_SHA256_PKCS1_PSS,
+        RsaSha384Pkcs1Pss = RSA_SHA384_PKCS1_PSS,
+        RsaSha512Pkcs1Pss = RSA_SHA512_PKCS1_PSS,
+        RsaSha1Pkcs1 = RSA_SHA1_PKCS1,
+        RsaSha224Pkcs1 = RSA_SHA_224_PKCS1,
+        RsaSha256Pkcs1 = RSA_SHA_256_PKCS1,
+        RsaSha384Pkcs1 = RSA_SHA_384_PKCS1,
+        RsaSha512Pkcs1 = RSA_SHA_512_PKCS1,
+    }
+);
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum SecureObjectType {
+        EcKeyPair = TYPE_EC_KEY_PAIR,
+        EcPrivKey = TYPE_EC_PRIV_KEY,
+        EcPubKey = TYPE_EC_PUB_KEY,
+        RsaKeyPair = TYPE_RSA_KEY_PAIR,
+        RsaKeyPairCrt = TYPE_RSA_KEY_PAIR_CRT,
+        RsaPrivKey = TYPE_RSA_PRIV_KEY,
+        RsaPrivKeyCrt = TYPE_RSA_PRIV_KEY_CRT,
+        RsaPubKey = TYPE_RSA_PUB_KEY,
+        AesKey = TYPE_AES_KEY,
+        DesKey = TYPE_DES_KEY,
+        BinaryFile = TYPE_BINARY_FILE,
+        Userid = TYPE_USERID,
+        Counter = TYPE_COUNTER,
+        Pcr = TYPE_PCR,
+        Curve = TYPE_CURVE,
+        HmacKey = TYPE_HMAC_KEY,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum SecureObjectFilter {
+        EcKeyPair = TYPE_EC_KEY_PAIR,
+        EcPrivKey = TYPE_EC_PRIV_KEY,
+        EcPubKey = TYPE_EC_PUB_KEY,
+        RsaKeyPair = TYPE_RSA_KEY_PAIR,
+        RsaKeyPairCrt = TYPE_RSA_KEY_PAIR_CRT,
+        RsaPrivKey = TYPE_RSA_PRIV_KEY,
+        RsaPrivKeyCrt = TYPE_RSA_PRIV_KEY_CRT,
+        RsaPubKey = TYPE_RSA_PUB_KEY,
+        AesKey = TYPE_AES_KEY,
+        DesKey = TYPE_DES_KEY,
+        BinaryFile = TYPE_BINARY_FILE,
+        Userid = TYPE_USERID,
+        Counter = TYPE_COUNTER,
+        Pcr = TYPE_PCR,
+        Curve = TYPE_CURVE,
+        HmacKey = TYPE_HMAC_KEY,
+        All = 0xFF,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum MoreIndicator {
+        More = MORE,
+        NoMore = NO_MORE,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum Se050Result {
+        Success = RESULT_SUCCESS,
+        Failure = RESULT_FAILURE,
     }
 );

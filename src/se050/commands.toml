@@ -1,3 +1,6 @@
+# To be parsed by generate_commands to generate Rust code for the commands.
+# The order of the TLV tags and payloads matters
+
 [create_session]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"
@@ -20,6 +23,7 @@ p2 = "P2_SESSION_POLICY"
 
 [exchange_session_data.payload]
 TAG_1 = { name = "session_policy", type = "SessionPolicy"}
+# Default type is &'data [u8]
 then = { name = "c_mac"}
 
 [exchange_session_data.response]
@@ -69,7 +73,7 @@ p1 = "P1_DEFAULT"
 p2 = "P2_TRANSPORT"
 
 [set_lock_state.payload]
-TAG_1 = { name = "lock_indicator", type = "LockIndicator"}
+TAG_1 = { name = "lock_indicator", type = "TransientIndicator"}
 TAG_2 = { name = "lock_state", type = "LockState"}
 
 # TODO SetPlatformSCPRequest
@@ -129,6 +133,200 @@ TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
 TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
 TAG_2 = { name = "key_size", type = "Option<Be<u16>>"}
 
+[write_symm_key]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+maybe_auth = true
+p1 = { name = "key_type", type = "SymmKeyType" }
+p2 = "P2_DEFAULT"
+
+[write_symm_key.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "kek_id", type = "Option<ObjectId>"}
+TAG_3 = { name = "value"}
+
+[write_binary]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+maybe_auth = true
+p1 = "P1_BINARY"
+p2 = "P2_DEFAULT"
+
+[write_binary.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>" }
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "offset", type = "Be<u16>" }
+TAG_3 = { name = "file_length", type = "Option<Be<u16>>" }
+TAG_4 = { name = "data", type = "Option<&'data [u8]>" }
+
+[write_user_id]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE | INS_AUTH_OBJECT"
+p1 = "P1_USERID"
+p2 = "P2_DEFAULT"
+
+[write_user_id.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_4 = { name = "data" }
+
+[write_counter]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+p1 = "P1_COUNTER"
+p2 = "P2_DEFAULT"
+
+[write_counter.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "data", type = "Option<CounterSize>" }
+TAG_3 = { name = "value", type = "Option<Be<u64>>" }
+
+[write_pcr]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+p1 = "P1_PCR"
+p2 = "P2_DEFAULT"
+
+[write_pcr.payload]
+TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "initial_value", type = "Option<&'data [u8]>" }
+TAG_3 = { name = "extend", type = "Option<&'data [u8]>" }
+
+[import_object]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+maybe_transient = true
+p1 = "P1_DEFAULT"
+p2 = "P2_IMPORT"
+
+[import_object.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "key_component", type = "RsaKeyComponent" }
+TAG_3 = { name = "serialized_object", type = "Option<&'data [u8]>" }
+
+# TODO import external object
+
+[read_object]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_DEFAULT"
+
+[read_object.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "offset", type = "Option<Be<u16>>" }
+TAG_3 = { name = "length", type = "Option<Be<u16>>" }
+TAG_4 = { name = "rsa_key_component", type = "Option<&'data [u8]>" }
+
+[read_object.response]
+TAG_1 = { name = "data" }
+
+[read_attest_object]
+cla = "NO_SM_CLA"
+ins = "INS_READ | INS_ATTEST"
+p1 = "P1_DEFAULT"
+p2 = "P2_DEFAULT"
+
+[read_attest_object.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "offset", type = "Option<Be<u16>>" }
+TAG_3 = { name = "length", type = "Option<Be<u16>>" }
+TAG_4 = { name = "rsa_key_component", type = "Option<&'data [u8]>" }
+TAG_5 = { name = "attestation_object", type = "ObjectId" }
+TAG_6 = { name = "attestation_algo", type = "AttestationAlgo" }
+TAG_7 = { name = "freshness_random", type = "Option<&'data [u8; 16]>" }
+
+[read_attest_object.response]
+TAG_1 = { name = "data" }
+TAG_2 = { name = "attributes" } # TODO type
+TAG_3 = { name = "timestamp", type = "&'data [u8; 12]" }
+TAG_4 = { name = "freshness_random", type = "&'data [u8; 16]" }
+TAG_5 = { name = "chip_unique_id", type = "&'data [u8; 18]" }
+TAG_6 = { name = "signature" }
+
+[export_object]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_EXPORT"
+le = "ExpectedLen::Max"
+
+[export_object.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_2 = { name = "rsa_key_component", type = "Option<&'data [u8]>" }
+
+[read_type]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_TYPE"
+le = "ExpectedLen::Max"
+
+[read_type.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+
+[read_type.response]
+TAG_1 = { name = "ty", type = "SecureObjectType" }
+TAG_2 = { name = "transient_indicator", type = "TransientIndicator" }
+
+[read_size]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_SIZE"
+le = "ExpectedLen::Max"
+
+[read_size.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+
+[read_size.response]
+TAG_1 = { name = "size", type = "Be<u64>" }
+
+[read_id_list]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_LIST"
+le = "ExpectedLen::Max"
+
+[read_id_list.payload]
+TAG_1 = { name = "offset", type = "Be<u16>" }
+TAG_2 = { name = "filter", type = "SecureObjectFilter" }
+
+[read_id_list.response]
+TAG_1 = { name = "more", type = "MoreIndicator" }
+TAG_2 = { name = "ids" } # TODO type
+
+[check_object_exists]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_EXIST"
+le = "ExpectedLen::Max"
+
+[check_object_exists.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+
+[check_object_exists.response]
+TAG_1 = { name = "result", type = "Se050Result" }
+
+[delete_secure_object]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_DELETE_OBJECT"
+
+[delete_secure_object.payload]
+TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
 
 [get_random]
 cla = "NO_SM_CLA"
