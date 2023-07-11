@@ -9,7 +9,7 @@ use iso7816::{
         writer::IntoWriter,
         CommandBuilder, DataSource, DataStream, ExpectedLen, Writer,
     },
-    tlv::Tag,
+    tlv::{Tag, Tlv},
     Instruction, Status,
 };
 
@@ -228,13 +228,19 @@ pub struct ProcessSessionCmd<C> {
 }
 
 impl<C: DataSource> ProcessSessionCmd<C> {
-    fn command(&self) -> CommandBuilder<&C> {
+    fn data(&self) -> (Tlv<SessionId>, Tlv<&C>) {
+        (
+            Tlv::new(TAG_SESSION_ID, self.session_id),
+            Tlv::new(TAG_1, &self.apdu),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<SessionId>, Tlv<&C>)> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_PROCESS,
             P1_DEFAULT,
             P2_DEFAULT,
-            &self.apdu,
+            self.data(),
             ExpectedLen::Max,
         )
     }

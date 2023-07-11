@@ -5,7 +5,7 @@
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
-p2 = "P2_DEFAULT"
+p2 = "P2_SESSION_CREATE"
 le = 0x0C
 
 [create_session.payload]

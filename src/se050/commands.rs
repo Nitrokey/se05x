@@ -15,7 +15,7 @@ impl CreateSession {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_DEFAULT, self.data(), 12)
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CREATE, self.data(), 12)
     }
 }
 
