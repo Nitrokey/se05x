@@ -340,3 +340,13 @@ TAG_1 = { name = "length", type = "Be<u16>" }
 
 [get_random.response]
 TAG_1 = { name = "data" }
+
+[delete_all]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_DELETE_ALL"
+le = "ExpectedLen::Max"
+
+[delete_all.payload]
+
