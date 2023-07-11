@@ -12,16 +12,25 @@ def data_for_arg(arg, name):
     if name == "then":
         return f'self.{arg["name"]}'
         
-    if data.get("optional", False):
+    if arg.get("optional", False):
         return f'self.{arg["name"]}.map(|data| Tlv::new({name}, data))'
     else:
         return f'Tlv::new({name}, self.{arg["name"]})'
+
+def struct_ty_for_arg(arg, name):
+    if name == "then":
+        return f'{arg.get("type", DEFAULT_TYPE)}'
+        
+    if arg.get("optional", False):
+        return f'Option<{arg.get("type", DEFAULT_TYPE)}>'
+    else:
+        return f'{arg.get("type", DEFAULT_TYPE)}'
 
 def ty_for_arg(arg, name):
     if name == "then":
         return f'{arg.get("type", DEFAULT_TYPE)}'
         
-    if data.get("optional", False):
+    if arg.get("optional", False):
         return f'Option<Tlv<{arg.get("type", DEFAULT_TYPE)}>>'
     else:
         return f'Tlv<{arg.get("type", DEFAULT_TYPE)}>'
@@ -131,8 +140,8 @@ for command, v in data.items():
 
         
 
-    for arg in v["payload"].values():
-        outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
+    for arg_name, arg in v["payload"].items():
+        outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 
     if payload_has_lifetime:
@@ -199,7 +208,7 @@ for command, v in data.items():
 
     outfile.write("\n")
     outfile.write(f'impl{bound} Se050Command<W> for {name}{payload_lifetime} {{\n')
-    if "response" not in "v": 
+    if "response" not in v: 
         outfile.write(f'    type Response<\'rdata> = ();\n')
     elif response_has_lifetime:
         outfile.write(f'    type Response<\'rdata> = {name}Response<\'rdata>;\n')

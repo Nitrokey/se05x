@@ -7,7 +7,7 @@ use iso7816::{
     command::{
         class::{NO_SM_CLA, ZERO_CLA},
         writer::IntoWriter,
-        CommandBuilder, DataSource, DataStream, Writer,
+        CommandBuilder, DataSource, DataStream, ExpectedLen, Writer,
     },
     tlv::Tag,
     Instruction, Status,
@@ -235,7 +235,7 @@ impl<C: DataSource> ProcessSessionCmd<C> {
             P1_DEFAULT,
             P2_DEFAULT,
             &self.apdu,
-            u16::MAX,
+            ExpectedLen::Max,
         )
     }
 }

@@ -36,7 +36,7 @@ p1 = "P1_DEFAULT"
 p2 = "P2_SESSION_REFRESH"
 
 [refresh_session.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
 
 [refresh_session.response]
 
@@ -89,12 +89,12 @@ maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
 p2 = "P2_DEFAULT"
 
 [write_ec_key.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "curve", type = "Option<EcCurve>"}
-TAG_3 = { name = "private_key", type = "Option<&'data [u8]>"}
-TAG_4 = { name = "public_key", type = "Option<&'data [u8]>"}
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "curve", type = "EcCurve", optional = true }
+TAG_3 = { name = "private_key", optional = true }
+TAG_4 = { name = "public_key", optional = true }
 
 [write_rsa_key]
 cla = "NO_SM_CLA"
@@ -106,18 +106,18 @@ maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
 p2 = "P2_DEFAULT"
 
 [write_rsa_key.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "key_size", type = "Option<Be<u16>>"}
-TAG_3 = { name = "p", type = "Option<&'data [u8]>"}
-TAG_4 = { name = "q", type = "Option<&'data [u8]>"}
-TAG_5 = { name = "dp", type = "Option<&'data [u8]>"}
-TAG_6 = { name = "dq", type = "Option<&'data [u8]>"}
-TAG_7 = { name = "inv_q", type = "Option<&'data [u8]>"}
-TAG_8 = { name = "e", type = "Option<&'data [u8]>"}
-TAG_9 = { name = "d", type = "Option<&'data [u8]>"}
-TAG_10 = { name = "n", type = "Option<&'data [u8]>"}
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "key_size", type = "Be<u16>", optional = true }
+TAG_3 = { name = "p", optional = true }
+TAG_4 = { name = "q", optional = true }
+TAG_5 = { name = "dp", optional = true }
+TAG_6 = { name = "dq", optional = true }
+TAG_7 = { name = "inv_q", optional = true }
+TAG_8 = { name = "e", optional = true }
+TAG_9 = { name = "d", optional = true }
+TAG_10 = { name = "n", optional = true }
 
 [gen_rsa_key]
 cla = "NO_SM_CLA"
@@ -128,10 +128,10 @@ p1 = "P1_RSA | P1_KEY_PAIR"
 p2 = "P2_RAW"
 
 [gen_rsa_key.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "key_size", type = "Option<Be<u16>>"}
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "key_size", type = "Be<u16>", optional = true }
 
 [write_symm_key]
 cla = "NO_SM_CLA"
@@ -142,10 +142,10 @@ p1 = { name = "key_type", type = "SymmKeyType" }
 p2 = "P2_DEFAULT"
 
 [write_symm_key.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "kek_id", type = "Option<ObjectId>"}
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "kek_id", type = "ObjectId", optional = true }
 TAG_3 = { name = "value"}
 
 [write_binary]
@@ -157,11 +157,11 @@ p1 = "P1_BINARY"
 p2 = "P2_DEFAULT"
 
 [write_binary.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>" }
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true  }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 TAG_2 = { name = "offset", type = "Be<u16>" }
-TAG_3 = { name = "file_length", type = "Option<Be<u16>>" }
-TAG_4 = { name = "data", type = "Option<&'data [u8]>" }
+TAG_3 = { name = "file_length", type = "Be<u16>", optional = true  }
+TAG_4 = { name = "data", optional = true  }
 
 [write_user_id]
 cla = "NO_SM_CLA"
@@ -170,10 +170,10 @@ p1 = "P1_USERID"
 p2 = "P2_DEFAULT"
 
 [write_user_id.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Option<Be<u16>>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_4 = { name = "data" }
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u8>", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId" }
+TAG_2 = { name = "data" }
 
 [write_counter]
 cla = "NO_SM_CLA"
@@ -183,10 +183,10 @@ p1 = "P1_COUNTER"
 p2 = "P2_DEFAULT"
 
 [write_counter.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "data", type = "Option<CounterSize>" }
-TAG_3 = { name = "value", type = "Option<Be<u64>>" }
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "data", type = "CounterSize", optional = true  }
+TAG_3 = { name = "value", type = "Be<u64>", optional = true  }
 
 [write_pcr]
 cla = "NO_SM_CLA"
@@ -196,10 +196,10 @@ p1 = "P1_PCR"
 p2 = "P2_DEFAULT"
 
 [write_pcr.payload]
-TAG_POLICY = { name = "policy", type = "Option<SessionPolicy>"}
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "initial_value", type = "Option<&'data [u8]>" }
-TAG_3 = { name = "extend", type = "Option<&'data [u8]>" }
+TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "initial_value", optional = true  }
+TAG_3 = { name = "extend", optional = true  }
 
 [import_object]
 cla = "NO_SM_CLA"
@@ -209,9 +209,9 @@ p1 = "P1_DEFAULT"
 p2 = "P2_IMPORT"
 
 [import_object.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 TAG_2 = { name = "key_component", type = "RsaKeyComponent" }
-TAG_3 = { name = "serialized_object", type = "Option<&'data [u8]>" }
+TAG_3 = { name = "serialized_object", optional = true  }
 
 # TODO import external object
 
@@ -222,10 +222,10 @@ p1 = "P1_DEFAULT"
 p2 = "P2_DEFAULT"
 
 [read_object.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "offset", type = "Option<Be<u16>>" }
-TAG_3 = { name = "length", type = "Option<Be<u16>>" }
-TAG_4 = { name = "rsa_key_component", type = "Option<&'data [u8]>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "offset", type = "Be<u16>", optional = true  }
+TAG_3 = { name = "length", type = "Be<u16>", optional = true  }
+TAG_4 = { name = "rsa_key_component", optional = true  }
 
 [read_object.response]
 TAG_1 = { name = "data" }
@@ -237,13 +237,13 @@ p1 = "P1_DEFAULT"
 p2 = "P2_DEFAULT"
 
 [read_attest_object.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "offset", type = "Option<Be<u16>>" }
-TAG_3 = { name = "length", type = "Option<Be<u16>>" }
-TAG_4 = { name = "rsa_key_component", type = "Option<&'data [u8]>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "offset", type = "Be<u16>", optional = true  }
+TAG_3 = { name = "length", type = "Be<u16>", optional = true  }
+TAG_4 = { name = "rsa_key_component", optional = true  }
 TAG_5 = { name = "attestation_object", type = "ObjectId" }
 TAG_6 = { name = "attestation_algo", type = "AttestationAlgo" }
-TAG_7 = { name = "freshness_random", type = "Option<&'data [u8; 16]>" }
+TAG_7 = { name = "freshness_random", type = "&'data [u8; 16]", optional = true  }
 
 [read_attest_object.response]
 TAG_1 = { name = "data" }
@@ -261,8 +261,8 @@ p2 = "P2_EXPORT"
 le = "ExpectedLen::Max"
 
 [export_object.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
-TAG_2 = { name = "rsa_key_component", type = "Option<&'data [u8]>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
+TAG_2 = { name = "rsa_key_component", optional = true  }
 
 [read_type]
 cla = "NO_SM_CLA"
@@ -272,7 +272,7 @@ p2 = "P2_TYPE"
 le = "ExpectedLen::Max"
 
 [read_type.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 
 [read_type.response]
 TAG_1 = { name = "ty", type = "SecureObjectType" }
@@ -286,7 +286,7 @@ p2 = "P2_SIZE"
 le = "ExpectedLen::Max"
 
 [read_size.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 
 [read_size.response]
 TAG_1 = { name = "size", type = "Be<u64>" }
@@ -314,7 +314,7 @@ p2 = "P2_EXIST"
 le = "ExpectedLen::Max"
 
 [check_object_exists.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 
 [check_object_exists.response]
 TAG_1 = { name = "result", type = "Se050Result" }
@@ -326,7 +326,7 @@ p1 = "P1_DEFAULT"
 p2 = "P2_DELETE_OBJECT"
 
 [delete_secure_object.payload]
-TAG_1 = { name = "object_id", type = "Option<ObjectId>" }
+TAG_1 = { name = "object_id", type = "ObjectId", optional = true  }
 
 [get_random]
 cla = "NO_SM_CLA"
