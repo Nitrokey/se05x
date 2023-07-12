@@ -429,8 +429,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         let mut header_buffer = [0; HEADER_LEN];
         let mut written = 0;
         let mut crc_buf = [0; TRAILER_LEN];
-        for i in 0..128 {
-            trace!("receive_data loop {written}, {i}, {}", buffer.len());
+        for _i in 0..128 {
             let read = self.read(&mut header_buffer);
             match read {
                 Ok(()) => {}
@@ -596,12 +595,14 @@ pub struct FrameSender<'writer, Twi, D> {
     data: usize,
     /// Amount of application data already written, includes data currently in `current_frame_buffer`
     written: usize,
+    sent: usize,
     current_frame_buffer: [u8; MAX_FRAME_LEN],
 }
 
 impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     fn current_offset(&self) -> usize {
-        self.written % MAX_FRAME_DATA_LEN
+        debug_assert!(self.written - self.sent <= MAX_FRAME_LEN);
+        self.written - self.sent
     }
 
     pub fn new(writer: &'writer mut T1oI2C<Twi, D>, data: usize) -> Self {
@@ -609,12 +610,18 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             writer,
             data,
             written: 0,
+            sent: 0,
             current_frame_buffer: [0; MAX_FRAME_LEN],
         }
     }
 
     pub fn write_data(&mut self, data: &[u8]) -> Result<usize, Error> {
-        debug!("Writing data: {:02x?}", data);
+        if data.len() < 10 {
+            debug!("Writing data: {:02x?}", data);
+        } else {
+            debug!("Writing {} bytes", data.len());
+        }
+
         if data.is_empty() {
             return Ok(0);
         }
@@ -623,28 +630,23 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             return Err(Error::Line(line!()));
         }
 
-        let mut rem = data;
-        while !rem.is_empty() {
-            let current_offset = self.current_offset();
-            let available_in_frame = MAX_FRAME_DATA_LEN - current_offset;
-            let chunk_len = available_in_frame.min(rem.len());
-            let (chunk, next_rem) = rem.split_at(chunk_len);
-            rem = next_rem;
-            self.written += chunk_len;
-            self.current_frame_buffer[HEADER_LEN + current_offset..][..chunk_len]
-                .copy_from_slice(chunk);
+        let current_offset = self.current_offset();
+        let available_in_frame = MAX_FRAME_DATA_LEN - current_offset;
+        let chunk_len = available_in_frame.min(data.len());
+        let chunk = &data[..chunk_len];
+        self.written += chunk_len;
+        self.current_frame_buffer[HEADER_LEN + current_offset..][..chunk_len]
+            .copy_from_slice(chunk);
 
-            if chunk_len == available_in_frame {
-                // frame is full
-                self.send_current_frame()?;
-            } else if self.written == self.data {
-                // if fully written, send remaining buffered data
-                self.send_current_frame()?;
-            }
+        if chunk_len == available_in_frame {
+            // frame is full
+            self.send_current_frame()?;
+        } else if self.written == self.data {
+            // if fully written, send remaining buffered data
+            self.send_current_frame()?;
         }
 
-        debug!("Written {}", data.len());
-        Ok(data.len())
+        Ok(chunk_len)
     }
 
     pub fn send_current_frame(&mut self) -> Result<(), Error> {
@@ -682,6 +684,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
                 Err(e) => return Err(e),
             }
         }
+        self.sent += data_len;
 
         if is_last {
             // No R-BLOCK expected for non chained I block
