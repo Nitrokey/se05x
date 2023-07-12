@@ -144,8 +144,13 @@ for command, v in data.items():
         
 
     for arg_name, arg in v["payload"].items():
+        if "comment" in arg:
+            outfile.write(f'    /// {arg["comment"]}\n')
+            outfile.write(f'    ///\n')
         if arg_name != "then":
-            outfile.write(f'    /// [`{arg_name}`]({arg_name})\n')
+            outfile.write(f'    /// Serialized to TLV tag [`{arg_name}`]({arg_name})\n')
+        else:
+            outfile.write(f'    /// Serialized to remaining data\n')
         outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 
@@ -199,8 +204,13 @@ for command, v in data.items():
         outfile.write(f'pub struct {name}Response{response_lifetime} {{\n')
 
         for arg_name, arg in v["response"].items():
+            if "comment" in arg:
+                outfile.write(f'    /// {arg["comment"]}\n')
+                outfile.write(f'    ///\n')
             if arg_name != "then":
-                outfile.write(f'    /// [`{arg_name}`]({arg_name})\n')
+                outfile.write(f'    /// Parsed from TLV tag [`{arg_name}`]({arg_name})\n')
+            else:
+                outfile.write(f'    /// Parsed from remaining data\n')
             outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
         outfile.write("}\n")
 
