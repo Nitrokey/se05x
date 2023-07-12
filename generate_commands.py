@@ -74,8 +74,11 @@ outfile.write("use iso7816::command::{CommandBuilder, ExpectedLen};\n")
 outfile.write("use iso7816::tlv::{take_do, Tlv};\n")
 
 for command, v in data.items():
-    outfile.write("\n")
     name = camel_case(command) 
+
+    outfile.write("\n")
+    outfile.write(f'// ************* {name} ************* //\n')
+    outfile.write("\n")
 
     cla = v["cla"]
     ins = v["ins"]

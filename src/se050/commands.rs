@@ -5,6 +5,8 @@ use super::*;
 use iso7816::command::{CommandBuilder, ExpectedLen};
 use iso7816::tlv::{take_do, Tlv};
 
+// ************* CreateSession ************* //
+
 #[derive(Clone, Debug)]
 pub struct CreateSession {
     pub object_id: ObjectId,
@@ -57,6 +59,8 @@ impl<W: Writer> Se050Command<W> for CreateSession {
     type Response<'rdata> = CreateSessionResponse;
 }
 
+// ************* ExchangeSessionData ************* //
+
 #[derive(Clone, Debug)]
 pub struct ExchangeSessionData<'data> {
     pub session_policy: SessionPolicy,
@@ -102,6 +106,8 @@ impl<'data, W: Writer> Se050Command<W> for ExchangeSessionData<'data> {
     type Response<'rdata> = ExchangeSessionDataResponse<'rdata>;
 }
 
+// ************* RefreshSession ************* //
+
 #[derive(Clone, Debug)]
 pub struct RefreshSession {
     pub policy: Option<SessionPolicy>,
@@ -144,6 +150,8 @@ impl<W: Writer> Se050Command<W> for RefreshSession {
     type Response<'rdata> = RefreshSessionResponse;
 }
 
+// ************* CloseSession ************* //
+
 #[derive(Clone, Debug)]
 pub struct CloseSession {
 }
@@ -184,6 +192,8 @@ impl<'data> Se050Response<'data> for CloseSessionResponse {
 impl<W: Writer> Se050Command<W> for CloseSession {
     type Response<'rdata> = CloseSessionResponse;
 }
+
+// ************* VerifySessionUserId ************* //
 
 #[derive(Clone, Debug)]
 pub struct VerifySessionUserId<'data> {
@@ -227,6 +237,8 @@ impl<'data, W: Writer> Se050Command<W> for VerifySessionUserId<'data> {
     type Response<'rdata> = VerifySessionUserIdResponse;
 }
 
+// ************* SetLockState ************* //
+
 #[derive(Clone, Debug)]
 pub struct SetLockState {
     pub lock_indicator: TransientIndicator,
@@ -259,6 +271,8 @@ impl<W: Writer> DataStream<W> for SetLockState {
 impl<W: Writer> Se050Command<W> for SetLockState {
     type Response<'rdata> = ();
 }
+
+// ************* WriteEcKey ************* //
 
 #[derive(Clone, Debug)]
 pub struct WriteEcKey<'data> {
@@ -303,6 +317,8 @@ impl<'data, W: Writer> DataStream<W> for WriteEcKey<'data> {
 impl<'data, W: Writer> Se050Command<W> for WriteEcKey<'data> {
     type Response<'rdata> = ();
 }
+
+// ************* WriteRsaKey ************* //
 
 #[derive(Clone, Debug)]
 pub struct WriteRsaKey<'data> {
@@ -354,6 +370,8 @@ impl<'data, W: Writer> Se050Command<W> for WriteRsaKey<'data> {
     type Response<'rdata> = ();
 }
 
+// ************* GenRsaKey ************* //
+
 #[derive(Clone, Debug)]
 pub struct GenRsaKey {
     pub transient: bool,
@@ -393,6 +411,8 @@ impl<W: Writer> DataStream<W> for GenRsaKey {
 impl<W: Writer> Se050Command<W> for GenRsaKey {
     type Response<'rdata> = ();
 }
+
+// ************* WriteSymmKey ************* //
 
 #[derive(Clone, Debug)]
 pub struct WriteSymmKey<'data> {
@@ -437,6 +457,8 @@ impl<'data, W: Writer> Se050Command<W> for WriteSymmKey<'data> {
     type Response<'rdata> = ();
 }
 
+// ************* WriteBinary ************* //
+
 #[derive(Clone, Debug)]
 pub struct WriteBinary<'data> {
     pub transient: bool,
@@ -478,6 +500,8 @@ impl<'data, W: Writer> Se050Command<W> for WriteBinary<'data> {
     type Response<'rdata> = ();
 }
 
+// ************* WriteUserId ************* //
+
 #[derive(Clone, Debug)]
 pub struct WriteUserId<'data> {
     pub policy: Option<SessionPolicy>,
@@ -512,6 +536,8 @@ impl<'data, W: Writer> DataStream<W> for WriteUserId<'data> {
 impl<'data, W: Writer> Se050Command<W> for WriteUserId<'data> {
     type Response<'rdata> = ();
 }
+
+// ************* WriteCounter ************* //
 
 #[derive(Clone, Debug)]
 pub struct WriteCounter {
@@ -551,6 +577,8 @@ impl<W: Writer> Se050Command<W> for WriteCounter {
     type Response<'rdata> = ();
 }
 
+// ************* WritePcr ************* //
+
 #[derive(Clone, Debug)]
 pub struct WritePcr<'data> {
     pub transient: bool,
@@ -589,6 +617,8 @@ impl<'data, W: Writer> Se050Command<W> for WritePcr<'data> {
     type Response<'rdata> = ();
 }
 
+// ************* ImportObject ************* //
+
 #[derive(Clone, Debug)]
 pub struct ImportObject<'data> {
     pub transient: bool,
@@ -625,6 +655,8 @@ impl<'data, W: Writer> DataStream<W> for ImportObject<'data> {
 impl<'data, W: Writer> Se050Command<W> for ImportObject<'data> {
     type Response<'rdata> = ();
 }
+
+// ************* ReadObject ************* //
 
 #[derive(Clone, Debug)]
 pub struct ReadObject<'data> {
@@ -680,6 +712,8 @@ impl<'data> Se050Response<'data> for ReadObjectResponse<'data> {
 impl<'data, W: Writer> Se050Command<W> for ReadObject<'data> {
     type Response<'rdata> = ReadObjectResponse<'rdata>;
 }
+
+// ************* ReadAttestObject ************* //
 
 #[derive(Clone, Debug)]
 pub struct ReadAttestObject<'data> {
@@ -789,6 +823,8 @@ impl<'data, W: Writer> Se050Command<W> for ReadAttestObject<'data> {
     type Response<'rdata> = ReadAttestObjectResponse<'rdata>;
 }
 
+// ************* ExportObject ************* //
+
 #[derive(Clone, Debug)]
 pub struct ExportObject<'data> {
     pub object_id: Option<ObjectId>,
@@ -821,6 +857,8 @@ impl<'data, W: Writer> DataStream<W> for ExportObject<'data> {
 impl<'data, W: Writer> Se050Command<W> for ExportObject<'data> {
     type Response<'rdata> = ();
 }
+
+// ************* ReadType ************* //
 
 #[derive(Clone, Debug)]
 pub struct ReadType {
@@ -884,6 +922,8 @@ impl<W: Writer> Se050Command<W> for ReadType {
     type Response<'rdata> = ReadTypeResponse;
 }
 
+// ************* ReadSize ************* //
+
 #[derive(Clone, Debug)]
 pub struct ReadSize {
     pub object_id: Option<ObjectId>,
@@ -935,6 +975,8 @@ impl<'data> Se050Response<'data> for ReadSizeResponse {
 impl<W: Writer> Se050Command<W> for ReadSize {
     type Response<'rdata> = ReadSizeResponse;
 }
+
+// ************* ReadIdList ************* //
 
 #[derive(Clone, Debug)]
 pub struct ReadIdList {
@@ -999,6 +1041,8 @@ impl<W: Writer> Se050Command<W> for ReadIdList {
     type Response<'rdata> = ReadIdListResponse<'rdata>;
 }
 
+// ************* CheckObjectExists ************* //
+
 #[derive(Clone, Debug)]
 pub struct CheckObjectExists {
     pub object_id: Option<ObjectId>,
@@ -1051,6 +1095,8 @@ impl<W: Writer> Se050Command<W> for CheckObjectExists {
     type Response<'rdata> = CheckObjectExistsResponse;
 }
 
+// ************* DeleteSecureObject ************* //
+
 #[derive(Clone, Debug)]
 pub struct DeleteSecureObject {
     pub object_id: Option<ObjectId>,
@@ -1082,6 +1128,8 @@ impl<W: Writer> DataStream<W> for DeleteSecureObject {
 impl<W: Writer> Se050Command<W> for DeleteSecureObject {
     type Response<'rdata> = ();
 }
+
+// ************* GetRandom ************* //
 
 #[derive(Clone, Debug)]
 pub struct GetRandom {
@@ -1134,6 +1182,8 @@ impl<'data> Se050Response<'data> for GetRandomResponse<'data> {
 impl<W: Writer> Se050Command<W> for GetRandom {
     type Response<'rdata> = GetRandomResponse<'rdata>;
 }
+
+// ************* DeleteAll ************* //
 
 #[derive(Clone, Debug)]
 pub struct DeleteAll {
