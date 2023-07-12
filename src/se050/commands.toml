@@ -89,7 +89,7 @@ maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
 p2 = "P2_DEFAULT"
 
 [write_ec_key.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "curve", type = "EcCurve", optional = true }
@@ -106,7 +106,7 @@ maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
 p2 = "P2_DEFAULT"
 
 [write_rsa_key.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "key_size", type = "Be<u16>", optional = true }
@@ -128,7 +128,7 @@ p1 = "P1_RSA | P1_KEY_PAIR"
 p2 = "P2_RAW"
 
 [gen_rsa_key.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "key_size", type = "Be<u16>", optional = true }
@@ -142,7 +142,7 @@ p1 = { name = "key_type", type = "SymmKeyType" }
 p2 = "P2_DEFAULT"
 
 [write_symm_key.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "kek_id", type = "ObjectId" }
@@ -156,7 +156,7 @@ p1 = "P1_BINARY"
 p2 = "P2_DEFAULT"
 
 [write_binary.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true  }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true  }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "offset", type = "Be<u16>", optional = true }
 TAG_3 = { name = "file_length", type = "Be<u16>", optional = true, comment = "Only when the object does not yet exists" }
@@ -169,7 +169,7 @@ p1 = "P1_USERID"
 p2 = "P2_DEFAULT"
 
 [write_user_id.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u8>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "data" }
@@ -182,7 +182,7 @@ p1 = "P1_COUNTER"
 p2 = "P2_DEFAULT"
 
 [write_counter.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "data", type = "CounterSize", optional = true  }
 TAG_3 = { name = "value", type = "Be<u64>", optional = true  }
@@ -195,7 +195,7 @@ p1 = "P1_PCR"
 p2 = "P2_DEFAULT"
 
 [write_pcr.payload]
-TAG_POLICY = { name = "policy", type = "SessionPolicy", optional = true }
+TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "initial_value", optional = true  }
 TAG_3 = { name = "extend", optional = true  }
@@ -321,7 +321,7 @@ TAG_1 = { name = "result", type = "Se050Result" }
 
 [delete_secure_object]
 cla = "NO_SM_CLA"
-ins = "INS_READ"
+ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
 p2 = "P2_DELETE_OBJECT"
 

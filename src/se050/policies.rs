@@ -133,6 +133,21 @@ impl<'a> PolicySet<'a> {
     }
 }
 
+impl<'a> DataSource for PolicySet<'a> {
+    fn len(&self) -> usize {
+        self.0.iter().map(|p| p.to_bytes().len()).sum()
+    }
+}
+
+impl<'a, W: Writer> DataStream<W> for PolicySet<'a> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        for p in self.0 {
+            writer.write_all(&p.to_bytes())?;
+        }
+        Ok(())
+    }
+}
+
 bitflags! {
     #[derive(Clone, Copy,PartialEq,Eq, Debug)]
     pub struct SessionPolicyFlags: u16 {
@@ -199,5 +214,23 @@ impl<W: Writer> DataStream<W> for SessionPolicy {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
         let bytes = self.to_bytes();
         writer.write_all(&bytes)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn policy() {
+        let policies = &[Policy {
+            object_id: ObjectId(hex_literal::hex!("CAFECAFE")),
+            access_rule: ObjectAccessRule::from_flags(ObjectPolicyFlags::ALLOW_DELETE),
+        }];
+        let policy = PolicySet(policies);
+
+        let mut buf = [0; 100];
+        let res = policy.to_bytes(&mut buf).unwrap();
+        assert_eq!(res, hex_literal::hex!("08 CAFECAFE 00040000"));
     }
 }

@@ -289,7 +289,7 @@ pub struct WriteEcKey<'data> {
     pub is_auth: bool,
     pub key_type: Option<P1KeyType>,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
@@ -303,10 +303,10 @@ pub struct WriteEcKey<'data> {
 }
 
 impl<'data> WriteEcKey<'data> {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<EcCurve>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<EcCurve>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), self.curve.map(|data| Tlv::new(TAG_2, data)), self.private_key.map(|data| Tlv::new(TAG_3, data)), self.public_key.map(|data| Tlv::new(TAG_4, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<EcCurve>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<EcCurve>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
         let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
         let p1: u8 = self.key_type.map(|v| v | P1_EC ).unwrap_or(P1_EC);
@@ -341,7 +341,7 @@ pub struct WriteRsaKey<'data> {
     pub is_auth: bool,
     pub key_type: Option<P1KeyType>,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
@@ -367,10 +367,10 @@ pub struct WriteRsaKey<'data> {
 }
 
 impl<'data> WriteRsaKey<'data> {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), self.key_size.map(|data| Tlv::new(TAG_2, data)), self.p.map(|data| Tlv::new(TAG_3, data)), self.q.map(|data| Tlv::new(TAG_4, data)), self.dp.map(|data| Tlv::new(TAG_5, data)), self.dq.map(|data| Tlv::new(TAG_6, data)), self.inv_q.map(|data| Tlv::new(TAG_7, data)), self.e.map(|data| Tlv::new(TAG_8, data)), self.d.map(|data| Tlv::new(TAG_9, data)), self.n.map(|data| Tlv::new(TAG_10, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
         let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
         let p1: u8 = self.key_type.map(|v| v | P1_RSA ).unwrap_or(P1_RSA);
@@ -400,11 +400,11 @@ impl<'data, W: Writer> Se050Command<W> for WriteRsaKey<'data> {
 // ************* GenRsaKey ************* //
 
 #[derive(Clone, Debug)]
-pub struct GenRsaKey {
+pub struct GenRsaKey<'data> {
     pub transient: bool,
     pub is_auth: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
@@ -413,11 +413,11 @@ pub struct GenRsaKey {
     pub key_size: Option<Be<u16>>,
 }
 
-impl GenRsaKey {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>) {
+impl<'data> GenRsaKey<'data> {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), self.key_size.map(|data| Tlv::new(TAG_2, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
         let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
 
@@ -425,7 +425,7 @@ impl GenRsaKey {
     }
 }
 
-impl DataSource for GenRsaKey {
+impl<'data> DataSource for GenRsaKey<'data> {
     fn len(&self) -> usize {
         self.command().len()
     }
@@ -433,13 +433,13 @@ impl DataSource for GenRsaKey {
         self.command().is_empty()
     }
 }
-impl<W: Writer> DataStream<W> for GenRsaKey {
+impl<'data, W: Writer> DataStream<W> for GenRsaKey<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         self.command().to_writer(writer)
     }
 }
 
-impl<W: Writer> Se050Command<W> for GenRsaKey {
+impl<'data, W: Writer> Se050Command<W> for GenRsaKey<'data> {
     type Response<'rdata> = ();
 }
 
@@ -451,7 +451,7 @@ pub struct WriteSymmKey<'data> {
     pub is_auth: bool,
     pub key_type: SymmKeyType,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
@@ -463,10 +463,10 @@ pub struct WriteSymmKey<'data> {
 }
 
 impl<'data> WriteSymmKey<'data> {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Tlv<ObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Tlv<ObjectId>, Tlv<&'data [u8]>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.kek_id), Tlv::new(TAG_3, self.value))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Tlv<ObjectId>, Tlv<&'data [u8]>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Tlv<ObjectId>, Tlv<&'data [u8]>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
         let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
         let p1: u8 = self.key_type.into();
@@ -499,7 +499,7 @@ impl<'data, W: Writer> Se050Command<W> for WriteSymmKey<'data> {
 pub struct WriteBinary<'data> {
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
@@ -513,10 +513,10 @@ pub struct WriteBinary<'data> {
 }
 
 impl<'data> WriteBinary<'data> {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>) {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), Tlv::new(TAG_1, self.object_id), self.offset.map(|data| Tlv::new(TAG_2, data)), self.file_length.map(|data| Tlv::new(TAG_3, data)), self.data.map(|data| Tlv::new(TAG_4, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_BINARY, P2_DEFAULT, self.data(), 0)
@@ -546,7 +546,7 @@ impl<'data, W: Writer> Se050Command<W> for WriteBinary<'data> {
 #[derive(Clone, Debug)]
 pub struct WriteUserId<'data> {
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u8>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
@@ -556,10 +556,10 @@ pub struct WriteUserId<'data> {
 }
 
 impl<'data> WriteUserId<'data> {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u8>>>, Tlv<ObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u8>>>, Tlv<ObjectId>, Tlv<&'data [u8]>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.data))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Option<Tlv<Be<u8>>>, Tlv<ObjectId>, Tlv<&'data [u8]>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u8>>>, Tlv<ObjectId>, Tlv<&'data [u8]>)> {
         CommandBuilder::new(NO_SM_CLA, INS_WRITE | INS_AUTH_OBJECT, P1_USERID, P2_DEFAULT, self.data(), 0)
     }
 }
@@ -585,10 +585,10 @@ impl<'data, W: Writer> Se050Command<W> for WriteUserId<'data> {
 // ************* WriteCounter ************* //
 
 #[derive(Clone, Debug)]
-pub struct WriteCounter {
+pub struct WriteCounter<'data> {
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
@@ -597,18 +597,18 @@ pub struct WriteCounter {
     pub value: Option<Be<u64>>,
 }
 
-impl WriteCounter {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Tlv<ObjectId>, Option<Tlv<CounterSize>>, Option<Tlv<Be<u64>>>) {
+impl<'data> WriteCounter<'data> {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<CounterSize>>, Option<Tlv<Be<u64>>>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), Tlv::new(TAG_1, self.object_id), self.data.map(|data| Tlv::new(TAG_2, data)), self.value.map(|data| Tlv::new(TAG_3, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Tlv<ObjectId>, Option<Tlv<CounterSize>>, Option<Tlv<Be<u64>>>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<CounterSize>>, Option<Tlv<Be<u64>>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_COUNTER, P2_DEFAULT, self.data(), 0)
     }
 }
 
-impl DataSource for WriteCounter {
+impl<'data> DataSource for WriteCounter<'data> {
     fn len(&self) -> usize {
         self.command().len()
     }
@@ -616,13 +616,13 @@ impl DataSource for WriteCounter {
         self.command().is_empty()
     }
 }
-impl<W: Writer> DataStream<W> for WriteCounter {
+impl<'data, W: Writer> DataStream<W> for WriteCounter<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         self.command().to_writer(writer)
     }
 }
 
-impl<W: Writer> Se050Command<W> for WriteCounter {
+impl<'data, W: Writer> Se050Command<W> for WriteCounter<'data> {
     type Response<'rdata> = ();
 }
 
@@ -632,7 +632,7 @@ impl<W: Writer> Se050Command<W> for WriteCounter {
 pub struct WritePcr<'data> {
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
-    pub policy: Option<SessionPolicy>,
+    pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
@@ -642,10 +642,10 @@ pub struct WritePcr<'data> {
 }
 
 impl<'data> WritePcr<'data> {
-    fn data(&self) -> (Option<Tlv<SessionPolicy>>, Tlv<ObjectId>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
+    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
         (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), Tlv::new(TAG_1, self.object_id), self.initial_value.map(|data| Tlv::new(TAG_2, data)), self.extend.map(|data| Tlv::new(TAG_3, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<SessionPolicy>>, Tlv<ObjectId>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
+    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
         let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_PCR, P2_DEFAULT, self.data(), 0)
@@ -1195,7 +1195,7 @@ impl DeleteSecureObject {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_DELETE_OBJECT, self.data(), 0)
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_DELETE_OBJECT, self.data(), 0)
     }
 }
 
