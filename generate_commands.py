@@ -144,6 +144,8 @@ for command, v in data.items():
         
 
     for arg_name, arg in v["payload"].items():
+        if arg_name != "then":
+            outfile.write(f'    /// [`{arg_name}`]({arg_name})\n')
         outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 
@@ -196,7 +198,9 @@ for command, v in data.items():
         outfile.write("#[derive(Clone, Debug)]\n")
         outfile.write(f'pub struct {name}Response{response_lifetime} {{\n')
 
-        for arg in v["response"].values():
+        for arg_name, arg in v["response"].items():
+            if arg_name != "then":
+                outfile.write(f'    /// [`{arg_name}`]({arg_name})\n')
             outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
         outfile.write("}\n")
 

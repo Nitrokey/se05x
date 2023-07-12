@@ -9,6 +9,7 @@ use iso7816::tlv::{take_do, Tlv};
 
 #[derive(Clone, Debug)]
 pub struct CreateSession {
+    /// [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
 }
 
@@ -36,6 +37,7 @@ impl<W: Writer> DataStream<W> for CreateSession {
 }
 #[derive(Clone, Debug)]
 pub struct CreateSessionResponse {
+    /// [`TAG_1`](TAG_1)
     pub session_id: SessionId,
 }
 
@@ -63,6 +65,7 @@ impl<W: Writer> Se050Command<W> for CreateSession {
 
 #[derive(Clone, Debug)]
 pub struct ExchangeSessionData<'data> {
+    /// [`TAG_1`](TAG_1)
     pub session_policy: SessionPolicy,
     pub c_mac: &'data [u8],
 }
@@ -110,6 +113,7 @@ impl<'data, W: Writer> Se050Command<W> for ExchangeSessionData<'data> {
 
 #[derive(Clone, Debug)]
 pub struct RefreshSession {
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
 }
 
@@ -197,6 +201,7 @@ impl<W: Writer> Se050Command<W> for CloseSession {
 
 #[derive(Clone, Debug)]
 pub struct VerifySessionUserId<'data> {
+    /// [`TAG_1`](TAG_1)
     pub user_id: &'data [u8],
 }
 
@@ -241,7 +246,9 @@ impl<'data, W: Writer> Se050Command<W> for VerifySessionUserId<'data> {
 
 #[derive(Clone, Debug)]
 pub struct SetLockState {
+    /// [`TAG_1`](TAG_1)
     pub lock_indicator: TransientIndicator,
+    /// [`TAG_2`](TAG_2)
     pub lock_state: LockState,
 }
 
@@ -279,11 +286,17 @@ pub struct WriteEcKey<'data> {
     pub transient: bool,
     pub is_auth: bool,
     pub key_type: Option<P1KeyType>,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub curve: Option<EcCurve>,
+    /// [`TAG_3`](TAG_3)
     pub private_key: Option<&'data [u8]>,
+    /// [`TAG_4`](TAG_4)
     pub public_key: Option<&'data [u8]>,
 }
 
@@ -325,17 +338,29 @@ pub struct WriteRsaKey<'data> {
     pub transient: bool,
     pub is_auth: bool,
     pub key_type: Option<P1KeyType>,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub key_size: Option<Be<u16>>,
+    /// [`TAG_3`](TAG_3)
     pub p: Option<&'data [u8]>,
+    /// [`TAG_4`](TAG_4)
     pub q: Option<&'data [u8]>,
+    /// [`TAG_5`](TAG_5)
     pub dp: Option<&'data [u8]>,
+    /// [`TAG_6`](TAG_6)
     pub dq: Option<&'data [u8]>,
+    /// [`TAG_7`](TAG_7)
     pub inv_q: Option<&'data [u8]>,
+    /// [`TAG_8`](TAG_8)
     pub e: Option<&'data [u8]>,
+    /// [`TAG_9`](TAG_9)
     pub d: Option<&'data [u8]>,
+    /// [`TAG_10`](TAG_10)
     pub n: Option<&'data [u8]>,
 }
 
@@ -376,9 +401,13 @@ impl<'data, W: Writer> Se050Command<W> for WriteRsaKey<'data> {
 pub struct GenRsaKey {
     pub transient: bool,
     pub is_auth: bool,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub key_size: Option<Be<u16>>,
 }
 
@@ -419,10 +448,15 @@ pub struct WriteSymmKey<'data> {
     pub transient: bool,
     pub is_auth: bool,
     pub key_type: SymmKeyType,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u16>>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub kek_id: Option<ObjectId>,
+    /// [`TAG_3`](TAG_3)
     pub value: &'data [u8],
 }
 
@@ -463,10 +497,15 @@ impl<'data, W: Writer> Se050Command<W> for WriteSymmKey<'data> {
 pub struct WriteBinary<'data> {
     pub transient: bool,
     pub is_auth: bool,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub offset: Be<u16>,
+    /// [`TAG_3`](TAG_3)
     pub file_length: Option<Be<u16>>,
+    /// [`TAG_4`](TAG_4)
     pub data: Option<&'data [u8]>,
 }
 
@@ -504,9 +543,13 @@ impl<'data, W: Writer> Se050Command<W> for WriteBinary<'data> {
 
 #[derive(Clone, Debug)]
 pub struct WriteUserId<'data> {
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
     pub max_attempts: Option<Be<u8>>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
+    /// [`TAG_2`](TAG_2)
     pub data: &'data [u8],
 }
 
@@ -542,9 +585,13 @@ impl<'data, W: Writer> Se050Command<W> for WriteUserId<'data> {
 #[derive(Clone, Debug)]
 pub struct WriteCounter {
     pub transient: bool,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub data: Option<CounterSize>,
+    /// [`TAG_3`](TAG_3)
     pub value: Option<Be<u64>>,
 }
 
@@ -582,9 +629,13 @@ impl<W: Writer> Se050Command<W> for WriteCounter {
 #[derive(Clone, Debug)]
 pub struct WritePcr<'data> {
     pub transient: bool,
+    /// [`TAG_POLICY`](TAG_POLICY)
     pub policy: Option<SessionPolicy>,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub initial_value: Option<&'data [u8]>,
+    /// [`TAG_3`](TAG_3)
     pub extend: Option<&'data [u8]>,
 }
 
@@ -622,8 +673,11 @@ impl<'data, W: Writer> Se050Command<W> for WritePcr<'data> {
 #[derive(Clone, Debug)]
 pub struct ImportObject<'data> {
     pub transient: bool,
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub key_component: RsaKeyComponent,
+    /// [`TAG_3`](TAG_3)
     pub serialized_object: Option<&'data [u8]>,
 }
 
@@ -660,9 +714,13 @@ impl<'data, W: Writer> Se050Command<W> for ImportObject<'data> {
 
 #[derive(Clone, Debug)]
 pub struct ReadObject<'data> {
+    /// [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
+    /// [`TAG_2`](TAG_2)
     pub offset: Option<Be<u16>>,
+    /// [`TAG_3`](TAG_3)
     pub length: Option<Be<u16>>,
+    /// [`TAG_4`](TAG_4)
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
@@ -690,6 +748,7 @@ impl<'data, W: Writer> DataStream<W> for ReadObject<'data> {
 }
 #[derive(Clone, Debug)]
 pub struct ReadObjectResponse<'data> {
+    /// [`TAG_1`](TAG_1)
     pub data: &'data [u8],
 }
 
@@ -717,12 +776,19 @@ impl<'data, W: Writer> Se050Command<W> for ReadObject<'data> {
 
 #[derive(Clone, Debug)]
 pub struct ReadAttestObject<'data> {
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub offset: Option<Be<u16>>,
+    /// [`TAG_3`](TAG_3)
     pub length: Option<Be<u16>>,
+    /// [`TAG_4`](TAG_4)
     pub rsa_key_component: Option<&'data [u8]>,
+    /// [`TAG_5`](TAG_5)
     pub attestation_object: ObjectId,
+    /// [`TAG_6`](TAG_6)
     pub attestation_algo: AttestationAlgo,
+    /// [`TAG_7`](TAG_7)
     pub freshness_random: Option<&'data [u8; 16]>,
 }
 
@@ -750,11 +816,17 @@ impl<'data, W: Writer> DataStream<W> for ReadAttestObject<'data> {
 }
 #[derive(Clone, Debug)]
 pub struct ReadAttestObjectResponse<'data> {
+    /// [`TAG_1`](TAG_1)
     pub data: &'data [u8],
+    /// [`TAG_2`](TAG_2)
     pub attributes: &'data [u8],
+    /// [`TAG_3`](TAG_3)
     pub timestamp: &'data [u8; 12],
+    /// [`TAG_4`](TAG_4)
     pub freshness_random: &'data [u8; 16],
+    /// [`TAG_5`](TAG_5)
     pub chip_unique_id: &'data [u8; 18],
+    /// [`TAG_6`](TAG_6)
     pub signature: &'data [u8],
 }
 
@@ -827,7 +899,9 @@ impl<'data, W: Writer> Se050Command<W> for ReadAttestObject<'data> {
 
 #[derive(Clone, Debug)]
 pub struct ExportObject<'data> {
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
+    /// [`TAG_2`](TAG_2)
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
@@ -862,6 +936,7 @@ impl<'data, W: Writer> Se050Command<W> for ExportObject<'data> {
 
 #[derive(Clone, Debug)]
 pub struct ReadType {
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
 }
 
@@ -889,7 +964,9 @@ impl<W: Writer> DataStream<W> for ReadType {
 }
 #[derive(Clone, Debug)]
 pub struct ReadTypeResponse {
+    /// [`TAG_1`](TAG_1)
     pub ty: SecureObjectType,
+    /// [`TAG_2`](TAG_2)
     pub transient_indicator: TransientIndicator,
 }
 
@@ -926,6 +1003,7 @@ impl<W: Writer> Se050Command<W> for ReadType {
 
 #[derive(Clone, Debug)]
 pub struct ReadSize {
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
 }
 
@@ -953,6 +1031,7 @@ impl<W: Writer> DataStream<W> for ReadSize {
 }
 #[derive(Clone, Debug)]
 pub struct ReadSizeResponse {
+    /// [`TAG_1`](TAG_1)
     pub size: Be<u64>,
 }
 
@@ -980,7 +1059,9 @@ impl<W: Writer> Se050Command<W> for ReadSize {
 
 #[derive(Clone, Debug)]
 pub struct ReadIdList {
+    /// [`TAG_1`](TAG_1)
     pub offset: Be<u16>,
+    /// [`TAG_2`](TAG_2)
     pub filter: SecureObjectFilter,
 }
 
@@ -1008,7 +1089,9 @@ impl<W: Writer> DataStream<W> for ReadIdList {
 }
 #[derive(Clone, Debug)]
 pub struct ReadIdListResponse<'data> {
+    /// [`TAG_1`](TAG_1)
     pub more: MoreIndicator,
+    /// [`TAG_2`](TAG_2)
     pub ids: &'data [u8],
 }
 
@@ -1045,6 +1128,7 @@ impl<W: Writer> Se050Command<W> for ReadIdList {
 
 #[derive(Clone, Debug)]
 pub struct CheckObjectExists {
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
 }
 
@@ -1072,6 +1156,7 @@ impl<W: Writer> DataStream<W> for CheckObjectExists {
 }
 #[derive(Clone, Debug)]
 pub struct CheckObjectExistsResponse {
+    /// [`TAG_1`](TAG_1)
     pub result: Se050Result,
 }
 
@@ -1099,6 +1184,7 @@ impl<W: Writer> Se050Command<W> for CheckObjectExists {
 
 #[derive(Clone, Debug)]
 pub struct DeleteSecureObject {
+    /// [`TAG_1`](TAG_1)
     pub object_id: Option<ObjectId>,
 }
 
@@ -1133,6 +1219,7 @@ impl<W: Writer> Se050Command<W> for DeleteSecureObject {
 
 #[derive(Clone, Debug)]
 pub struct GetRandom {
+    /// [`TAG_1`](TAG_1)
     pub length: Be<u16>,
 }
 
@@ -1160,6 +1247,7 @@ impl<W: Writer> DataStream<W> for GetRandom {
 }
 #[derive(Clone, Debug)]
 pub struct GetRandomResponse<'data> {
+    /// [`TAG_1`](TAG_1)
     pub data: &'data [u8],
 }
 
