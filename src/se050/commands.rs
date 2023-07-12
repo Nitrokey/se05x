@@ -660,17 +660,17 @@ impl<'data, W: Writer> Se050Command<W> for ImportObject<'data> {
 
 #[derive(Clone, Debug)]
 pub struct ReadObject<'data> {
-    pub object_id: Option<ObjectId>,
+    pub object_id: ObjectId,
     pub offset: Option<Be<u16>>,
     pub length: Option<Be<u16>>,
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
 impl<'data> ReadObject<'data> {
-    fn data(&self) -> (Option<Tlv<ObjectId>>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>) {
-        (self.object_id.map(|data| Tlv::new(TAG_1, data)), self.offset.map(|data| Tlv::new(TAG_2, data)), self.length.map(|data| Tlv::new(TAG_3, data)), self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)))
+    fn data(&self) -> (Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>) {
+        (Tlv::new(TAG_1, self.object_id), self.offset.map(|data| Tlv::new(TAG_2, data)), self.length.map(|data| Tlv::new(TAG_3, data)), self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)))
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<ObjectId>>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>)> {
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>)> {
         CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_DEFAULT, self.data(), 0)
     }
 }
