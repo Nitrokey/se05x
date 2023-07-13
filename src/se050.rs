@@ -48,17 +48,17 @@ impl From<Error> for Status {
     fn from(value: Error) -> Self {
         match value {
             Error::Status(status) => status,
-            Error::Unknown => Status(0x0000),
-            Error::Tlv => Status(0x0001),
-            Error::T1(t1::Error::Unknown) => Status(0x0002),
-            Error::T1(t1::Error::AddressNack) => Status(0x0003),
-            Error::T1(t1::Error::DataNack) => Status(0x0004),
-            Error::T1(t1::Error::BadCrc) => Status(0x0005),
-            Error::T1(t1::Error::BadPcb) => Status(0x0006),
-            Error::T1(t1::Error::BadAddress) => Status(0x0007),
-            Error::T1(t1::Error::ReceptionBuffer) => Status(0x0008),
-            Error::T1(t1::Error::Line(l)) => Status(0x1000 + l.min(0x0FFF) as u16),
-            Error::Line(l) => Status(0x2000 + l.min(0x0FFF) as u16),
+            Error::Unknown => Status::from(0x0000),
+            Error::Tlv => Status::from(0x0001),
+            Error::T1(t1::Error::Unknown) => Status::from(0x0002),
+            Error::T1(t1::Error::AddressNack) => Status::from(0x0003),
+            Error::T1(t1::Error::DataNack) => Status::from(0x0004),
+            Error::T1(t1::Error::BadCrc) => Status::from(0x0005),
+            Error::T1(t1::Error::BadPcb) => Status::from(0x0006),
+            Error::T1(t1::Error::BadAddress) => Status::from(0x0007),
+            Error::T1(t1::Error::ReceptionBuffer) => Status::from(0x0008),
+            Error::T1(t1::Error::Line(l)) => Status::from(0x1000 + l.min(0x0FFF) as u16),
+            Error::Line(l) => Status::from(0x2000 + l.min(0x0FFF) as u16),
         }
     }
 }
@@ -130,7 +130,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         command.to_writer(&mut sender)?;
         self.t1.wait_segt();
         let (response, status) = self.receive_apdu(response_buf)?;
-        if status != Status::SUCCESS {
+        if status != Status::Success {
             return Err(Error::Status(status));
         }
         C::Response::from_response(response)
