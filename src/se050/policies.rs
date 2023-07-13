@@ -135,13 +135,15 @@ impl<'a> PolicySet<'a> {
 
 impl<'a> DataSource for PolicySet<'a> {
     fn len(&self) -> usize {
-        self.0.iter().map(|p| p.to_bytes().len()).sum()
+        self.0.iter().map(|p| p.to_bytes().len() + 1).sum()
     }
 }
 
 impl<'a, W: Writer> DataStream<W> for PolicySet<'a> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
         for p in self.0 {
+            let b = p.to_bytes();
+            writer.write_all(&[b.len() as u8])?;
             writer.write_all(&p.to_bytes())?;
         }
         Ok(())
@@ -224,13 +226,13 @@ mod tests {
     #[test]
     fn policy() {
         let policies = &[Policy {
-            object_id: ObjectId(hex_literal::hex!("CAFECAFE")),
+            object_id: ObjectId::INVALID,
             access_rule: ObjectAccessRule::from_flags(ObjectPolicyFlags::ALLOW_DELETE),
         }];
         let policy = PolicySet(policies);
 
         let mut buf = [0; 100];
         let res = policy.to_bytes(&mut buf).unwrap();
-        assert_eq!(res, hex_literal::hex!("08 CAFECAFE 00040000"));
+        assert_eq!(res, hex_literal::hex!("08 00000000 00040000"));
     }
 }
