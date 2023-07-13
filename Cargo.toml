@@ -32,5 +32,4 @@ log-none = []
 nrf = ["nrf-hal-common"]
 
 [patch.crates-io]
-iso7816 = { path = "../iso7816" }
-delog = { git = "https://github.com/sosthene-nitrokey/delog.git", rev = "41901aa4d44e64f729a4d5ec5638c3911b8184a9" }
+iso7816 = { git = "https://github.com/sosthene-nitrokey/iso7816.git", rev = "936a815fa1bf9ce99e7baef584099e8353bae45a"}
