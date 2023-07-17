@@ -319,6 +319,9 @@ impl<W: Writer, C: Se050Command<W>> Se050Command<W> for ProcessSessionCmd<C> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct CryptoObjectId(pub [u8; 2]);
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct SessionId(pub [u8; 8]);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -382,9 +385,27 @@ impl TryFrom<&[u8]> for SessionId {
     }
 }
 
+impl TryFrom<&[u8]> for CryptoObjectId {
+    type Error = TryFromSliceError;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let tmp = value.try_into()?;
+        Ok(Self(tmp))
+    }
+}
+
 impl DataSource for ObjectId {
     fn len(&self) -> usize {
         4
+    }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl DataSource for CryptoObjectId {
+    fn len(&self) -> usize {
+        2
     }
 
     fn is_empty(&self) -> bool {
@@ -402,6 +423,11 @@ impl DataSource for SessionId {
     }
 }
 
+impl<W: Writer> DataStream<W> for CryptoObjectId {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
+        writer.write_all(&self.0)
+    }
+}
 impl<W: Writer> DataStream<W> for SessionId {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
         writer.write_all(&self.0)
@@ -613,6 +639,13 @@ pub const TRANSIENT_LOCK: u8 = 0x01;
 pub const PERSISTENT_LOCK: u8 = 0x02;
 
 pub const LOCKED: u8 = 0x01;
+
+/// For DigestInit/DigestUpdate/DigestFinal
+pub const CC_DIGEST: u8 = 0x01;
+/// For CipherInit/CipherUpdate/CipherFinal
+pub const CC_CIPHER: u8 = 0x02;
+/// For MACInit/MACUpdate/MACFinal
+pub const CC_SIGNATURE: u8 = 0x03;
 
 pub const RESULT_SUCCESS: u8 = 0x01;
 pub const RESULT_FAILURE: u8 = 0x02;
@@ -835,7 +868,10 @@ macro_rules! enum_data {
         #[$outer:meta]
         #[repr($repr:tt)]
         $vis:vis enum $name:ident {
-            $($var:ident = $num:tt),+
+            $(
+                $(#[$var_tag:meta])?
+                $var:ident = $num:tt
+            ),+
             $(,)*
         }
     ) => {
@@ -843,6 +879,7 @@ macro_rules! enum_data {
         #[repr($repr)]
         $vis enum $name {
             $(
+                $(#[$var_tag])?
                 $var = $num,
             )*
         }
@@ -1175,5 +1212,106 @@ enum_data!(
     pub enum Se050Result {
         Success = RESULT_SUCCESS,
         Failure = RESULT_FAILURE,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum CryptoContext {
+        Digest = CC_DIGEST,
+        Cipher = CC_CIPHER,
+        Signature = CC_SIGNATURE,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum Digest {
+        DigestNoHash = DIGEST_NO_HASH,
+        DigestSha = DIGEST_SHA,
+        DigestSha224 = DIGEST_SHA224,
+        DigestSha256 = DIGEST_SHA256,
+        DigestSha384 = DIGEST_SHA384,
+        DigestSha512 = DIGEST_SHA512,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum MacAlgo {
+        HmacSha1 = HMAC_SHA1,
+        HmacSha256 = HMAC_SHA256,
+        HmacSha384 = HMAC_SHA384,
+        HmacSha512 = HMAC_SHA512,
+        DesMac4Iso9797M2 = DES_MAC4_ISO9797_M2,
+        DesMac4Iso97971M2Alg3 = DES_MAC4_ISO9797_1_M2_ALG3,
+        DesMac4Iso9797M1 = DES_MAC4_ISO9797_M1,
+        DesMac4Iso97971M1Alg3 = DES_MAC4_ISO9797_1_M1_ALG3,
+        DesMac8Iso9797M2 = DES_MAC8_ISO9797_M2,
+        DesMac8Iso97971M2Alg3 = DES_MAC8_ISO9797_1_M2_ALG3,
+        DesMac8Iso97971M1Alg3 = DES_MAC8_ISO9797_1_M1_ALG3,
+        // DesMac8Iso97971M1Alg3 = DES_MAC8_ISO9797_1_M1_ALG3,
+        Cmac128 = CMAC128,
+        DesCmac8 = DES_CMAC8,
+        AesCmac16 = AES_CMAC16,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum CipherMode {
+        DesCbcNopad = DES_CBC_NOPAD,
+        DesCbcIso9797M1 = DES_CBC_ISO9797_M1,
+        DesCbcIso9797M2 = DES_CBC_ISO9797_M2,
+        DesCbcPkcs5 = DES_CBC_PKCS5,
+        DesEcbNopad = DES_ECB_NOPAD,
+        DesEcbIso9797M1 = DES_ECB_ISO9797_M1,
+        DesEcbIso9797M2 = DES_ECB_ISO9797_M2,
+        DesEcbPkcs5 = DES_ECB_PKCS5,
+        AesEcbNopad = AES_ECB_NOPAD,
+        AesCbcNopad = AES_CBC_NOPAD,
+        AesCbcIso9797M1 = AES_CBC_ISO9797_M1,
+        AesCbcIso9797M2 = AES_CBC_ISO9797_M2,
+        AesCbcPkcs5 = AES_CBC_PKCS5,
+        AesCtr = AES_CTR,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum EcDsaSignatureAlgo {
+        /// Not supported
+        Plain = SIG_ECDSA_PLAIN,
+        /// ECDSA with a SHA-1 digest as input.
+        Sha = SIG_ECDSA_SHA,
+        /// ECDSA with a SHA224 digest as input.
+        Sha224 = SIG_ECDSA_SHA_224,
+        /// ECDSA with a SHA256 digest as input.
+        Sha256 = SIG_ECDSA_SHA_256,
+        /// ECDSA with a SHA384 digest as input.
+        Sha384 = SIG_ECDSA_SHA_384,
+        /// ECDSA with a SHA512 digest as input.
+        Sha512 = SIG_ECDSA_SHA_512,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum EdDsaSignatureAlgo {
+        Pure = SIG_ED25519PURE,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum EcDaaSignatureAlgo {
+        EcDaa = SIG_ECDAA,
     }
 );

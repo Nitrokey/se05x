@@ -11,6 +11,9 @@ def camel_case(name):
 def data_for_arg(arg, name):
     if name == "then":
         return f'self.{arg["name"]}'
+
+    if "value" in arg:
+        return f'Tlv::new({name}, {arg["value"]})'
         
     if arg.get("optional", False):
         return f'self.{arg["name"]}.map(|data| Tlv::new({name}, data))'
@@ -144,6 +147,8 @@ for command, v in data.items():
         
 
     for arg_name, arg in v["payload"].items():
+        if "value" in arg:
+            continue
         if "comment" in arg:
             outfile.write(f'    /// {arg["comment"]}\n')
             outfile.write(f'    ///\n')

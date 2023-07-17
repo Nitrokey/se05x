@@ -1,6 +1,8 @@
 # To be parsed by generate_commands to generate Rust code for the commands.
 # The order of the TLV tags and payloads matters
 
+# SESSION MANAGEMENT
+
 [create_session]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"
@@ -66,6 +68,8 @@ TAG_1 = { name = "user_id" }
 # TODO ECKeySessionInternalAuthenticate
 # TODO ECKeySessionGetECKAPublicKey
 
+# MODULE MANAGEMENT
+
 [set_lock_state]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"
@@ -78,6 +82,8 @@ TAG_2 = { name = "lock_state", type = "LockState" }
 
 # TODO SetPlatformSCPRequest
 # TODO SetAppletFeatures
+
+# SECURE OBJECT MANAGEMENT
 
 [write_ec_key]
 cla = "NO_SM_CLA"
@@ -328,6 +334,8 @@ p2 = "P2_DELETE_OBJECT"
 [delete_secure_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }
 
+# EC CURVE MANAGEMENT
+
 [create_ec_curve]
 cla = "NO_SM_CLA"
 ins = "INS_WRITE"
@@ -380,6 +388,163 @@ p2 = "P2_DELETE_OBJECT"
 
 [delete_ec_curve.payload]
 TAG_1 = { name = "curve", type = "EcCurve" }
+
+# CRYPTO OBJECT MANAGEMENT
+
+[create_digest_object]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+p1 = "P1_CRYPTO_OBJ"
+p2 = "P2_DEFAULT"
+
+[create_digest_object.payload]
+TAG_1 = { name = "id", type = "CryptoObjectId" }
+TAG_2 = { name = "context", type = "CryptoContext", value = "CryptoContext::Digest" }
+TAG_3 = { name = "subtype", type = "Digest" }
+
+[create_cipher_object]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+p1 = "P1_CRYPTO_OBJ"
+p2 = "P2_DEFAULT"
+
+[create_cipher_object.payload]
+TAG_1 = { name = "id", type = "CryptoObjectId" }
+TAG_2 = { name = "context", type = "CryptoContext", value = "CryptoContext::Cipher" }
+TAG_3 = { name = "subtype", type = "CipherMode" }
+
+[create_signature_object]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+p1 = "P1_CRYPTO_OBJ"
+p2 = "P2_DEFAULT"
+
+[create_signature_object.payload]
+TAG_1 = { name = "id", type = "CryptoObjectId" }
+TAG_2 = { name = "context", type = "CryptoContext", value = "CryptoContext::Signature" }
+TAG_3 = { name = "subtype", type = "MacAlgo" }
+
+[read_crypto_obj_list]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_CRYPTO_OBJ"
+p2 = "P2_LIST"
+
+[read_crypto_obj_list.payload]
+[read_crypto_obj_list.response]
+# TODO type
+TAG_1 = { name = "list" }
+
+[delete_crypto_obj]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_CRYPTO_OBJ"
+p2 = "P2_DELETE_OBJECT"
+
+[delete_crypto_obj.payload]
+TAG_1 = { name = "id", type = "CryptoObjectId" }
+
+# EC CRYPTO OPERATIONS
+
+## Signature
+
+[ecdsa_sign]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_SIGNATURE"
+p2 = "P2_SIGN"
+le = "ExpectedLen::Max"
+
+[ecdsa_sign.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "EcDsaSignatureAlgo" }
+TAG_3 = { name = "data" }
+
+[ecdsa_sign.response]
+# TODO type (ASN.1 format parsing)
+TAG_1 = { name = "signature" }
+
+[eddsa_sign]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_SIGNATURE"
+p2 = "P2_SIGN"
+le = "ExpectedLen::Max"
+
+[eddsa_sign.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "EdDsaSignatureAlgo", value = "EdDsaSignatureAlgo::Pure" }
+TAG_3 = { name = "data" }
+
+[eddsa_sign.response]
+TAG_1 = { name = "signature" }
+
+[ecdaa_sign]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_SIGNATURE"
+p2 = "P2_SIGN"
+le = "ExpectedLen::Max"
+
+[ecdaa_sign.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "EcDaaSignatureAlgo", value = "EcDaaSignatureAlgo::EcDaa" }
+TAG_3 = { name = "data", type = "[u8; 32]" }
+TAG_4 = { name = "random_data", type = "[u8; 32]" }
+
+[ecdaa_sign.response]
+TAG_1 = { name = "signature" }
+
+## Signature verification
+
+[ecdsa_verify]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_SIGNATURE"
+p2 = "P2_VERIFY"
+le = 0x03
+
+[ecdsa_verify.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "EcDsaSignatureAlgo" }
+TAG_3 = { name = "data" }
+# TODO type (ASN.1 format parsing)
+TAG_5 = { name = "signature" }
+
+[ecdsa_verify.response]
+TAG_1 = { name = "result", type = "Se050Result" }
+
+[eddsa_verify]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_SIGNATURE"
+p2 = "P2_VERIFY"
+le = 0x03
+
+[eddsa_verify.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "EdDsaSignatureAlgo", value = "EdDsaSignatureAlgo::Pure" }
+TAG_3 = { name = "data" }
+TAG_5 = { name = "signature" }
+
+[eddsa_verify.response]
+TAG_1 = { name = "result", type = "Se050Result" }
+
+## Shared secret generation
+
+[ecdh_generate_shared_secret]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_EC"
+p2 = "P2_DH"
+le = "ExpectedLen::Max"
+
+[ecdh_generate_shared_secret.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "public_key" }
+
+[ecdh_generate_shared_secret.response]
+TAG_1 = { name = "shared_secret" }
 
 [get_random]
 cla = "NO_SM_CLA"

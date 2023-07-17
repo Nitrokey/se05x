@@ -1858,6 +1858,712 @@ impl<W: Writer> Se050Command<W> for DeleteEcCurve {
     type Response<'rdata> = ();
 }
 
+// ************* CreateDigestObject ************* //
+
+#[derive(Clone, Debug)]
+pub struct CreateDigestObject {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub subtype: Digest,
+}
+
+impl CreateDigestObject {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<Digest>) {
+        (
+            Tlv::new(TAG_1, self.id),
+            Tlv::new(TAG_2, CryptoContext::Digest),
+            Tlv::new(TAG_3, self.subtype),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<Digest>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_WRITE,
+            P1_CRYPTO_OBJ,
+            P2_DEFAULT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl DataSource for CreateDigestObject {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for CreateDigestObject {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for CreateDigestObject {
+    type Response<'rdata> = ();
+}
+
+// ************* CreateCipherObject ************* //
+
+#[derive(Clone, Debug)]
+pub struct CreateCipherObject {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub subtype: CipherMode,
+}
+
+impl CreateCipherObject {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<CipherMode>) {
+        (
+            Tlv::new(TAG_1, self.id),
+            Tlv::new(TAG_2, CryptoContext::Cipher),
+            Tlv::new(TAG_3, self.subtype),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<CipherMode>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_WRITE,
+            P1_CRYPTO_OBJ,
+            P2_DEFAULT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl DataSource for CreateCipherObject {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for CreateCipherObject {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for CreateCipherObject {
+    type Response<'rdata> = ();
+}
+
+// ************* CreateSignatureObject ************* //
+
+#[derive(Clone, Debug)]
+pub struct CreateSignatureObject {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub subtype: MacAlgo,
+}
+
+impl CreateSignatureObject {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<MacAlgo>) {
+        (
+            Tlv::new(TAG_1, self.id),
+            Tlv::new(TAG_2, CryptoContext::Signature),
+            Tlv::new(TAG_3, self.subtype),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<MacAlgo>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_WRITE,
+            P1_CRYPTO_OBJ,
+            P2_DEFAULT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl DataSource for CreateSignatureObject {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for CreateSignatureObject {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for CreateSignatureObject {
+    type Response<'rdata> = ();
+}
+
+// ************* ReadCryptoObjList ************* //
+
+#[derive(Clone, Debug)]
+pub struct ReadCryptoObjList {}
+
+impl ReadCryptoObjList {
+    fn data(&self) -> () {
+        ()
+    }
+    fn command(&self) -> CommandBuilder<()> {
+        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CRYPTO_OBJ, P2_LIST, self.data(), 0)
+    }
+}
+
+impl DataSource for ReadCryptoObjList {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for ReadCryptoObjList {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ReadCryptoObjListResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub list: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for ReadCryptoObjListResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (list, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { list })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for ReadCryptoObjList {
+    type Response<'rdata> = ReadCryptoObjListResponse<'rdata>;
+}
+
+// ************* DeleteCryptoObj ************* //
+
+#[derive(Clone, Debug)]
+pub struct DeleteCryptoObj {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub id: CryptoObjectId,
+}
+
+impl DeleteCryptoObj {
+    fn data(&self) -> Tlv<CryptoObjectId> {
+        Tlv::new(TAG_1, self.id)
+    }
+    fn command(&self) -> CommandBuilder<Tlv<CryptoObjectId>> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_CRYPTO_OBJ,
+            P2_DELETE_OBJECT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl DataSource for DeleteCryptoObj {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for DeleteCryptoObj {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for DeleteCryptoObj {
+    type Response<'rdata> = ();
+}
+
+// ************* EcdsaSign ************* //
+
+#[derive(Clone, Debug)]
+pub struct EcdsaSign<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: EcDsaSignatureAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> EcdsaSign<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<EcDsaSignatureAlgo>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.data),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<EcDsaSignatureAlgo>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for EcdsaSign<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for EcdsaSign<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct EcdsaSignResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub signature: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for EcdsaSignResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (signature, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { signature })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for EcdsaSign<'data> {
+    type Response<'rdata> = EcdsaSignResponse<'rdata>;
+}
+
+// ************* EddsaSign ************* //
+
+#[derive(Clone, Debug)]
+pub struct EddsaSign<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> EddsaSign<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<EdDsaSignatureAlgo>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure),
+            Tlv::new(TAG_3, self.data),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<EdDsaSignatureAlgo>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for EddsaSign<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for EddsaSign<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct EddsaSignResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub signature: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for EddsaSignResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (signature, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { signature })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for EddsaSign<'data> {
+    type Response<'rdata> = EddsaSignResponse<'rdata>;
+}
+
+// ************* EcdaaSign ************* //
+
+#[derive(Clone, Debug)]
+pub struct EcdaaSign {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: [u8; 32],
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub random_data: [u8; 32],
+}
+
+impl EcdaaSign {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<EcDaaSignatureAlgo>,
+        Tlv<[u8; 32]>,
+        Tlv<[u8; 32]>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, EcDaaSignatureAlgo::EcDaa),
+            Tlv::new(TAG_3, self.data),
+            Tlv::new(TAG_4, self.random_data),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<EcDaaSignatureAlgo>,
+        Tlv<[u8; 32]>,
+        Tlv<[u8; 32]>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl DataSource for EcdaaSign {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for EcdaaSign {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct EcdaaSignResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub signature: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for EcdaaSignResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (signature, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { signature })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for EcdaaSign {
+    type Response<'rdata> = EcdaaSignResponse<'rdata>;
+}
+
+// ************* EcdsaVerify ************* //
+
+#[derive(Clone, Debug)]
+pub struct EcdsaVerify<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: EcDsaSignatureAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+    /// Serialized to TLV tag [`TAG_5`](TAG_5)
+    pub signature: &'data [u8],
+}
+
+impl<'data> EcdsaVerify<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<EcDsaSignatureAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.data),
+            Tlv::new(TAG_5, self.signature),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<EcDsaSignatureAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_VERIFY,
+            self.data(),
+            3,
+        )
+    }
+}
+
+impl<'data> DataSource for EcdsaVerify<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for EcdsaVerify<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct EcdsaVerifyResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub result: Se050Result,
+}
+
+impl<'data> Se050Response<'data> for EcdsaVerifyResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (result, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { result })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for EcdsaVerify<'data> {
+    type Response<'rdata> = EcdsaVerifyResponse;
+}
+
+// ************* EddsaVerify ************* //
+
+#[derive(Clone, Debug)]
+pub struct EddsaVerify<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+    /// Serialized to TLV tag [`TAG_5`](TAG_5)
+    pub signature: &'data [u8],
+}
+
+impl<'data> EddsaVerify<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<EdDsaSignatureAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure),
+            Tlv::new(TAG_3, self.data),
+            Tlv::new(TAG_5, self.signature),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<EdDsaSignatureAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_VERIFY,
+            self.data(),
+            3,
+        )
+    }
+}
+
+impl<'data> DataSource for EddsaVerify<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for EddsaVerify<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct EddsaVerifyResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub result: Se050Result,
+}
+
+impl<'data> Se050Response<'data> for EddsaVerifyResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (result, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { result })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for EddsaVerify<'data> {
+    type Response<'rdata> = EddsaVerifyResponse;
+}
+
+// ************* EcdhGenerateSharedSecret ************* //
+
+#[derive(Clone, Debug)]
+pub struct EcdhGenerateSharedSecret<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub public_key: &'data [u8],
+}
+
+impl<'data> EcdhGenerateSharedSecret<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.public_key),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_EC,
+            P2_DH,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for EcdhGenerateSharedSecret<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for EcdhGenerateSharedSecret<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct EcdhGenerateSharedSecretResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub shared_secret: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for EcdhGenerateSharedSecretResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (shared_secret, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { shared_secret })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for EcdhGenerateSharedSecret<'data> {
+    type Response<'rdata> = EcdhGenerateSharedSecretResponse<'rdata>;
+}
+
 // ************* GetRandom ************* //
 
 #[derive(Clone, Debug)]
