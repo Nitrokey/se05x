@@ -1217,6 +1217,225 @@ impl<W: Writer> Se050Command<W> for DeleteSecureObject {
     type Response<'rdata> = ();
 }
 
+// ************* CreateEcCurve ************* //
+
+#[derive(Clone, Debug)]
+pub struct CreateEcCurve {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub curve: EcCurve,
+}
+
+impl CreateEcCurve {
+    fn data(&self) -> Tlv<EcCurve> {
+        Tlv::new(TAG_1, self.curve)
+    }
+    fn command(&self) -> CommandBuilder<Tlv<EcCurve>> {
+        CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_CREATE, self.data(), 0)
+    }
+}
+
+impl DataSource for CreateEcCurve {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for CreateEcCurve {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for CreateEcCurve {
+    type Response<'rdata> = ();
+}
+
+// ************* SetEcCurveParam ************* //
+
+#[derive(Clone, Debug)]
+pub struct SetEcCurveParam<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub curve: EcCurve,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub param: EcCurveParam,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub value: &'data [u8],
+}
+
+impl<'data> SetEcCurveParam<'data> {
+    fn data(&self) -> (Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>) {
+        (Tlv::new(TAG_1, self.curve), Tlv::new(TAG_2, self.param), Tlv::new(TAG_3, self.value))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_PARAM, self.data(), 0)
+    }
+}
+
+impl<'data> DataSource for SetEcCurveParam<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for SetEcCurveParam<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for SetEcCurveParam<'data> {
+    type Response<'rdata> = ();
+}
+
+// ************* GetEcCurveId ************* //
+
+#[derive(Clone, Debug)]
+pub struct GetEcCurveId {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub object_id: ObjectId,
+}
+
+impl GetEcCurveId {
+    fn data(&self) -> Tlv<ObjectId> {
+        Tlv::new(TAG_1, self.object_id)
+    }
+    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_ID, self.data(), 0)
+    }
+}
+
+impl DataSource for GetEcCurveId {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for GetEcCurveId {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct GetEcCurveIdResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub curve: EcCurve,
+}
+
+impl<'data> Se050Response<'data> for GetEcCurveIdResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+
+        let (curve, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { curve })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for GetEcCurveId {
+    type Response<'rdata> = GetEcCurveIdResponse;
+}
+
+// ************* ReadEcCurveList ************* //
+
+#[derive(Clone, Debug)]
+pub struct ReadEcCurveList {
+}
+
+impl ReadEcCurveList {
+    fn data(&self) -> () {
+        ()
+    }
+    fn command(&self) -> CommandBuilder<()> {
+        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_LIST, self.data(), 0)
+    }
+}
+
+impl DataSource for ReadEcCurveList {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for ReadEcCurveList {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ReadEcCurveListResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub ids: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for ReadEcCurveListResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+
+        let (ids, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { ids })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for ReadEcCurveList {
+    type Response<'rdata> = ReadEcCurveListResponse<'rdata>;
+}
+
+// ************* DeleteEcCurve ************* //
+
+#[derive(Clone, Debug)]
+pub struct DeleteEcCurve {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub curve: EcCurve,
+}
+
+impl DeleteEcCurve {
+    fn data(&self) -> Tlv<EcCurve> {
+        Tlv::new(TAG_1, self.curve)
+    }
+    fn command(&self) -> CommandBuilder<Tlv<EcCurve>> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_CURVE, P2_DELETE_OBJECT, self.data(), 0)
+    }
+}
+
+impl DataSource for DeleteEcCurve {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for DeleteEcCurve {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for DeleteEcCurve {
+    type Response<'rdata> = ();
+}
+
 // ************* GetRandom ************* //
 
 #[derive(Clone, Debug)]

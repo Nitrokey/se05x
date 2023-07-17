@@ -15,9 +15,12 @@ use iso7816::{
 
 use crate::t1::{self, DataReceived, FrameSender, I2CForT1, T1oI2C};
 
+use self::commands::{CreateEcCurve, SetEcCurveParam};
+
 #[rustfmt::skip]
 pub mod commands;
 
+pub mod constants;
 pub mod policies;
 
 pub struct Se050<Twi, D> {
@@ -134,6 +137,56 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
             return Err(Error::Status(status));
         }
         C::Response::from_response(response)
+    }
+
+    pub fn create_and_set_curve(&mut self, curve: EcCurve) -> Result<(), Error> {
+        let response_buf = &mut [0; 2];
+        self.run_command(&CreateEcCurve { curve }, response_buf)?;
+        let Some(params) = curve.params() else {
+            // Curve doesn't need configuring params
+            return Ok(());
+        };
+        self.run_command(
+            &SetEcCurveParam {
+                curve,
+                param: EcCurveParam::ParamA,
+                value: params.a,
+            },
+            response_buf,
+        )?;
+        self.run_command(
+            &SetEcCurveParam {
+                curve,
+                param: EcCurveParam::ParamB,
+                value: params.b,
+            },
+            response_buf,
+        )?;
+        self.run_command(
+            &SetEcCurveParam {
+                curve,
+                param: EcCurveParam::ParamG,
+                value: params.g,
+            },
+            response_buf,
+        )?;
+        self.run_command(
+            &SetEcCurveParam {
+                curve,
+                param: EcCurveParam::ParamN,
+                value: params.order,
+            },
+            response_buf,
+        )?;
+        self.run_command(
+            &SetEcCurveParam {
+                curve,
+                param: EcCurveParam::ParamPrime,
+                value: params.prime,
+            },
+            response_buf,
+        )?;
+        Ok(())
     }
 }
 
@@ -955,6 +1008,48 @@ enum_data!(
         IdEccMontDh25519 = ID_ECC_MONT_DH_25519,
     }
 );
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum EcCurveParam {
+        ParamA = CURVE_PARAM_A,
+        ParamB = CURVE_PARAM_B,
+        ParamG = CURVE_PARAM_G,
+        ParamN = CURVE_PARAM_N,
+        ParamPrime = CURVE_PARAM_PRIME,
+    }
+);
+
+impl EcCurve {
+    /// None means that the constant doesn't need configuring its parameters (curve 25519)
+    pub fn params(&self) -> Option<constants::CurveConstants> {
+        match self {
+            Self::NistP192 => Some(constants::PRIME192V1),
+            Self::NistP224 => Some(constants::SECP224R1),
+            Self::NistP256 => Some(constants::PRIME256V1),
+            Self::NistP384 => Some(constants::SECP384R1),
+            Self::NistP521 => Some(constants::SECP521R1),
+
+            Self::Brainpool160 => Some(constants::BRAINPOOL_P160R1),
+            Self::Brainpool192 => Some(constants::BRAINPOOL_P192R1),
+            Self::Brainpool224 => Some(constants::BRAINPOOL_P224R1),
+            Self::Brainpool256 => Some(constants::BRAINPOOL_P256R1),
+            Self::Brainpool320 => Some(constants::BRAINPOOL_P320R1),
+            Self::Brainpool384 => Some(constants::BRAINPOOL_P384R1),
+            Self::Brainpool512 => Some(constants::BRAINPOOL_P512R1),
+
+            Self::Secp160k1 => Some(constants::SECP160K1),
+            Self::Secp192k1 => Some(constants::SECP192K1),
+            Self::Secp224k1 => Some(constants::SECP224K1),
+            Self::Secp256k1 => Some(constants::SECP256K1),
+
+            Self::TpmEccBnP256 => Some(constants::TPM_BN_P256),
+            Self::IdEccEd25519 => None,
+            Self::IdEccMontDh25519 => None,
+        }
+    }
+}
 
 enum_data!(
     #[derive(Debug, Clone, Copy)]

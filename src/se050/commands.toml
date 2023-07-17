@@ -328,6 +328,59 @@ p2 = "P2_DELETE_OBJECT"
 [delete_secure_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }
 
+[create_ec_curve]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+p1 = "P1_CURVE"
+p2 = "P2_CREATE"
+
+[create_ec_curve.payload]
+TAG_1 = { name = "curve", type = "EcCurve" }
+
+[set_ec_curve_param]
+cla = "NO_SM_CLA"
+ins = "INS_WRITE"
+p1 = "P1_CURVE"
+p2 = "P2_PARAM"
+
+[set_ec_curve_param.payload]
+TAG_1 = { name = "curve", type = "EcCurve" }
+TAG_2 = { name = "param", type = "EcCurveParam" }
+TAG_3 = { name = "value" }
+
+[get_ec_curve_id]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_CURVE"
+p2 = "P2_ID"
+
+[get_ec_curve_id.payload]
+TAG_1 = { name = "object_id", type = "ObjectId" }
+
+[get_ec_curve_id.response]
+TAG_1 = { name = "curve", type = "EcCurve" }
+
+[read_ec_curve_list]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_CURVE"
+p2 = "P2_LIST"
+
+[read_ec_curve_list.payload]
+
+[read_ec_curve_list.response]
+# TODO better type
+TAG_1 = { name = "ids" }
+
+[delete_ec_curve]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_CURVE"
+p2 = "P2_DELETE_OBJECT"
+
+[delete_ec_curve.payload]
+TAG_1 = { name = "curve", type = "EcCurve" }
+
 [get_random]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"
