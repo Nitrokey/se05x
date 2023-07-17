@@ -18,7 +18,14 @@ impl CreateSession {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CREATE, self.data(), 12)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_CREATE,
+            self.data(),
+            12,
+        )
     }
 }
 
@@ -43,7 +50,6 @@ pub struct CreateSessionResponse {
 
 impl<'data> Se050Response<'data> for CreateSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (session_id, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -76,7 +82,14 @@ impl<'data> ExchangeSessionData<'data> {
         (Tlv::new(TAG_1, self.session_policy), self.c_mac)
     }
     fn command(&self) -> CommandBuilder<(Tlv<SessionPolicy>, &'data [u8])> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_POLICY, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_POLICY,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -124,7 +137,14 @@ impl RefreshSession {
         self.policy.map(|data| Tlv::new(TAG_POLICY, data))
     }
     fn command(&self) -> CommandBuilder<Option<Tlv<SessionPolicy>>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_REFRESH, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_REFRESH,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -142,13 +162,12 @@ impl<W: Writer> DataStream<W> for RefreshSession {
     }
 }
 #[derive(Clone, Debug)]
-pub struct RefreshSessionResponse {
-}
+pub struct RefreshSessionResponse {}
 
 impl<'data> Se050Response<'data> for RefreshSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
-        Ok(Self {  })
+        Ok(Self {})
     }
 }
 
@@ -159,15 +178,21 @@ impl<W: Writer> Se050Command<W> for RefreshSession {
 // ************* CloseSession ************* //
 
 #[derive(Clone, Debug)]
-pub struct CloseSession {
-}
+pub struct CloseSession {}
 
 impl CloseSession {
     fn data(&self) -> () {
         ()
     }
     fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CLOSE, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_CLOSE,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -185,13 +210,12 @@ impl<W: Writer> DataStream<W> for CloseSession {
     }
 }
 #[derive(Clone, Debug)]
-pub struct CloseSessionResponse {
-}
+pub struct CloseSessionResponse {}
 
 impl<'data> Se050Response<'data> for CloseSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
-        Ok(Self {  })
+        Ok(Self {})
     }
 }
 
@@ -212,7 +236,14 @@ impl<'data> VerifySessionUserId<'data> {
         Tlv::new(TAG_1, self.user_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<&'data [u8]>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_USERID, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_USERID,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -230,13 +261,12 @@ impl<'data, W: Writer> DataStream<W> for VerifySessionUserId<'data> {
     }
 }
 #[derive(Clone, Debug)]
-pub struct VerifySessionUserIdResponse {
-}
+pub struct VerifySessionUserIdResponse {}
 
 impl<'data> Se050Response<'data> for VerifySessionUserIdResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
-        Ok(Self {  })
+        Ok(Self {})
     }
 }
 
@@ -256,10 +286,20 @@ pub struct SetLockState {
 
 impl SetLockState {
     fn data(&self) -> (Tlv<TransientIndicator>, Tlv<LockState>) {
-        (Tlv::new(TAG_1, self.lock_indicator), Tlv::new(TAG_2, self.lock_state))
+        (
+            Tlv::new(TAG_1, self.lock_indicator),
+            Tlv::new(TAG_2, self.lock_state),
+        )
     }
     fn command(&self) -> CommandBuilder<(Tlv<TransientIndicator>, Tlv<LockState>)> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TRANSPORT, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_TRANSPORT,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -303,13 +343,47 @@ pub struct WriteEcKey<'data> {
 }
 
 impl<'data> WriteEcKey<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<EcCurve>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), self.curve.map(|data| Tlv::new(TAG_2, data)), self.private_key.map(|data| Tlv::new(TAG_3, data)), self.public_key.map(|data| Tlv::new(TAG_4, data)))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<EcCurve>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            self.max_attempts
+                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
+            Tlv::new(TAG_1, self.object_id),
+            self.curve.map(|data| Tlv::new(TAG_2, data)),
+            self.private_key.map(|data| Tlv::new(TAG_3, data)),
+            self.public_key.map(|data| Tlv::new(TAG_4, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<EcCurve>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
-        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
-        let p1: u8 = self.key_type.map(|v| v | P1_EC ).unwrap_or(P1_EC);
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<EcCurve>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
+        let p1: u8 = self.key_type.map(|v| v | P1_EC).unwrap_or(P1_EC);
 
         CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
     }
@@ -367,13 +441,65 @@ pub struct WriteRsaKey<'data> {
 }
 
 impl<'data> WriteRsaKey<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), self.key_size.map(|data| Tlv::new(TAG_2, data)), self.p.map(|data| Tlv::new(TAG_3, data)), self.q.map(|data| Tlv::new(TAG_4, data)), self.dp.map(|data| Tlv::new(TAG_5, data)), self.dq.map(|data| Tlv::new(TAG_6, data)), self.inv_q.map(|data| Tlv::new(TAG_7, data)), self.e.map(|data| Tlv::new(TAG_8, data)), self.d.map(|data| Tlv::new(TAG_9, data)), self.n.map(|data| Tlv::new(TAG_10, data)))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            self.max_attempts
+                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
+            Tlv::new(TAG_1, self.object_id),
+            self.key_size.map(|data| Tlv::new(TAG_2, data)),
+            self.p.map(|data| Tlv::new(TAG_3, data)),
+            self.q.map(|data| Tlv::new(TAG_4, data)),
+            self.dp.map(|data| Tlv::new(TAG_5, data)),
+            self.dq.map(|data| Tlv::new(TAG_6, data)),
+            self.inv_q.map(|data| Tlv::new(TAG_7, data)),
+            self.e.map(|data| Tlv::new(TAG_8, data)),
+            self.d.map(|data| Tlv::new(TAG_9, data)),
+            self.n.map(|data| Tlv::new(TAG_10, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
-        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
-        let p1: u8 = self.key_type.map(|v| v | P1_RSA ).unwrap_or(P1_RSA);
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
+        let p1: u8 = self.key_type.map(|v| v | P1_RSA).unwrap_or(P1_RSA);
 
         CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
     }
@@ -414,12 +540,40 @@ pub struct GenRsaKey<'data> {
 }
 
 impl<'data> GenRsaKey<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), self.key_size.map(|data| Tlv::new(TAG_2, data)))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            self.max_attempts
+                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
+            Tlv::new(TAG_1, self.object_id),
+            self.key_size.map(|data| Tlv::new(TAG_2, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
-        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_RSA | P1_KEY_PAIR, P2_RAW, self.data(), 0)
     }
@@ -463,12 +617,43 @@ pub struct WriteSymmKey<'data> {
 }
 
 impl<'data> WriteSymmKey<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Tlv<ObjectId>, Tlv<&'data [u8]>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.kek_id), Tlv::new(TAG_3, self.value))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Tlv<ObjectId>,
+        Tlv<&'data [u8]>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            self.max_attempts
+                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
+            Tlv::new(TAG_1, self.object_id),
+            Tlv::new(TAG_2, self.kek_id),
+            Tlv::new(TAG_3, self.value),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u16>>>, Tlv<ObjectId>, Tlv<ObjectId>, Tlv<&'data [u8]>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
-        let ins = if self.is_auth { ins | INS_AUTH_OBJECT } else { ins };
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u16>>>,
+        Tlv<ObjectId>,
+        Tlv<ObjectId>,
+        Tlv<&'data [u8]>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
         let p1: u8 = self.key_type.into();
 
         CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
@@ -513,11 +698,37 @@ pub struct WriteBinary<'data> {
 }
 
 impl<'data> WriteBinary<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), Tlv::new(TAG_1, self.object_id), self.offset.map(|data| Tlv::new(TAG_2, data)), self.file_length.map(|data| Tlv::new(TAG_3, data)), self.data.map(|data| Tlv::new(TAG_4, data)))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            Tlv::new(TAG_1, self.object_id),
+            self.offset.map(|data| Tlv::new(TAG_2, data)),
+            self.file_length.map(|data| Tlv::new(TAG_3, data)),
+            self.data.map(|data| Tlv::new(TAG_4, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_BINARY, P2_DEFAULT, self.data(), 0)
     }
@@ -556,11 +767,38 @@ pub struct WriteUserId<'data> {
 }
 
 impl<'data> WriteUserId<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u8>>>, Tlv<ObjectId>, Tlv<&'data [u8]>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), self.max_attempts.map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)), Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.data))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u8>>>,
+        Tlv<ObjectId>,
+        Tlv<&'data [u8]>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            self.max_attempts
+                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
+            Tlv::new(TAG_1, self.object_id),
+            Tlv::new(TAG_2, self.data),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Option<Tlv<Be<u8>>>, Tlv<ObjectId>, Tlv<&'data [u8]>)> {
-        CommandBuilder::new(NO_SM_CLA, INS_WRITE | INS_AUTH_OBJECT, P1_USERID, P2_DEFAULT, self.data(), 0)
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Option<Tlv<Be<u8>>>,
+        Tlv<ObjectId>,
+        Tlv<&'data [u8]>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_WRITE | INS_AUTH_OBJECT,
+            P1_USERID,
+            P2_DEFAULT,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -598,11 +836,34 @@ pub struct WriteCounter<'data> {
 }
 
 impl<'data> WriteCounter<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<CounterSize>>, Option<Tlv<Be<u64>>>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), Tlv::new(TAG_1, self.object_id), self.data.map(|data| Tlv::new(TAG_2, data)), self.value.map(|data| Tlv::new(TAG_3, data)))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<CounterSize>>,
+        Option<Tlv<Be<u64>>>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            Tlv::new(TAG_1, self.object_id),
+            self.data.map(|data| Tlv::new(TAG_2, data)),
+            self.value.map(|data| Tlv::new(TAG_3, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<CounterSize>>, Option<Tlv<Be<u64>>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<CounterSize>>,
+        Option<Tlv<Be<u64>>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_COUNTER, P2_DEFAULT, self.data(), 0)
     }
@@ -642,11 +903,34 @@ pub struct WritePcr<'data> {
 }
 
 impl<'data> WritePcr<'data> {
-    fn data(&self) -> (Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>) {
-        (self.policy.map(|data| Tlv::new(TAG_POLICY, data)), Tlv::new(TAG_1, self.object_id), self.initial_value.map(|data| Tlv::new(TAG_2, data)), self.extend.map(|data| Tlv::new(TAG_3, data)))
+    fn data(
+        &self,
+    ) -> (
+        Option<Tlv<PolicySet<'data>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
+            Tlv::new(TAG_1, self.object_id),
+            self.initial_value.map(|data| Tlv::new(TAG_2, data)),
+            self.extend.map(|data| Tlv::new(TAG_3, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Option<Tlv<PolicySet<'data>>>, Tlv<ObjectId>, Option<Tlv<&'data [u8]>>, Option<Tlv<&'data [u8]>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Option<Tlv<PolicySet<'data>>>,
+        Tlv<ObjectId>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_PCR, P2_DEFAULT, self.data(), 0)
     }
@@ -684,11 +968,31 @@ pub struct ImportObject<'data> {
 }
 
 impl<'data> ImportObject<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaKeyComponent>, Option<Tlv<&'data [u8]>>) {
-        (Tlv::new(TAG_1, self.object_id), Tlv::new(TAG_2, self.key_component), self.serialized_object.map(|data| Tlv::new(TAG_3, data)))
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<RsaKeyComponent>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.object_id),
+            Tlv::new(TAG_2, self.key_component),
+            self.serialized_object.map(|data| Tlv::new(TAG_3, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaKeyComponent>, Option<Tlv<&'data [u8]>>)> {
-        let ins = if self.transient { INS_WRITE | INS_TRANSIENT } else { INS_WRITE };
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<RsaKeyComponent>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
 
         CommandBuilder::new(NO_SM_CLA, ins, P1_DEFAULT, P2_IMPORT, self.data(), 0)
     }
@@ -727,11 +1031,37 @@ pub struct ReadObject<'data> {
 }
 
 impl<'data> ReadObject<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>) {
-        (Tlv::new(TAG_1, self.object_id), self.offset.map(|data| Tlv::new(TAG_2, data)), self.length.map(|data| Tlv::new(TAG_3, data)), self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)))
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.object_id),
+            self.offset.map(|data| Tlv::new(TAG_2, data)),
+            self.length.map(|data| Tlv::new(TAG_3, data)),
+            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>)> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_DEFAULT, self.data(), ExpectedLen::Max)
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -756,7 +1086,6 @@ pub struct ReadObjectResponse<'data> {
 
 impl<'data> Se050Response<'data> for ReadObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (data, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -795,11 +1124,46 @@ pub struct ReadAttestObject<'data> {
 }
 
 impl<'data> ReadAttestObject<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Tlv<ObjectId>, Tlv<AttestationAlgo>, Option<Tlv<&'data [u8; 16]>>) {
-        (Tlv::new(TAG_1, self.object_id), self.offset.map(|data| Tlv::new(TAG_2, data)), self.length.map(|data| Tlv::new(TAG_3, data)), self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)), Tlv::new(TAG_5, self.attestation_object), Tlv::new(TAG_6, self.attestation_algo), self.freshness_random.map(|data| Tlv::new(TAG_7, data)))
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+        Tlv<ObjectId>,
+        Tlv<AttestationAlgo>,
+        Option<Tlv<&'data [u8; 16]>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.object_id),
+            self.offset.map(|data| Tlv::new(TAG_2, data)),
+            self.length.map(|data| Tlv::new(TAG_3, data)),
+            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
+            Tlv::new(TAG_5, self.attestation_object),
+            Tlv::new(TAG_6, self.attestation_algo),
+            self.freshness_random.map(|data| Tlv::new(TAG_7, data)),
+        )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Option<Tlv<Be<u16>>>, Option<Tlv<Be<u16>>>, Option<Tlv<&'data [u8]>>, Tlv<ObjectId>, Tlv<AttestationAlgo>, Option<Tlv<&'data [u8; 16]>>)> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ | INS_ATTEST, P1_DEFAULT, P2_DEFAULT, self.data(), 0)
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<Be<u16>>>,
+        Option<Tlv<&'data [u8]>>,
+        Tlv<ObjectId>,
+        Tlv<AttestationAlgo>,
+        Option<Tlv<&'data [u8; 16]>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ | INS_ATTEST,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -834,7 +1198,6 @@ pub struct ReadAttestObjectResponse<'data> {
 
 impl<'data> Se050Response<'data> for ReadAttestObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (data, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -889,7 +1252,14 @@ impl<'data> Se050Response<'data> for ReadAttestObjectResponse<'data> {
             }
         };
         let _ = rem;
-        Ok(Self { data, attributes, timestamp, freshness_random, chip_unique_id, signature })
+        Ok(Self {
+            data,
+            attributes,
+            timestamp,
+            freshness_random,
+            chip_unique_id,
+            signature,
+        })
     }
 }
 
@@ -909,10 +1279,20 @@ pub struct ExportObject<'data> {
 
 impl<'data> ExportObject<'data> {
     fn data(&self) -> (Tlv<ObjectId>, Option<Tlv<&'data [u8]>>) {
-        (Tlv::new(TAG_1, self.object_id), self.rsa_key_component.map(|data| Tlv::new(TAG_2, data)))
+        (
+            Tlv::new(TAG_1, self.object_id),
+            self.rsa_key_component.map(|data| Tlv::new(TAG_2, data)),
+        )
     }
     fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Option<Tlv<&'data [u8]>>)> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_EXPORT,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -947,7 +1327,14 @@ impl ReadType {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_TYPE, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_TYPE,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -974,7 +1361,6 @@ pub struct ReadTypeResponse {
 
 impl<'data> Se050Response<'data> for ReadTypeResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (ty, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -993,7 +1379,10 @@ impl<'data> Se050Response<'data> for ReadTypeResponse {
             }
         };
         let _ = rem;
-        Ok(Self { ty, transient_indicator })
+        Ok(Self {
+            ty,
+            transient_indicator,
+        })
     }
 }
 
@@ -1014,7 +1403,14 @@ impl ReadSize {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_SIZE, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_SIZE,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -1039,7 +1435,6 @@ pub struct ReadSizeResponse {
 
 impl<'data> Se050Response<'data> for ReadSizeResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (size, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -1072,7 +1467,14 @@ impl ReadIdList {
         (Tlv::new(TAG_1, self.offset), Tlv::new(TAG_2, self.filter))
     }
     fn command(&self) -> CommandBuilder<(Tlv<Be<u16>>, Tlv<SecureObjectFilter>)> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_LIST, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_LIST,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -1099,7 +1501,6 @@ pub struct ReadIdListResponse<'data> {
 
 impl<'data> Se050Response<'data> for ReadIdListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (more, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -1139,7 +1540,14 @@ impl CheckObjectExists {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXIST, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_EXIST,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -1164,7 +1572,6 @@ pub struct CheckObjectExistsResponse {
 
 impl<'data> Se050Response<'data> for CheckObjectExistsResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (result, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -1195,7 +1602,14 @@ impl DeleteSecureObject {
         Tlv::new(TAG_1, self.object_id)
     }
     fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_DELETE_OBJECT, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_DELETE_OBJECT,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -1266,7 +1680,11 @@ pub struct SetEcCurveParam<'data> {
 
 impl<'data> SetEcCurveParam<'data> {
     fn data(&self) -> (Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>) {
-        (Tlv::new(TAG_1, self.curve), Tlv::new(TAG_2, self.param), Tlv::new(TAG_3, self.value))
+        (
+            Tlv::new(TAG_1, self.curve),
+            Tlv::new(TAG_2, self.param),
+            Tlv::new(TAG_3, self.value),
+        )
     }
     fn command(&self) -> CommandBuilder<(Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>)> {
         CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_PARAM, self.data(), 0)
@@ -1329,7 +1747,6 @@ pub struct GetEcCurveIdResponse {
 
 impl<'data> Se050Response<'data> for GetEcCurveIdResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (curve, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -1350,8 +1767,7 @@ impl<W: Writer> Se050Command<W> for GetEcCurveId {
 // ************* ReadEcCurveList ************* //
 
 #[derive(Clone, Debug)]
-pub struct ReadEcCurveList {
-}
+pub struct ReadEcCurveList {}
 
 impl ReadEcCurveList {
     fn data(&self) -> () {
@@ -1383,7 +1799,6 @@ pub struct ReadEcCurveListResponse<'data> {
 
 impl<'data> Se050Response<'data> for ReadEcCurveListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (ids, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -1414,7 +1829,14 @@ impl DeleteEcCurve {
         Tlv::new(TAG_1, self.curve)
     }
     fn command(&self) -> CommandBuilder<Tlv<EcCurve>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_CURVE, P2_DELETE_OBJECT, self.data(), 0)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_CURVE,
+            P2_DELETE_OBJECT,
+            self.data(),
+            0,
+        )
     }
 }
 
@@ -1449,7 +1871,14 @@ impl GetRandom {
         Tlv::new(TAG_1, self.length)
     }
     fn command(&self) -> CommandBuilder<Tlv<Be<u16>>> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_RANDOM, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_RANDOM,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 
@@ -1474,7 +1903,6 @@ pub struct GetRandomResponse<'data> {
 
 impl<'data> Se050Response<'data> for GetRandomResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-
         let (data, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
@@ -1495,15 +1923,21 @@ impl<W: Writer> Se050Command<W> for GetRandom {
 // ************* DeleteAll ************* //
 
 #[derive(Clone, Debug)]
-pub struct DeleteAll {
-}
+pub struct DeleteAll {}
 
 impl DeleteAll {
     fn data(&self) -> () {
         ()
     }
     fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_DELETE_ALL, self.data(), ExpectedLen::Max)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_DELETE_ALL,
+            self.data(),
+            ExpectedLen::Max,
+        )
     }
 }
 

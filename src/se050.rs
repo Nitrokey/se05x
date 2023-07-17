@@ -17,7 +17,6 @@ use crate::t1::{self, DataReceived, FrameSender, I2CForT1, T1oI2C};
 
 use self::commands::{CreateEcCurve, SetEcCurveParam};
 
-#[rustfmt::skip]
 pub mod commands;
 
 pub mod constants;
