@@ -546,6 +546,17 @@ TAG_2 = { name = "public_key" }
 [ecdh_generate_shared_secret.response]
 TAG_1 = { name = "shared_secret" }
 
+[get_version]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_VERSION"
+le = 0xB
+
+[get_version.payload]
+[get_version.response]
+TAG_1 = { name = "version_info", type = "VersionInfo" }
+
 [get_random]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"

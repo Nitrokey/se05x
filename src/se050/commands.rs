@@ -2564,6 +2564,58 @@ impl<'data, W: Writer> Se050Command<W> for EcdhGenerateSharedSecret<'data> {
     type Response<'rdata> = EcdhGenerateSharedSecretResponse<'rdata>;
 }
 
+// ************* GetVersion ************* //
+
+#[derive(Clone, Debug)]
+pub struct GetVersion {}
+
+impl GetVersion {
+    fn data(&self) -> () {
+        ()
+    }
+    fn command(&self) -> CommandBuilder<()> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_VERSION, self.data(), 11)
+    }
+}
+
+impl DataSource for GetVersion {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for GetVersion {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct GetVersionResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub version_info: VersionInfo,
+}
+
+impl<'data> Se050Response<'data> for GetVersionResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (version_info, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { version_info })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for GetVersion {
+    type Response<'rdata> = GetVersionResponse;
+}
+
 // ************* GetRandom ************* //
 
 #[derive(Clone, Debug)]

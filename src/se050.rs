@@ -94,6 +94,10 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         }
     }
 
+    pub fn set_t1_retry_count(&mut self, value: u32) {
+        self.t1.retry_count = value;
+    }
+
     fn receive_apdu<'buf>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -140,11 +144,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
 
     pub fn create_and_set_curve(&mut self, curve: EcCurve) -> Result<(), Error> {
         let response_buf = &mut [0; 2];
-        self.run_command(&CreateEcCurve { curve }, response_buf)?;
         let Some(params) = curve.params() else {
             // Curve doesn't need configuring params
             return Ok(());
         };
+        self.run_command(&CreateEcCurve { curve }, response_buf)?;
         self.run_command(
             &SetEcCurveParam {
                 curve,
@@ -248,6 +252,15 @@ impl<'a> Se050Response<'a> for Atr {
         Self::parse(data)
     }
 }
+
+impl<'a> TryFrom<&'a [u8]> for Atr {
+    type Error = Error;
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        Self::parse(value)
+    }
+}
+
+pub type VersionInfo = Atr;
 
 impl Select {
     fn command(&self) -> CommandBuilder<&'static [u8]> {
@@ -1088,7 +1101,7 @@ impl EcCurve {
 }
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum SymmKeyType {
         Aes = P1_AES,
@@ -1098,7 +1111,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u16)]
     pub enum CounterSize {
         B1 = 1,
@@ -1113,7 +1126,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum RsaKeyComponent {
         Mod = RSA_COMP_MOD,
@@ -1128,7 +1141,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum AttestationAlgo {
         // NOT SUPPORTED
@@ -1151,7 +1164,7 @@ enum_data!(
     }
 );
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum SecureObjectType {
         EcKeyPair = TYPE_EC_KEY_PAIR,
@@ -1174,7 +1187,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum SecureObjectFilter {
         EcKeyPair = TYPE_EC_KEY_PAIR,
@@ -1198,7 +1211,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum MoreIndicator {
         More = MORE,
@@ -1207,7 +1220,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum Se050Result {
         Success = RESULT_SUCCESS,
@@ -1216,7 +1229,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum CryptoContext {
         Digest = CC_DIGEST,
@@ -1226,7 +1239,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum Digest {
         DigestNoHash = DIGEST_NO_HASH,
@@ -1239,7 +1252,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum MacAlgo {
         HmacSha1 = HMAC_SHA1,
@@ -1261,7 +1274,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum CipherMode {
         DesCbcNopad = DES_CBC_NOPAD,
@@ -1282,7 +1295,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum EcDsaSignatureAlgo {
         /// Not supported
@@ -1301,7 +1314,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum EdDsaSignatureAlgo {
         Pure = SIG_ED25519PURE,
@@ -1309,7 +1322,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum EcDaaSignatureAlgo {
         EcDaa = SIG_ECDAA,
