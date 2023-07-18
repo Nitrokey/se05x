@@ -335,6 +335,7 @@ pub struct T1oI2C<Twi, D> {
     iseq_rcv: Seq,
     /// microseconds
     mpot: u32,
+    pub retry_count: u32,
     delay: D,
     segt: u32,
 }
@@ -365,6 +366,8 @@ pub enum DataReceived {
     },
 }
 
+const DEFAULT_RETRY_COUNT: u32 = 1024;
+
 impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         // Default MPOT value.
@@ -380,6 +383,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             iseq_rcv: Seq::ZERO,
             mpot: DMPOT_MS * 1000,
             segt: SEGT_US as _,
+            retry_count: DEFAULT_RETRY_COUNT,
             delay,
         }
     }
@@ -429,7 +433,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         let mut header_buffer = [0; HEADER_LEN];
         let mut written = 0;
         let mut crc_buf = [0; TRAILER_LEN];
-        for _i in 0..128 {
+        for _i in 0..self.retry_count {
             let read = self.read(&mut header_buffer);
             match read {
                 Ok(()) => {}
@@ -667,7 +671,7 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             &self.current_frame_buffer[HEADER_LEN..][..data_len],
             &self.current_frame_buffer[HEADER_LEN + data_len..][..TRAILER_LEN],
         );
-        for _ in 0..128 {
+        for _ in 0..self.writer.retry_count {
             match self
                 .writer
                 .write(&self.current_frame_buffer[..data_len + HEADER_LEN + TRAILER_LEN])
