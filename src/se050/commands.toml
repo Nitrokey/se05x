@@ -557,6 +557,29 @@ le = 0xB
 [get_version.response]
 TAG_1 = { name = "version_info", type = "VersionInfo" }
 
+[get_timestamp]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_TIME"
+le = 0x14
+
+[get_timestamp.payload]
+[get_timestamp.response]
+TAG_1 = { name = "timestamp", type = "&'data [u8; 12]" }
+
+[get_free_memory]
+cla = "NO_SM_CLA"
+ins = "INS_MGMT"
+p1 = "P1_DEFAULT"
+p2 = "P2_MEMORY"
+le = 0x06
+
+[get_free_memory.payload]
+TAG_1 = { name = "memory", type = "Memory"}
+[get_free_memory.response]
+TAG_1 = { name = "available", type = "Be<u16>" }
+
 [get_random]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"

@@ -1328,3 +1328,13 @@ enum_data!(
         EcDaa = SIG_ECDAA,
     }
 );
+
+enum_data!(
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum Memory {
+        Persistent = MEM_PERSISTENT,
+        TransientReset = MEM_TRANSIENT_RESET,
+        TransientDeselect = MEM_TRANSIENT_DESELECT,
+    }
+);

@@ -2616,6 +2616,113 @@ impl<W: Writer> Se050Command<W> for GetVersion {
     type Response<'rdata> = GetVersionResponse;
 }
 
+// ************* GetTimestamp ************* //
+
+#[derive(Clone, Debug)]
+pub struct GetTimestamp {}
+
+impl GetTimestamp {
+    fn data(&self) -> () {
+        ()
+    }
+    fn command(&self) -> CommandBuilder<()> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TIME, self.data(), 20)
+    }
+}
+
+impl DataSource for GetTimestamp {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for GetTimestamp {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct GetTimestampResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub timestamp: &'data [u8; 12],
+}
+
+impl<'data> Se050Response<'data> for GetTimestampResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (timestamp, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { timestamp })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for GetTimestamp {
+    type Response<'rdata> = GetTimestampResponse<'rdata>;
+}
+
+// ************* GetFreeMemory ************* //
+
+#[derive(Clone, Debug)]
+pub struct GetFreeMemory {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub memory: Memory,
+}
+
+impl GetFreeMemory {
+    fn data(&self) -> Tlv<Memory> {
+        Tlv::new(TAG_1, self.memory)
+    }
+    fn command(&self) -> CommandBuilder<Tlv<Memory>> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_MEMORY, self.data(), 6)
+    }
+}
+
+impl DataSource for GetFreeMemory {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for GetFreeMemory {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct GetFreeMemoryResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub available: Be<u16>,
+}
+
+impl<'data> Se050Response<'data> for GetFreeMemoryResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (available, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { available })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for GetFreeMemory {
+    type Response<'rdata> = GetFreeMemoryResponse;
+}
+
 // ************* GetRandom ************* //
 
 #[derive(Clone, Debug)]
