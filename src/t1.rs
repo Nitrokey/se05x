@@ -303,6 +303,7 @@ pub enum Error {
     BadAddress,
     ReceptionBuffer,
     Line(u32),
+    Timeout,
 }
 
 impl fmt::Display for Error {
@@ -315,6 +316,7 @@ impl fmt::Display for Error {
             Self::BadPcb => f.write_str("Received invalid PCB"),
             Self::BadAddress => f.write_str("Bad address"),
             Self::ReceptionBuffer => f.write_str("Reception buffer is too small"),
+            Self::Timeout => f.write_str("Read timed out"),
             Self::Line(l) => write!(f, "Error comming from line: {l}"),
         }
     }
@@ -334,11 +336,19 @@ pub struct T1oI2C<Twi, D> {
     nad_se2hd: u8,
     iseq_snd: Seq,
     iseq_rcv: Seq,
-    /// microseconds
+    /// Waiting time between attempts to read
+    ///
+    /// Microseconds
     mpot: u32,
+    /// Retry count for attempts to write data to the se
     pub retry_count: u32,
     delay: D,
     segt: u32,
+    /// Block waiting time
+    /// Maximum time the SE050 can take to respond
+    ///
+    /// Microseconds
+    bwt: u32,
 }
 
 // const TWI_RETRIES: usize = 128;
@@ -347,6 +357,7 @@ pub struct T1oI2C<Twi, D> {
 /// SEGT value in microseconds
 /// Minimun time between reading attempts
 const SEGT_US: u32 = 10;
+const BWT_US: u32 = 100_000;
 
 /// See table 4 of UM1225
 const NAD_HD_TO_SE: u8 = 0x5A;
@@ -385,6 +396,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             mpot: DMPOT_MS * 1000,
             segt: SEGT_US as _,
             retry_count: DEFAULT_RETRY_COUNT,
+            bwt: BWT_US,
             delay,
         }
     }
@@ -434,7 +446,15 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         let mut header_buffer = [0; HEADER_LEN];
         let mut written = 0;
         let mut crc_buf = [0; TRAILER_LEN];
-        for _i in 0..self.retry_count {
+        let mut retry_count = self.bwt / self.mpot + 1;
+        let mut i = 0;
+        loop {
+            debug!("{retry_count}, {i}, {written}, {}, {}", self.bwt, self.mpot);
+            i += 1;
+            if i == retry_count {
+                break;
+            }
+
             let read = self.read(&mut header_buffer);
             match read {
                 Ok(()) => {}
@@ -450,12 +470,14 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             let [nad, pcb, len] = header_buffer;
             debug!("Received header: {:02x?}", header_buffer);
 
-            if buffer.len() < len as usize {
+            if buffer.len() < written + len as usize {
                 error!("Buffer too small");
                 return Err(Error::ReceptionBuffer);
             }
 
+            let mut data_buf = [0; MAX_FRAME_DATA_LEN];
             let current_buf = &mut buffer[written..][..len as usize];
+            let data_buf = &mut data_buf[..len as _];
 
             if nad != self.nad_se2hd {
                 error!("Received bad nad: {:02x}", nad);
@@ -463,8 +485,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             }
 
             if len != 0 {
-                self.read(current_buf)?;
-                written += len as usize;
+                self.read(data_buf)?;
             }
             self.read(&mut crc_buf)?;
 
@@ -472,25 +493,41 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
 
             let mut crc = Crc::new();
             crc.update(&header_buffer);
-            crc.update(&current_buf);
+            crc.update(data_buf);
             let crc = crc.get().to_le_bytes();
             if crc_buf != crc {
-                error!(
-                    "Got bad crc: {:02x?} expected {:02x?}",
-                    &current_buf[..len as usize][..2],
-                    crc
-                );
+                error!("Got bad crc: {:02x?} expected {:02x?}", &data_buf[..2], crc);
                 // TODO: write R-Block with error
                 return Err(Error::BadCrc);
             }
 
             let (seq, more) = match pcb {
+                Pcb::S(SBlock::WtxRequest) => {
+                    debug!("Got WtxRequest");
+                    if len != 1 {
+                        return Err(Error::Line(line!()));
+                    }
+                    let mult = data_buf[0];
+                    let frame = [
+                        self.nad_hd2se,
+                        Pcb::S(SBlock::WtxResponse).to_byte(),
+                        1,
+                        mult,
+                    ];
+                    let [crc1, crc2] = Crc::calculate(&frame).to_le_bytes();
+                    self.write(&[frame[0], frame[1], frame[2], crc1, crc2])?;
+
+                    retry_count = (self.bwt * mult as u32) / self.mpot + 1;
+                    i = 0;
+                    continue;
+                }
                 Pcb::S(block) => {
+                    current_buf.copy_from_slice(&data_buf);
                     return Ok(DataReceived::SBlock {
                         block,
-                        i_data: written - len as usize,
+                        i_data: written as usize,
                         s_data: len as usize,
-                    })
+                    });
                 }
                 Pcb::R(_, _) => {
                     error!("Got unexpected R-Block in receive");
@@ -498,6 +535,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
                 }
                 Pcb::I(seq, more) => (seq, more),
             };
+            current_buf.copy_from_slice(data_buf);
+            written += len as usize;
 
             if seq != self.iseq_rcv {
                 warn!("Got bad seq");
@@ -515,8 +554,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             let [crc1, crc2] = Crc::calculate(&frame).to_le_bytes();
             self.write(&[frame[0], frame[1], frame[2], crc1, crc2])?;
         }
-        error!("Failed to read after 128 tries");
-        Err(Error::Line(line!()))
+        error!("Waited for btw");
+        Err(Error::Timeout)
     }
 
     pub fn resync(&mut self) -> Result<(), Error> {
@@ -575,9 +614,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             let mpot: u32 = atr.mpot.into();
             self.mpot = 1000 * mpot;
             self.segt = atr.segt.into();
+            self.bwt = (atr.bwt as u32) * 1000;
         };
         self.iseq_snd = Seq::ZERO;
         self.iseq_rcv = Seq::ZERO;
+        debug_now!("Got atr: {atr:?}");
         Ok(atr.unwrap_or_default())
     }
 

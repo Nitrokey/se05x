@@ -59,6 +59,7 @@ impl From<Error> for Status {
             Error::T1(t1::Error::BadPcb) => Status::from(0x0006),
             Error::T1(t1::Error::BadAddress) => Status::from(0x0007),
             Error::T1(t1::Error::ReceptionBuffer) => Status::from(0x0008),
+            Error::T1(t1::Error::Timeout) => Status::from(0x0009),
             Error::T1(t1::Error::Line(l)) => Status::from(0x1000 + l.min(0x0FFF) as u16),
             Error::Line(l) => Status::from(0x2000 + l.min(0x0FFF) as u16),
         }
