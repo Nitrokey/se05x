@@ -42,7 +42,7 @@ impl From<Infallible> for Error {
 }
 impl From<TryFromSliceError> for Error {
     fn from(_value: TryFromSliceError) -> Self {
-        Self::Unknown
+        Self::Line(line!())
     }
 }
 
@@ -107,13 +107,14 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
                 &buffer[..len - 2],
                 Status::from([buffer[len - 2], buffer[len - 1]]),
             )),
-            DataReceived::SBlock { .. } => {
-                error!("Got unexpected S-block");
-                Err(Error::Unknown)
-            }
+            DataReceived::SBlock {
+                block,
+                i_data,
+                s_data,
+            } => Err(Error::Line(line!())),
             _ => {
                 error!("Got too short apdu");
-                Err(Error::Unknown)
+                Err(Error::Line(line!()))
             }
         }
     }
@@ -231,7 +232,7 @@ impl Atr {
     fn parse(atr: &[u8]) -> Result<Self, Error> {
         debug!("Parsing SELECT atr");
         let [major, minor, patch, config1, config2, secure_box_major, secure_box_minor] = atr else {
-            return Err(Error::Unknown);
+            return Err(Error::Line(line!()));
         };
 
         let applet_config =
@@ -1336,5 +1337,32 @@ enum_data!(
         Persistent = MEM_PERSISTENT,
         TransientReset = MEM_TRANSIENT_RESET,
         TransientDeselect = MEM_TRANSIENT_DESELECT,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum RsaSignatureAlgo {
+        RsaSha1Pkcs1Pss = RSA_SHA1_PKCS1_PSS,
+        RsaSha224Pkcs1Pss = RSA_SHA224_PKCS1_PSS,
+        RsaSha256Pkcs1Pss = RSA_SHA256_PKCS1_PSS,
+        RsaSha384Pkcs1Pss = RSA_SHA384_PKCS1_PSS,
+        RsaSha512Pkcs1Pss = RSA_SHA512_PKCS1_PSS,
+        RsaSha1Pkcs1 = RSA_SHA1_PKCS1,
+        RsaSha224Pkcs1 = RSA_SHA_224_PKCS1,
+        RsaSha256Pkcs1 = RSA_SHA_256_PKCS1,
+        RsaSha384Pkcs1 = RSA_SHA_384_PKCS1,
+        RsaSha512Pkcs1 = RSA_SHA_512_PKCS1,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum RsaEncryptionAlgo {
+        NoPad = RSA_NO_PAD,
+        Pkcs1 = RSA_PKCS1,
+        Pkcs1Oaep = RSA_PKCS1_OAEP,
     }
 );

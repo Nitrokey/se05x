@@ -2564,6 +2564,296 @@ impl<'data, W: Writer> Se050Command<W> for EcdhGenerateSharedSecret<'data> {
     type Response<'rdata> = EcdhGenerateSharedSecretResponse<'rdata>;
 }
 
+// ************* RsaSign ************* //
+
+#[derive(Clone, Debug)]
+pub struct RsaSign<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: RsaSignatureAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> RsaSign<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.data),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_SIGNATURE,
+            P2_SIGN,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for RsaSign<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for RsaSign<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct RsaSignResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub signature: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for RsaSignResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (signature, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { signature })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for RsaSign<'data> {
+    type Response<'rdata> = RsaSignResponse<'rdata>;
+}
+
+// ************* RsaVerify ************* //
+
+#[derive(Clone, Debug)]
+pub struct RsaVerify<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: RsaSignatureAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub signature: &'data [u8],
+}
+
+impl<'data> RsaVerify<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<RsaSignatureAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.data),
+            Tlv::new(TAG_4, self.signature),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<RsaSignatureAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    )> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_SIGNATURE, P2_VERIFY, self.data(), 3)
+    }
+}
+
+impl<'data> DataSource for RsaVerify<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for RsaVerify<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct RsaVerifyResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub result: Se050Result,
+}
+
+impl<'data> Se050Response<'data> for RsaVerifyResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (result, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { result })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for RsaVerify<'data> {
+    type Response<'rdata> = RsaVerifyResponse;
+}
+
+// ************* RsaEncrypt ************* //
+
+#[derive(Clone, Debug)]
+pub struct RsaEncrypt<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: RsaEncryptionAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub plaintext: &'data [u8],
+}
+
+impl<'data> RsaEncrypt<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.plaintext),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_SIGNATURE,
+            P2_ENCRYPT_ONESHOT,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for RsaEncrypt<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for RsaEncrypt<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct RsaEncryptResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub ciphertext: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for RsaEncryptResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (ciphertext, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { ciphertext })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for RsaEncrypt<'data> {
+    type Response<'rdata> = RsaEncryptResponse<'rdata>;
+}
+
+// ************* RsaDecrypt ************* //
+
+#[derive(Clone, Debug)]
+pub struct RsaDecrypt<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: RsaEncryptionAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub ciphertext: &'data [u8],
+}
+
+impl<'data> RsaDecrypt<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.ciphertext),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_SIGNATURE,
+            P2_DECRYPT_ONESHOT,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for RsaDecrypt<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for RsaDecrypt<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct RsaDecryptResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub plaintext: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for RsaDecryptResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (plaintext, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { plaintext })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for RsaDecrypt<'data> {
+    type Response<'rdata> = RsaDecryptResponse<'rdata>;
+}
+
 // ************* GetVersion ************* //
 
 #[derive(Clone, Debug)]

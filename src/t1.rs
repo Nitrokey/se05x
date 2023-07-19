@@ -322,7 +322,8 @@ impl fmt::Display for Error {
 
 impl iso7816::command::writer::Error for Error {
     fn failed_serialization(_cause: &'static str) -> Self {
-        Self::Unknown
+        error!("Failed serializaiton: {}", _cause);
+        Self::Line(line!())
     }
 }
 
@@ -538,6 +539,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             error!("Got unexpected error: {data:?}");
             return Err(Error::BadPcb);
         }
+        self.iseq_snd = Seq::ZERO;
+        self.iseq_rcv = Seq::ZERO;
         Ok(())
     }
 
