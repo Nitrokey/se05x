@@ -825,6 +825,9 @@ TAG_4 = { name = "requested_len", type = "Be<u16>", comment = "Up to 512" }
 [pbkdf2.response]
 TAG_1 = { name = "data" }
 
+# TODO MIFARE DESFire 
+# TODO TLS handshake support
+
 [get_version]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"
