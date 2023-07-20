@@ -696,6 +696,100 @@ TAG_4 = { name = "initialization_vector", optional = true }
 [cipher_one_shot_decrypt.response]
 TAG_1 = { name = "plaintext" }
 
+# MAC
+
+[mac_generate_init]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_GENERATE"
+
+[mac_generate_init.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
+
+[mac_validate_init]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_VALIDATE"
+
+[mac_validate_init.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
+
+[mac_update]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_UPDATE"
+le = "ExpectedLen::Max"
+
+[mac_update.payload]
+TAG_1 = { name= "data" }
+TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
+
+[mac_generate_final]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_FINAL"
+le = "ExpectedLen::Max"
+
+[mac_generate_final.payload]
+TAG_1 = { name= "data" }
+TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
+
+[mac_generate_final.response]
+TAG_1 = { name= "mac" }
+
+[mac_validate_final]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_FINAL"
+le = "ExpectedLen::Max"
+
+[mac_validate_final.payload]
+TAG_1 = { name= "data" }
+TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
+TAG_3 = { name = "tag", comment = "Tag to validate"}
+
+[mac_validate_final.response]
+TAG_1 = { name= "mac" }
+
+[mac_one_shot_generate]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_GENERATE_ONESHOT"
+le = "ExpectedLen::Max"
+
+[mac_one_shot_generate.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "MacAlgo" }
+TAG_3 = { name = "plaintext" }
+TAG_4 = { name = "initialization_vector", optional = true }
+
+[mac_one_shot_generate.response]
+TAG_1 = { name = "mactext" }
+
+[mac_one_shot_validate]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_MAC"
+p2 = "P2_VALIDATE_ONESHOT"
+le = "ExpectedLen::Max"
+
+[mac_one_shot_validate.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "algo", type = "MacAlgo" }
+TAG_3 = { name = "data" }
+TAG_4 = { name = "tag", comment = "tag to validate" }
+
+[mac_one_shot_validate.response]
+TAG_1 = { name = "result", type = "Se050Result" }
+
 [get_version]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"

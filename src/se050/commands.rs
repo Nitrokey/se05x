@@ -3259,6 +3259,436 @@ impl<'data, W: Writer> Se050Command<W> for CipherOneShotDecrypt<'data> {
     type Response<'rdata> = CipherOneShotDecryptResponse<'rdata>;
 }
 
+// ************* MacGenerateInit ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacGenerateInit {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mac_id: CryptoObjectId,
+}
+
+impl MacGenerateInit {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>) {
+        (Tlv::new(TAG_1, self.key_id), Tlv::new(TAG_2, self.mac_id))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_GENERATE, self.data(), 0)
+    }
+}
+
+impl DataSource for MacGenerateInit {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for MacGenerateInit {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for MacGenerateInit {
+    type Response<'rdata> = ();
+}
+
+// ************* MacValidateInit ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacValidateInit {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mac_id: CryptoObjectId,
+}
+
+impl MacValidateInit {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>) {
+        (Tlv::new(TAG_1, self.key_id), Tlv::new(TAG_2, self.mac_id))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_VALIDATE, self.data(), 0)
+    }
+}
+
+impl DataSource for MacValidateInit {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for MacValidateInit {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for MacValidateInit {
+    type Response<'rdata> = ();
+}
+
+// ************* MacUpdate ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacUpdate<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mac_id: CryptoObjectId,
+}
+
+impl<'data> MacUpdate<'data> {
+    fn data(&self) -> (Tlv<&'data [u8]>, Tlv<CryptoObjectId>) {
+        (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_UPDATE,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for MacUpdate<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for MacUpdate<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for MacUpdate<'data> {
+    type Response<'rdata> = ();
+}
+
+// ************* MacGenerateFinal ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacGenerateFinal<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mac_id: CryptoObjectId,
+}
+
+impl<'data> MacGenerateFinal<'data> {
+    fn data(&self) -> (Tlv<&'data [u8]>, Tlv<CryptoObjectId>) {
+        (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_FINAL,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for MacGenerateFinal<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for MacGenerateFinal<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct MacGenerateFinalResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub mac: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for MacGenerateFinalResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (mac, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { mac })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for MacGenerateFinal<'data> {
+    type Response<'rdata> = MacGenerateFinalResponse<'rdata>;
+}
+
+// ************* MacValidateFinal ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacValidateFinal<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mac_id: CryptoObjectId,
+    /// Tag to validate
+    ///
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub tag: &'data [u8],
+}
+
+impl<'data> MacValidateFinal<'data> {
+    fn data(&self) -> (Tlv<&'data [u8]>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.data),
+            Tlv::new(TAG_2, self.mac_id),
+            Tlv::new(TAG_3, self.tag),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_FINAL,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for MacValidateFinal<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for MacValidateFinal<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct MacValidateFinalResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub mac: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for MacValidateFinalResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (mac, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { mac })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for MacValidateFinal<'data> {
+    type Response<'rdata> = MacValidateFinalResponse<'rdata>;
+}
+
+// ************* MacOneShotGenerate ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacOneShotGenerate<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: MacAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub plaintext: &'data [u8],
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub initialization_vector: Option<&'data [u8]>,
+}
+
+impl<'data> MacOneShotGenerate<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<MacAlgo>,
+        Tlv<&'data [u8]>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.plaintext),
+            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<MacAlgo>,
+        Tlv<&'data [u8]>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_GENERATE_ONESHOT,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for MacOneShotGenerate<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for MacOneShotGenerate<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct MacOneShotGenerateResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub mactext: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for MacOneShotGenerateResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (mactext, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { mactext })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for MacOneShotGenerate<'data> {
+    type Response<'rdata> = MacOneShotGenerateResponse<'rdata>;
+}
+
+// ************* MacOneShotValidate ************* //
+
+#[derive(Clone, Debug)]
+pub struct MacOneShotValidate<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub algo: MacAlgo,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+    /// tag to validate
+    ///
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub tag: &'data [u8],
+}
+
+impl<'data> MacOneShotValidate<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<MacAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.algo),
+            Tlv::new(TAG_3, self.data),
+            Tlv::new(TAG_4, self.tag),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<MacAlgo>,
+        Tlv<&'data [u8]>,
+        Tlv<&'data [u8]>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_VALIDATE_ONESHOT,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for MacOneShotValidate<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for MacOneShotValidate<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct MacOneShotValidateResponse {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub result: Se050Result,
+}
+
+impl<'data> Se050Response<'data> for MacOneShotValidateResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (result, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { result })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for MacOneShotValidate<'data> {
+    type Response<'rdata> = MacOneShotValidateResponse;
+}
+
 // ************* GetVersion ************* //
 
 #[derive(Clone, Debug)]
