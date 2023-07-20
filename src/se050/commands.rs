@@ -2861,6 +2861,404 @@ impl<'data, W: Writer> Se050Command<W> for RsaDecrypt<'data> {
     type Response<'rdata> = RsaDecryptResponse<'rdata>;
 }
 
+// ************* CipherEncryptInit ************* //
+
+#[derive(Clone, Debug)]
+pub struct CipherEncryptInit<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub cipher_id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub initialization_vector: &'data [u8],
+}
+
+impl<'data> CipherEncryptInit<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.cipher_id),
+            Tlv::new(TAG_4, self.initialization_vector),
+        )
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_ENCRYPT, self.data(), 0)
+    }
+}
+
+impl<'data> DataSource for CipherEncryptInit<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for CipherEncryptInit<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for CipherEncryptInit<'data> {
+    type Response<'rdata> = ();
+}
+
+// ************* CipherDecryptInit ************* //
+
+#[derive(Clone, Debug)]
+pub struct CipherDecryptInit<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub cipher_id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub initialization_vector: Option<&'data [u8]>,
+}
+
+impl<'data> CipherDecryptInit<'data> {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.cipher_id),
+            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_DECRYPT, self.data(), 0)
+    }
+}
+
+impl<'data> DataSource for CipherDecryptInit<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for CipherDecryptInit<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for CipherDecryptInit<'data> {
+    type Response<'rdata> = ();
+}
+
+// ************* CipherUpdate ************* //
+
+#[derive(Clone, Debug)]
+pub struct CipherUpdate<'data> {
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub cipher_id: CryptoObjectId,
+    /// input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used
+    ///
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> CipherUpdate<'data> {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+        (Tlv::new(TAG_2, self.cipher_id), Tlv::new(TAG_3, self.data))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_UPDATE,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for CipherUpdate<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for CipherUpdate<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct CipherUpdateResponse<'data> {
+    /// output data
+    ///
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for CipherUpdateResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (data, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { data })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for CipherUpdate<'data> {
+    type Response<'rdata> = CipherUpdateResponse<'rdata>;
+}
+
+// ************* CipherFinal ************* //
+
+#[derive(Clone, Debug)]
+pub struct CipherFinal<'data> {
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub cipher_id: CryptoObjectId,
+    /// input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used
+    ///
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> CipherFinal<'data> {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+        (Tlv::new(TAG_2, self.cipher_id), Tlv::new(TAG_3, self.data))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_FINAL,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for CipherFinal<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for CipherFinal<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct CipherFinalResponse<'data> {
+    /// output data
+    ///
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for CipherFinalResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (data, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { data })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for CipherFinal<'data> {
+    type Response<'rdata> = CipherFinalResponse<'rdata>;
+}
+
+// ************* CipherOneShotEncrypt ************* //
+
+#[derive(Clone, Debug)]
+pub struct CipherOneShotEncrypt<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mode: CipherMode,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub plaintext: &'data [u8],
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub initialization_vector: Option<&'data [u8]>,
+}
+
+impl<'data> CipherOneShotEncrypt<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<CipherMode>,
+        Tlv<&'data [u8]>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.mode),
+            Tlv::new(TAG_3, self.plaintext),
+            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<CipherMode>,
+        Tlv<&'data [u8]>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_ENCRYPT_ONESHOT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl<'data> DataSource for CipherOneShotEncrypt<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for CipherOneShotEncrypt<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct CipherOneShotEncryptResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub ciphertext: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for CipherOneShotEncryptResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (ciphertext, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { ciphertext })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for CipherOneShotEncrypt<'data> {
+    type Response<'rdata> = CipherOneShotEncryptResponse<'rdata>;
+}
+
+// ************* CipherOneShotDecrypt ************* //
+
+#[derive(Clone, Debug)]
+pub struct CipherOneShotDecrypt<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub key_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub mode: CipherMode,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub ciphertext: &'data [u8],
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub initialization_vector: Option<&'data [u8]>,
+}
+
+impl<'data> CipherOneShotDecrypt<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<CipherMode>,
+        Tlv<&'data [u8]>,
+        Option<Tlv<&'data [u8]>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.key_id),
+            Tlv::new(TAG_2, self.mode),
+            Tlv::new(TAG_3, self.ciphertext),
+            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<CipherMode>,
+        Tlv<&'data [u8]>,
+        Option<Tlv<&'data [u8]>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_DECRYPT_ONESHOT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl<'data> DataSource for CipherOneShotDecrypt<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for CipherOneShotDecrypt<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct CipherOneShotDecryptResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub plaintext: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for CipherOneShotDecryptResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (plaintext, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { plaintext })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for CipherOneShotDecrypt<'data> {
+    type Response<'rdata> = CipherOneShotDecryptResponse<'rdata>;
+}
+
 // ************* GetVersion ************* //
 
 #[derive(Clone, Debug)]

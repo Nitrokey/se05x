@@ -614,6 +614,87 @@ TAG_3 = { name = "ciphertext" }
 # TODO type (ASN.1 signature)
 TAG_1 = { name = "plaintext" }
 
+# Crypto operations AES/DES
+
+[cipher_encrypt_init]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_CIPHER"
+p2 = "P2_ENCRYPT"
+
+[cipher_encrypt_init.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
+TAG_4 = { name= "initialization_vector" }
+
+[cipher_decrypt_init]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_CIPHER"
+p2 = "P2_DECRYPT"
+
+[cipher_decrypt_init.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
+TAG_4 = { name = "initialization_vector", optional = true }
+
+[cipher_update]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_CIPHER"
+p2 = "P2_UPDATE"
+le = "ExpectedLen::Max"
+
+[cipher_update.payload]
+TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
+TAG_3 = { name= "data", comment = "input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used" }
+
+[cipher_update.response]
+TAG_1 = { name= "data", comment = "output data" }
+
+[cipher_final]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_CIPHER"
+p2 = "P2_FINAL"
+le = "ExpectedLen::Max"
+
+[cipher_final.payload]
+TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
+TAG_3 = { name= "data", comment = "input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used" }
+
+[cipher_final.response]
+TAG_1 = { name= "data", comment = "output data" }
+
+[cipher_one_shot_encrypt]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_CIPHER"
+p2 = "P2_ENCRYPT_ONESHOT"
+
+[cipher_one_shot_encrypt.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "mode", type = "CipherMode" }
+TAG_3 = { name = "plaintext" }
+TAG_4 = { name = "initialization_vector", optional = true }
+
+[cipher_one_shot_encrypt.response]
+TAG_1 = { name = "ciphertext" }
+
+[cipher_one_shot_decrypt]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_CIPHER"
+p2 = "P2_DECRYPT_ONESHOT"
+
+[cipher_one_shot_decrypt.payload]
+TAG_1 = { name = "key_id", type = "ObjectId" }
+TAG_2 = { name = "mode", type = "CipherMode" }
+TAG_3 = { name = "ciphertext" }
+TAG_4 = { name = "initialization_vector", optional = true }
+
+[cipher_one_shot_decrypt.response]
+TAG_1 = { name = "plaintext" }
 
 [get_version]
 cla = "NO_SM_CLA"
