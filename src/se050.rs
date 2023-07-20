@@ -1367,3 +1367,16 @@ enum_data!(
         Pkcs1Oaep = RSA_PKCS1_OAEP,
     }
 );
+
+enum_data!(
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum DigestMode {
+        NoHash = DIGEST_NO_HASH,
+        Sha = DIGEST_SHA,
+        Sha224 = DIGEST_SHA224,
+        Sha256 = DIGEST_SHA256,
+        Sha384 = DIGEST_SHA384,
+        Sha512 = DIGEST_SHA512,
+    }
+);

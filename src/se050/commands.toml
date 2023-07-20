@@ -790,6 +790,41 @@ TAG_4 = { name = "tag", comment = "tag to validate" }
 [mac_one_shot_validate.response]
 TAG_1 = { name = "result", type = "Se050Result" }
 
+# Key derivation functions
+
+[hkdf]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_DEFAULT"
+p2 = "P2_HKDF"
+le = "ExpectedLen::Max"
+
+[hkdf.payload]
+TAG_1 = { name = "ikm", type = "ObjectId" }
+TAG_2 = { name = "digest", type = "DigestMode" }
+TAG_3 = { name = "salt", comment = "up to 64 bytes", optional = true }
+TAG_4 = { name = "info", optional = true }
+TAG_5 = { name = "requested_len", type = "Be<u16>", comment = "Up to MAX_APDU_PAYLOAD_LENGTH (= 889)"}
+
+[hkdf.response]
+TAG_1 = { name = "data" }
+
+[pbkdf2]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_DEFAULT"
+p2 = "P2_PBKDF"
+le = "ExpectedLen::Max"
+
+[pbkdf2.payload]
+TAG_1 = { name = "password", type = "ObjectId" }
+TAG_2 = { name = "salt", comment = "up to 64 bytes", optional = true }
+TAG_3 = { name = "iterations", type = "Be<u16>", comment = "Up to 0x7FFF" }
+TAG_4 = { name = "requested_len", type = "Be<u16>", comment = "Up to 512" }
+
+[pbkdf2.response]
+TAG_1 = { name = "data" }
+
 [get_version]
 cla = "NO_SM_CLA"
 ins = "INS_MGMT"

@@ -3689,6 +3689,195 @@ impl<'data, W: Writer> Se050Command<W> for MacOneShotValidate<'data> {
     type Response<'rdata> = MacOneShotValidateResponse;
 }
 
+// ************* Hkdf ************* //
+
+#[derive(Clone, Debug)]
+pub struct Hkdf<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub ikm: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub digest: DigestMode,
+    /// up to 64 bytes
+    ///
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub salt: Option<&'data [u8]>,
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub info: Option<&'data [u8]>,
+    /// Up to MAX_APDU_PAYLOAD_LENGTH (= 889)
+    ///
+    /// Serialized to TLV tag [`TAG_5`](TAG_5)
+    pub requested_len: Be<u16>,
+}
+
+impl<'data> Hkdf<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Tlv<DigestMode>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Tlv<Be<u16>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.ikm),
+            Tlv::new(TAG_2, self.digest),
+            self.salt.map(|data| Tlv::new(TAG_3, data)),
+            self.info.map(|data| Tlv::new(TAG_4, data)),
+            Tlv::new(TAG_5, self.requested_len),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Tlv<DigestMode>,
+        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<&'data [u8]>>,
+        Tlv<Be<u16>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_HKDF,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for Hkdf<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for Hkdf<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct HkdfResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for HkdfResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (data, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { data })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for Hkdf<'data> {
+    type Response<'rdata> = HkdfResponse<'rdata>;
+}
+
+// ************* Pbkdf2 ************* //
+
+#[derive(Clone, Debug)]
+pub struct Pbkdf2<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub password: ObjectId,
+    /// up to 64 bytes
+    ///
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub salt: Option<&'data [u8]>,
+    /// Up to 0x7FFF
+    ///
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub iterations: Be<u16>,
+    /// Up to 512
+    ///
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    pub requested_len: Be<u16>,
+}
+
+impl<'data> Pbkdf2<'data> {
+    fn data(
+        &self,
+    ) -> (
+        Tlv<ObjectId>,
+        Option<Tlv<&'data [u8]>>,
+        Tlv<Be<u16>>,
+        Tlv<Be<u16>>,
+    ) {
+        (
+            Tlv::new(TAG_1, self.password),
+            self.salt.map(|data| Tlv::new(TAG_2, data)),
+            Tlv::new(TAG_3, self.iterations),
+            Tlv::new(TAG_4, self.requested_len),
+        )
+    }
+    fn command(
+        &self,
+    ) -> CommandBuilder<(
+        Tlv<ObjectId>,
+        Option<Tlv<&'data [u8]>>,
+        Tlv<Be<u16>>,
+        Tlv<Be<u16>>,
+    )> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_PBKDF,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for Pbkdf2<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for Pbkdf2<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct Pbkdf2Response<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for Pbkdf2Response<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (data, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { data })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for Pbkdf2<'data> {
+    type Response<'rdata> = Pbkdf2Response<'rdata>;
+}
+
 // ************* GetVersion ************* //
 
 #[derive(Clone, Debug)]
