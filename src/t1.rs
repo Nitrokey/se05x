@@ -416,7 +416,6 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     }
 
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
-        trace!("Reading");
         match self.twi.read(self.se_address, buffer) {
             Ok(_) => return Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
@@ -443,13 +442,12 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     }
 
     pub fn receive_data(&mut self, buffer: &mut [u8]) -> Result<DataReceived, Error> {
-        let mut header_buffer = [0; HEADER_LEN];
         let mut written = 0;
-        let mut crc_buf = [0; TRAILER_LEN];
         let mut retry_count = self.bwt / self.mpot + 1;
         let mut i = 0;
         loop {
-            debug!("{retry_count}, {i}, {written}, {}, {}", self.bwt, self.mpot);
+            let mut header_buffer = [0; HEADER_LEN];
+            let mut crc_buf = [0; TRAILER_LEN];
             i += 1;
             if i == retry_count {
                 break;
@@ -503,11 +501,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
 
             let (seq, more) = match pcb {
                 Pcb::S(SBlock::WtxRequest) => {
-                    debug!("Got WtxRequest");
                     if len != 1 {
                         return Err(Error::Line(line!()));
                     }
                     let mult = data_buf[0];
+                    debug!("Got WtxRequest, {mult}");
                     let frame = [
                         self.nad_hd2se,
                         Pcb::S(SBlock::WtxResponse).to_byte(),
@@ -515,10 +513,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
                         mult,
                     ];
                     let [crc1, crc2] = Crc::calculate(&frame).to_le_bytes();
-                    self.write(&[frame[0], frame[1], frame[2], crc1, crc2])?;
+                    self.write(&[frame[0], frame[1], frame[2], frame[3], crc1, crc2])?;
 
                     retry_count = (self.bwt * mult as u32) / self.mpot + 1;
                     i = 0;
+                    self.delay.delay_us(100_000);
                     continue;
                 }
                 Pcb::S(block) => {

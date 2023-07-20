@@ -550,7 +550,7 @@ TAG_1 = { name = "shared_secret" }
 
 [rsa_sign]
 cla = "NO_SM_CLA"
-ins = "INS_MGMT"
+ins = "INS_CRYPTO"
 p1 = "P1_SIGNATURE"
 p2 = "P2_SIGN"
 le = "ExpectedLen::Max"
@@ -566,7 +566,7 @@ TAG_1 = { name = "signature" }
 
 [rsa_verify]
 cla = "NO_SM_CLA"
-ins = "INS_MGMT"
+ins = "INS_CRYPTO"
 p1 = "P1_SIGNATURE"
 p2 = "P2_VERIFY"
 le = 0x03
@@ -576,7 +576,7 @@ TAG_1 = { name = "key_id", type = "ObjectId" }
 TAG_2 = { name = "algo", type = "RsaSignatureAlgo" }
 TAG_3 = { name = "data" }
 # TODO type (ASN.1 signature)
-TAG_4 = { name = "signature" }
+TAG_5 = { name = "signature" }
 
 [rsa_verify.response]
 # TODO type (ASN.1 signature)
@@ -584,7 +584,7 @@ TAG_1 = { name = "result", type = "Se050Result" }
 
 [rsa_encrypt]
 cla = "NO_SM_CLA"
-ins = "INS_MGMT"
+ins = "INS_CRYPTO"
 p1 = "P1_SIGNATURE"
 p2 = "P2_ENCRYPT_ONESHOT"
 le = "ExpectedLen::Max"
@@ -600,7 +600,7 @@ TAG_1 = { name = "ciphertext" }
 
 [rsa_decrypt]
 cla = "NO_SM_CLA"
-ins = "INS_MGMT"
+ins = "INS_CRYPTO"
 p1 = "P1_SIGNATURE"
 p2 = "P2_DECRYPT_ONESHOT"
 le = "ExpectedLen::Max"

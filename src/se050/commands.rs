@@ -2587,7 +2587,7 @@ impl<'data> RsaSign<'data> {
     fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>)> {
         CommandBuilder::new(
             NO_SM_CLA,
-            INS_MGMT,
+            INS_CRYPTO,
             P1_SIGNATURE,
             P2_SIGN,
             self.data(),
@@ -2644,7 +2644,7 @@ pub struct RsaVerify<'data> {
     pub algo: RsaSignatureAlgo,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
-    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    /// Serialized to TLV tag [`TAG_5`](TAG_5)
     pub signature: &'data [u8],
 }
 
@@ -2661,7 +2661,7 @@ impl<'data> RsaVerify<'data> {
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_4, self.signature),
+            Tlv::new(TAG_5, self.signature),
         )
     }
     fn command(
@@ -2672,7 +2672,14 @@ impl<'data> RsaVerify<'data> {
         Tlv<&'data [u8]>,
         Tlv<&'data [u8]>,
     )> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_SIGNATURE, P2_VERIFY, self.data(), 3)
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_VERIFY,
+            self.data(),
+            3,
+        )
     }
 }
 
@@ -2737,7 +2744,7 @@ impl<'data> RsaEncrypt<'data> {
     fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>)> {
         CommandBuilder::new(
             NO_SM_CLA,
-            INS_MGMT,
+            INS_CRYPTO,
             P1_SIGNATURE,
             P2_ENCRYPT_ONESHOT,
             self.data(),
@@ -2807,7 +2814,7 @@ impl<'data> RsaDecrypt<'data> {
     fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>)> {
         CommandBuilder::new(
             NO_SM_CLA,
-            INS_MGMT,
+            INS_CRYPTO,
             P1_SIGNATURE,
             P2_DECRYPT_ONESHOT,
             self.data(),
