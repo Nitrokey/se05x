@@ -26,6 +26,8 @@ pub struct Se050<Twi, D> {
     t1: T1oI2C<Twi, D>,
 }
 
+pub const MAX_APDU_PAYLOAD_LENGTH: usize = 889;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
     Unknown,
@@ -1368,15 +1370,21 @@ enum_data!(
     }
 );
 
-enum_data!(
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    #[repr(u8)]
-    pub enum DigestMode {
-        NoHash = DIGEST_NO_HASH,
-        Sha = DIGEST_SHA,
-        Sha224 = DIGEST_SHA224,
-        Sha256 = DIGEST_SHA256,
-        Sha384 = DIGEST_SHA384,
-        Sha512 = DIGEST_SHA512,
+#[cfg(test)]
+mod tests {
+    use super::{commands::CipherOneShotEncrypt, *};
+
+    #[test]
+    fn encrypt_length() {
+        let key_id = ObjectId(hex!("03445566"));
+        let plaintext_data = [2; 32 * 15];
+        let iv = [0xFF; 16];
+        let command = CipherOneShotEncrypt {
+            key_id,
+            mode: CipherMode::AesCbcPkcs5,
+            plaintext: &plaintext_data,
+            initialization_vector: Some(&iv),
+        };
+        assert!(command.len() < MAX_APDU_PAYLOAD_LENGTH);
     }
-);
+}

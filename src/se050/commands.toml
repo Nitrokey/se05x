@@ -151,7 +151,7 @@ p2 = "P2_DEFAULT"
 TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }
 TAG_MAX_ATTEMPTS = { name = "max_attempts", type = "Be<u16>", optional = true }
 TAG_1 = { name = "object_id", type = "ObjectId" }
-TAG_2 = { name = "kek_id", type = "ObjectId" }
+TAG_2 = { name = "kek_id", type = "ObjectId", optional = true }
 TAG_3 = { name = "value" }
 
 [write_binary]
@@ -625,7 +625,7 @@ p2 = "P2_ENCRYPT"
 [cipher_encrypt_init.payload]
 TAG_1 = { name = "key_id", type = "ObjectId" }
 TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
-TAG_4 = { name= "initialization_vector" }
+TAG_4 = { name= "initialization_vector", optional = true }
 
 [cipher_decrypt_init]
 cla = "NO_SM_CLA"
@@ -671,6 +671,7 @@ cla = "NO_SM_CLA"
 ins = "INS_CRYPTO"
 p1 = "P1_CIPHER"
 p2 = "P2_ENCRYPT_ONESHOT"
+le = "ExpectedLen::Max"
 
 [cipher_one_shot_encrypt.payload]
 TAG_1 = { name = "key_id", type = "ObjectId" }
@@ -686,6 +687,7 @@ cla = "NO_SM_CLA"
 ins = "INS_CRYPTO"
 p1 = "P1_CIPHER"
 p2 = "P2_DECRYPT_ONESHOT"
+le = "ExpectedLen::Max"
 
 [cipher_one_shot_decrypt.payload]
 TAG_1 = { name = "key_id", type = "ObjectId" }
@@ -741,7 +743,7 @@ TAG_1 = { name= "data" }
 TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
 
 [mac_generate_final.response]
-TAG_1 = { name= "mac" }
+TAG_1 = { name= "tag" }
 
 [mac_validate_final]
 cla = "NO_SM_CLA"
@@ -751,12 +753,12 @@ p2 = "P2_FINAL"
 le = "ExpectedLen::Max"
 
 [mac_validate_final.payload]
-TAG_1 = { name= "data" }
+TAG_1 = { name = "data" }
 TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
 TAG_3 = { name = "tag", comment = "Tag to validate"}
 
 [mac_validate_final.response]
-TAG_1 = { name= "mac" }
+TAG_1 = { name = "result", type = "Se050Result" }
 
 [mac_one_shot_generate]
 cla = "NO_SM_CLA"
@@ -768,11 +770,10 @@ le = "ExpectedLen::Max"
 [mac_one_shot_generate.payload]
 TAG_1 = { name = "key_id", type = "ObjectId" }
 TAG_2 = { name = "algo", type = "MacAlgo" }
-TAG_3 = { name = "plaintext" }
-TAG_4 = { name = "initialization_vector", optional = true }
+TAG_3 = { name = "data" }
 
 [mac_one_shot_generate.response]
-TAG_1 = { name = "mactext" }
+TAG_1 = { name = "tag" }
 
 [mac_one_shot_validate]
 cla = "NO_SM_CLA"
@@ -785,7 +786,7 @@ le = "ExpectedLen::Max"
 TAG_1 = { name = "key_id", type = "ObjectId" }
 TAG_2 = { name = "algo", type = "MacAlgo" }
 TAG_3 = { name = "data" }
-TAG_4 = { name = "tag", comment = "tag to validate" }
+TAG_5 = { name = "tag", comment = "tag to validate" }
 
 [mac_one_shot_validate.response]
 TAG_1 = { name = "result", type = "Se050Result" }
@@ -801,7 +802,7 @@ le = "ExpectedLen::Max"
 
 [hkdf.payload]
 TAG_1 = { name = "ikm", type = "ObjectId" }
-TAG_2 = { name = "digest", type = "DigestMode" }
+TAG_2 = { name = "digest", type = "Digest" }
 TAG_3 = { name = "salt", comment = "up to 64 bytes", optional = true }
 TAG_4 = { name = "info", optional = true }
 TAG_5 = { name = "requested_len", type = "Be<u16>", comment = "Up to MAX_APDU_PAYLOAD_LENGTH (= 889)"}

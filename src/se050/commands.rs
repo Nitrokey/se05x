@@ -611,7 +611,7 @@ pub struct WriteSymmKey<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
-    pub kek_id: ObjectId,
+    pub kek_id: Option<ObjectId>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub value: &'data [u8],
 }
@@ -623,7 +623,7 @@ impl<'data> WriteSymmKey<'data> {
         Option<Tlv<PolicySet<'data>>>,
         Option<Tlv<Be<u16>>>,
         Tlv<ObjectId>,
-        Tlv<ObjectId>,
+        Option<Tlv<ObjectId>>,
         Tlv<&'data [u8]>,
     ) {
         (
@@ -631,7 +631,7 @@ impl<'data> WriteSymmKey<'data> {
             self.max_attempts
                 .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
             Tlv::new(TAG_1, self.object_id),
-            Tlv::new(TAG_2, self.kek_id),
+            self.kek_id.map(|data| Tlv::new(TAG_2, data)),
             Tlv::new(TAG_3, self.value),
         )
     }
@@ -641,7 +641,7 @@ impl<'data> WriteSymmKey<'data> {
         Option<Tlv<PolicySet<'data>>>,
         Option<Tlv<Be<u16>>>,
         Tlv<ObjectId>,
-        Tlv<ObjectId>,
+        Option<Tlv<ObjectId>>,
         Tlv<&'data [u8]>,
     )> {
         let ins = if self.transient {
@@ -2870,18 +2870,20 @@ pub struct CipherEncryptInit<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub cipher_id: CryptoObjectId,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
-    pub initialization_vector: &'data [u8],
+    pub initialization_vector: Option<&'data [u8]>,
 }
 
 impl<'data> CipherEncryptInit<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>) {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.cipher_id),
-            Tlv::new(TAG_4, self.initialization_vector),
+            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+    fn command(
+        &self,
+    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>)> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_ENCRYPT, self.data(), 0)
     }
 }
@@ -3129,7 +3131,7 @@ impl<'data> CipherOneShotEncrypt<'data> {
             P1_CIPHER,
             P2_ENCRYPT_ONESHOT,
             self.data(),
-            0,
+            ExpectedLen::Max,
         )
     }
 }
@@ -3216,7 +3218,7 @@ impl<'data> CipherOneShotDecrypt<'data> {
             P1_CIPHER,
             P2_DECRYPT_ONESHOT,
             self.data(),
-            0,
+            ExpectedLen::Max,
         )
     }
 }
@@ -3419,12 +3421,12 @@ impl<'data, W: Writer> DataStream<W> for MacGenerateFinal<'data> {
 #[derive(Clone, Debug)]
 pub struct MacGenerateFinalResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub mac: &'data [u8],
+    pub tag: &'data [u8],
 }
 
 impl<'data> Se050Response<'data> for MacGenerateFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let (mac, rem) = loop {
+        let (tag, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
@@ -3433,7 +3435,7 @@ impl<'data> Se050Response<'data> for MacGenerateFinalResponse<'data> {
             }
         };
         let _ = rem;
-        Ok(Self { mac })
+        Ok(Self { tag })
     }
 }
 
@@ -3489,14 +3491,14 @@ impl<'data, W: Writer> DataStream<W> for MacValidateFinal<'data> {
     }
 }
 #[derive(Clone, Debug)]
-pub struct MacValidateFinalResponse<'data> {
+pub struct MacValidateFinalResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub mac: &'data [u8],
+    pub result: Se050Result,
 }
 
-impl<'data> Se050Response<'data> for MacValidateFinalResponse<'data> {
+impl<'data> Se050Response<'data> for MacValidateFinalResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let (mac, rem) = loop {
+        let (result, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
@@ -3505,12 +3507,12 @@ impl<'data> Se050Response<'data> for MacValidateFinalResponse<'data> {
             }
         };
         let _ = rem;
-        Ok(Self { mac })
+        Ok(Self { result })
     }
 }
 
 impl<'data, W: Writer> Se050Command<W> for MacValidateFinal<'data> {
-    type Response<'rdata> = MacValidateFinalResponse<'rdata>;
+    type Response<'rdata> = MacValidateFinalResponse;
 }
 
 // ************* MacOneShotGenerate ************* //
@@ -3522,35 +3524,18 @@ pub struct MacOneShotGenerate<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub algo: MacAlgo,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
-    pub plaintext: &'data [u8],
-    /// Serialized to TLV tag [`TAG_4`](TAG_4)
-    pub initialization_vector: Option<&'data [u8]>,
+    pub data: &'data [u8],
 }
 
 impl<'data> MacOneShotGenerate<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<MacAlgo>,
-        Tlv<&'data [u8]>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<MacAlgo>, Tlv<&'data [u8]>) {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.plaintext),
-            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
+            Tlv::new(TAG_3, self.data),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<MacAlgo>,
-        Tlv<&'data [u8]>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<MacAlgo>, Tlv<&'data [u8]>)> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3578,12 +3563,12 @@ impl<'data, W: Writer> DataStream<W> for MacOneShotGenerate<'data> {
 #[derive(Clone, Debug)]
 pub struct MacOneShotGenerateResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub mactext: &'data [u8],
+    pub tag: &'data [u8],
 }
 
 impl<'data> Se050Response<'data> for MacOneShotGenerateResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let (mactext, rem) = loop {
+        let (tag, rem) = loop {
             let mut rem_inner = rem;
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
@@ -3592,7 +3577,7 @@ impl<'data> Se050Response<'data> for MacOneShotGenerateResponse<'data> {
             }
         };
         let _ = rem;
-        Ok(Self { mactext })
+        Ok(Self { tag })
     }
 }
 
@@ -3612,7 +3597,7 @@ pub struct MacOneShotValidate<'data> {
     pub data: &'data [u8],
     /// tag to validate
     ///
-    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    /// Serialized to TLV tag [`TAG_5`](TAG_5)
     pub tag: &'data [u8],
 }
 
@@ -3629,7 +3614,7 @@ impl<'data> MacOneShotValidate<'data> {
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_4, self.tag),
+            Tlv::new(TAG_5, self.tag),
         )
     }
     fn command(
@@ -3696,7 +3681,7 @@ pub struct Hkdf<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub ikm: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
-    pub digest: DigestMode,
+    pub digest: Digest,
     /// up to 64 bytes
     ///
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
@@ -3714,7 +3699,7 @@ impl<'data> Hkdf<'data> {
         &self,
     ) -> (
         Tlv<ObjectId>,
-        Tlv<DigestMode>,
+        Tlv<Digest>,
         Option<Tlv<&'data [u8]>>,
         Option<Tlv<&'data [u8]>>,
         Tlv<Be<u16>>,
@@ -3731,7 +3716,7 @@ impl<'data> Hkdf<'data> {
         &self,
     ) -> CommandBuilder<(
         Tlv<ObjectId>,
-        Tlv<DigestMode>,
+        Tlv<Digest>,
         Option<Tlv<&'data [u8]>>,
         Option<Tlv<&'data [u8]>>,
         Tlv<Be<u16>>,
