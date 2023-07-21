@@ -1246,12 +1246,12 @@ enum_data!(
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum Digest {
-        DigestNoHash = DIGEST_NO_HASH,
-        DigestSha = DIGEST_SHA,
-        DigestSha224 = DIGEST_SHA224,
-        DigestSha256 = DIGEST_SHA256,
-        DigestSha384 = DIGEST_SHA384,
-        DigestSha512 = DIGEST_SHA512,
+        NoHash = DIGEST_NO_HASH,
+        Sha = DIGEST_SHA,
+        Sha224 = DIGEST_SHA224,
+        Sha256 = DIGEST_SHA256,
+        Sha384 = DIGEST_SHA384,
+        Sha512 = DIGEST_SHA512,
     }
 );
 

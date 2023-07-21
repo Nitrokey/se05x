@@ -3350,14 +3350,7 @@ impl<'data> MacUpdate<'data> {
         (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
     }
     fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>)> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_CRYPTO,
-            P1_MAC,
-            P2_UPDATE,
-            self.data(),
-            ExpectedLen::Max,
-        )
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_UPDATE, self.data(), 0)
     }
 }
 
@@ -3861,6 +3854,206 @@ impl<'data> Se050Response<'data> for Pbkdf2Response<'data> {
 
 impl<'data, W: Writer> Se050Command<W> for Pbkdf2<'data> {
     type Response<'rdata> = Pbkdf2Response<'rdata>;
+}
+
+// ************* DigestInit ************* //
+
+#[derive(Clone, Debug)]
+pub struct DigestInit {
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub digest_id: CryptoObjectId,
+}
+
+impl DigestInit {
+    fn data(&self) -> Tlv<CryptoObjectId> {
+        Tlv::new(TAG_2, self.digest_id)
+    }
+    fn command(&self) -> CommandBuilder<Tlv<CryptoObjectId>> {
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_INIT, self.data(), 0)
+    }
+}
+
+impl DataSource for DigestInit {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for DigestInit {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<W: Writer> Se050Command<W> for DigestInit {
+    type Response<'rdata> = ();
+}
+
+// ************* DigestUpdate ************* //
+
+#[derive(Clone, Debug)]
+pub struct DigestUpdate<'data> {
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub digest_id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> DigestUpdate<'data> {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+        (Tlv::new(TAG_2, self.digest_id), Tlv::new(TAG_3, self.data))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_UPDATE, self.data(), 0)
+    }
+}
+
+impl<'data> DataSource for DigestUpdate<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for DigestUpdate<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for DigestUpdate<'data> {
+    type Response<'rdata> = ();
+}
+
+// ************* DigestFinal ************* //
+
+#[derive(Clone, Debug)]
+pub struct DigestFinal<'data> {
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub digest_id: CryptoObjectId,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    pub data: &'data [u8],
+}
+
+impl<'data> DigestFinal<'data> {
+    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+        (Tlv::new(TAG_2, self.digest_id), Tlv::new(TAG_3, self.data))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_FINAL,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for DigestFinal<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for DigestFinal<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct DigestFinalResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub digest: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for DigestFinalResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (digest, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { digest })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for DigestFinal<'data> {
+    type Response<'rdata> = DigestFinalResponse<'rdata>;
+}
+
+// ************* DigestOneShot ************* //
+
+#[derive(Clone, Debug)]
+pub struct DigestOneShot<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub algo: Digest,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    pub data: &'data [u8],
+}
+
+impl<'data> DigestOneShot<'data> {
+    fn data(&self) -> (Tlv<Digest>, Tlv<&'data [u8]>) {
+        (Tlv::new(TAG_1, self.algo), Tlv::new(TAG_2, self.data))
+    }
+    fn command(&self) -> CommandBuilder<(Tlv<Digest>, Tlv<&'data [u8]>)> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_ONESHOT,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl<'data> DataSource for DigestOneShot<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for DigestOneShot<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct DigestOneShotResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub digest: &'data [u8],
+}
+
+impl<'data> Se050Response<'data> for DigestOneShotResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (digest, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { digest })
+    }
+}
+
+impl<'data, W: Writer> Se050Command<W> for DigestOneShot<'data> {
+    type Response<'rdata> = DigestOneShotResponse<'rdata>;
 }
 
 // ************* GetVersion ************* //

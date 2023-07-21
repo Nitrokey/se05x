@@ -625,7 +625,7 @@ p2 = "P2_ENCRYPT"
 [cipher_encrypt_init.payload]
 TAG_1 = { name = "key_id", type = "ObjectId" }
 TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
-TAG_4 = { name= "initialization_vector", optional = true }
+TAG_4 = { name = "initialization_vector", optional = true }
 
 [cipher_decrypt_init]
 cla = "NO_SM_CLA"
@@ -647,10 +647,10 @@ le = "ExpectedLen::Max"
 
 [cipher_update.payload]
 TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
-TAG_3 = { name= "data", comment = "input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used" }
+TAG_3 = { name = "data", comment = "input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used" }
 
 [cipher_update.response]
-TAG_1 = { name= "data", comment = "output data" }
+TAG_1 = { name = "data", comment = "output data" }
 
 [cipher_final]
 cla = "NO_SM_CLA"
@@ -661,10 +661,10 @@ le = "ExpectedLen::Max"
 
 [cipher_final.payload]
 TAG_2 = { name = "cipher_id", type = "CryptoObjectId" }
-TAG_3 = { name= "data", comment = "input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used" }
+TAG_3 = { name = "data", comment = "input data, can be either plaintext or ciphertext depending on whether cipher_decrypt_init or cipher_encrypt_init was used" }
 
 [cipher_final.response]
-TAG_1 = { name= "data", comment = "output data" }
+TAG_1 = { name = "data", comment = "output data" }
 
 [cipher_one_shot_encrypt]
 cla = "NO_SM_CLA"
@@ -725,10 +725,9 @@ cla = "NO_SM_CLA"
 ins = "INS_CRYPTO"
 p1 = "P1_MAC"
 p2 = "P2_UPDATE"
-le = "ExpectedLen::Max"
 
 [mac_update.payload]
-TAG_1 = { name= "data" }
+TAG_1 = { name = "data" }
 TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
 
 [mac_generate_final]
@@ -739,11 +738,11 @@ p2 = "P2_FINAL"
 le = "ExpectedLen::Max"
 
 [mac_generate_final.payload]
-TAG_1 = { name= "data" }
+TAG_1 = { name = "data" }
 TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
 
 [mac_generate_final.response]
-TAG_1 = { name= "tag" }
+TAG_1 = { name = "tag" }
 
 [mac_validate_final]
 cla = "NO_SM_CLA"
@@ -828,6 +827,56 @@ TAG_1 = { name = "data" }
 
 # TODO MIFARE DESFire 
 # TODO TLS handshake support
+
+# Digest Operations
+
+[digest_init]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_DEFAULT"
+p2 = "P2_INIT"
+
+[digest_init.payload]
+TAG_2 = { name = "digest_id", type = "CryptoObjectId" }
+
+[digest_update]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_DEFAULT"
+p2 = "P2_UPDATE"
+
+[digest_update.payload]
+TAG_2 = { name = "digest_id", type = "CryptoObjectId" }
+TAG_3 = { name = "data" }
+
+[digest_final]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_DEFAULT"
+p2 = "P2_FINAL"
+le = "ExpectedLen::Max"
+
+[digest_final.payload]
+TAG_2 = { name = "digest_id", type = "CryptoObjectId" }
+TAG_3 = { name = "data" }
+
+[digest_final.response]
+TAG_1 = { name = "digest" }
+
+[digest_one_shot]
+cla = "NO_SM_CLA"
+ins = "INS_CRYPTO"
+p1 = "P1_DEFAULT"
+p2 = "P2_ONESHOT"
+le = "ExpectedLen::Max"
+
+[digest_one_shot.payload]
+TAG_1 = { name = "algo", type = "Digest" }
+TAG_2 = { name = "data" }
+
+[digest_one_shot.response]
+TAG_1 = { name = "digest" }
+
 
 [get_version]
 cla = "NO_SM_CLA"
