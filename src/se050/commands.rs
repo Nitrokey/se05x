@@ -2745,7 +2745,7 @@ impl<'data> RsaEncrypt<'data> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
-            P1_SIGNATURE,
+            P1_RSA,
             P2_ENCRYPT_ONESHOT,
             self.data(),
             ExpectedLen::Max,
@@ -2815,7 +2815,7 @@ impl<'data> RsaDecrypt<'data> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
-            P1_SIGNATURE,
+            P1_RSA,
             P2_DECRYPT_ONESHOT,
             self.data(),
             ExpectedLen::Max,

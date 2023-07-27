@@ -585,7 +585,7 @@ TAG_1 = { name = "result", type = "Se050Result" }
 [rsa_encrypt]
 cla = "NO_SM_CLA"
 ins = "INS_CRYPTO"
-p1 = "P1_SIGNATURE"
+p1 = "P1_RSA"
 p2 = "P2_ENCRYPT_ONESHOT"
 le = "ExpectedLen::Max"
 
@@ -595,13 +595,12 @@ TAG_2 = { name = "algo", type = "RsaEncryptionAlgo" }
 TAG_3 = { name = "plaintext" }
 
 [rsa_encrypt.response]
-# TODO type (ASN.1 signature)
 TAG_1 = { name = "ciphertext" }
 
 [rsa_decrypt]
 cla = "NO_SM_CLA"
 ins = "INS_CRYPTO"
-p1 = "P1_SIGNATURE"
+p1 = "P1_RSA"
 p2 = "P2_DECRYPT_ONESHOT"
 le = "ExpectedLen::Max"
 
@@ -611,7 +610,6 @@ TAG_2 = { name = "algo", type = "RsaEncryptionAlgo" }
 TAG_3 = { name = "ciphertext" }
 
 [rsa_decrypt.response]
-# TODO type (ASN.1 signature)
 TAG_1 = { name = "plaintext" }
 
 # Crypto operations AES/DES
