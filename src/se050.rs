@@ -122,13 +122,13 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         }
     }
 
-    pub fn enable(&mut self) -> Result<(), Error> {
+    pub fn enable(&mut self) -> Result<Atr, Error> {
         self.t1.resync()?;
         self.t1.interface_soft_reset(&mut [0; 64])?;
         let mut resp_buffer = [0; 9];
         let atr = self.run_command(&Select, &mut resp_buffer)?;
         debug!("Got ATR: {atr:02x?}");
-        Ok(())
+        Ok(atr)
     }
 
     pub fn run_command<'buf, C: for<'a> Se050Command<FrameSender<'a, Twi, D>>>(
