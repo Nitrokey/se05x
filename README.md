@@ -12,8 +12,8 @@ It contains an implementation of the T=1 protocol and the ISO7816-4 APDUs that a
 This crate is under heavy development.
 
 ```rust,ignore
-let i2c: impl I2CForT1 = …;
-let delay: impl DelayUs<u32> = …;
+let i2c: impl I2CForT1 = todo!();
+let delay: impl DelayUs<u32> = todo!();
 let mut se050 = Se050::new(i2c, address, delay);
 let user_id = ObjectId(hex!("01020304"));
 
