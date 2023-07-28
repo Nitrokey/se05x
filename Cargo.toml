@@ -1,12 +1,15 @@
+# Copyright (C) 2023 Nitrokey GmbH
+# SPDX-License-Identifier: CC0-1.0
+
 [package]
 name = "se050"
 version = "0.0.1"
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
 
 edition = "2021"
-repository = "https://github.com/robertstojicptb/se050"
+repository = "https://github.com/sosthene-nitrokey/se050-generation"
 license = "Apache-2.0 OR MIT"
-description = "Driver for NXP SE050"
+description = "Driver for NXP SE05X"
 
 [dependencies]
 bitflags = "2.3.2"

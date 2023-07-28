@@ -1,3 +1,6 @@
+// Copyright (C) 2023 Nitrokey GmbH
+// SPDX-License-Identifier: LGPL-3.0-only
+
 //! Copied from [plug-and-trust/se05x_ecc_curves_values.h](https://github.com/NXP/plug-and-trust/blob/master/hostlib/hostLib/inc/se05x_ecc_curves_values.h)
 
 use hex_literal::hex;

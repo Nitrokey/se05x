@@ -1,3 +1,6 @@
+// Copyright (C) 2023 Nitrokey GmbH
+// SPDX-License-Identifier: LGPL-3.0-only
+
 use bitflags::bitflags;
 use iso7816::command::{DataSource, DataStream, Writer};
 

@@ -1,3 +1,6 @@
+# Copyright (C) 2023 Nitrokey GmbH
+# SPDX-License-Identifier: LGPL-3.0-only
+
 import toml
 import sys
 
@@ -68,6 +71,10 @@ if len(sys.argv) != 3:
 outfile = open(sys.argv[2], "w")
 data = toml.load(sys.argv[1])
 
+# REUSE-IgnoreStart
+outfile.write("// Copyright (C) 2023 Nitrokey GmbH\n")
+outfile.write("// SPDX-License-Identifier: LGPL-3.0-only\n\n")
+# REUSE-IgnoreEnd
 
 outfile.write("// Generated Automatically by `generate_commands.py DO NOT MODIFY MANUALLY\n\n")
 

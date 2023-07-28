@@ -1,3 +1,6 @@
+# Copyright (C) 2023 Nitrokey GmbH
+# SPDX-License-Identifier: CC0-1.0
+
 # To be parsed by generate_commands to generate Rust code for the commands.
 # The order of the TLV tags and payloads matters
 
