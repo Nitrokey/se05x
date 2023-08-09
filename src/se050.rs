@@ -198,6 +198,55 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         )?;
         Ok(())
     }
+
+    #[cfg(feature = "aes-session")]
+    pub fn authenticate_aes128_session<R: rand::CryptoRng + rand::RngCore>(
+        &mut self,
+        session_id: SessionId,
+        key: &[u8; 16],
+        rng: &mut R,
+    ) -> Result<(), Error> {
+        let mut buf = [0; 1024];
+        use aes::Aes128;
+        use cmac::{Cmac, Mac};
+        use rand::{CryptoRng, Rng, RngCore};
+
+        use crate::se050::commands::ScpInitializeUpdate;
+        let host_challenge: [u8; 8] = rng.gen();
+        let chal = self.run_command(&ScpInitializeUpdate { host_challenge }, &mut buf)?;
+
+        fn calculate_session_keys(
+            host_challenge: [u8; 8],
+            card_challenge: [u8; 8],
+            key: &[u8; 16],
+        ) -> [u8; 16] {
+            /// Data Derivation to generate Sess ENC Key
+            pub const DATA_DERIVATION_SENC: u8 = 0x04;
+            /// Data Derivation to generate Sess MAC Key
+            pub const DATA_DERIVATION_SMAC: u8 = 0x06;
+            /// Data Derivation to generate Sess RMAC Key
+            pub const DATA_DERIVATION_RMAC: u8 = 0x07;
+            pub const DATA_DERIVATION_L_128_BIT: u16 = 0x0080;
+            pub const DATA_DERIVATION_L_128_BIT_BE: [u8; 2] =
+                DATA_DERIVATION_L_128_BIT.to_be_bytes();
+            pub const DATA_DERIVATION_KDF_CTR: u8 = 0x01;
+            let mut context = [0u8; 16];
+            context[..8].copy_from_slice(&host_challenge);
+            context[8..][..8].copy_from_slice(&card_challenge);
+            let mut dda = [0u8; 22];
+            dda[11] = DATA_DERIVATION_SENC;
+            dda[12 + 1] = DATA_DERIVATION_L_128_BIT_BE[0];
+            dda[12 + 2] = DATA_DERIVATION_L_128_BIT_BE[1];
+            dda[12 + 3] = DATA_DERIVATION_KDF_CTR;
+            dda[12 + 4..][..16].copy_from_slice(&context);
+
+            let mut mac = Cmac::<Aes128>::new(key.into());
+            mac.update(&dda);
+            let tag = mac.finalize().into_bytes().into();
+            tag
+        }
+        todo!()
+    }
 }
 
 bitflags! {
@@ -346,12 +395,12 @@ pub struct Se05xChallenge {
     pub card_cryptogram: [u8; 8],
 }
 
-impl From<&[u8; 26]> for Se05xChallenge {
-    fn from(value: &[u8; 26]) -> Self {
+impl From<&[u8; 28]> for Se05xChallenge {
+    fn from(value: &[u8; 28]) -> Self {
         let key_diversification_data: [u8; 10] = value[..10].try_into().unwrap();
         let key_information: [u8; 2] = value[..10][..2].try_into().unwrap();
         let card_challenge: [u8; 8] = value[..12][..8].try_into().unwrap();
-        let card_cryptogram: [u8; 8] = value[..12][..8].try_into().unwrap();
+        let card_cryptogram: [u8; 8] = value[..20][..8].try_into().unwrap();
         Self {
             key_diversification_data,
             key_information,
@@ -364,10 +413,10 @@ impl From<&[u8; 26]> for Se05xChallenge {
 impl TryFrom<&[u8]> for Se05xChallenge {
     type Error = Error;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        if value.len() < 26 {
+        if value.len() < 28 {
             return Err(Error::Line(line!()));
         }
-        let value: &[u8; 26] = value[..26].try_into()?;
+        let value: &[u8; 28] = value[..28].try_into()?;
         Ok(value.into())
     }
 }

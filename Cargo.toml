@@ -12,8 +12,10 @@ license = "Apache-2.0 OR MIT"
 description = "Driver for NXP SE05X"
 
 [dependencies]
+aes = { version = "0.8.3", optional = true }
 bitflags = "2.3.2"
 byteorder = { version = "1", default-features = false }
+cmac = { version = "0.7.2", optional = true }
 crc16 = "0.4"
 delog = "0.1"
 embedded-hal = "*"
@@ -22,9 +24,10 @@ hex-literal = "0.4.1"
 iso7816 = "0.1.1"
 lpc55-hal = { version = "0.3.0", optional = true }
 nrf-hal-common = { version = "0.15.0", optional = true }
+rand = { version = "0.8.5", optional = true, default-features = false }
 
 [features]
-default = []
+default = ["aes-session"]
 
 log-all = []
 log-debug = []
@@ -35,6 +38,8 @@ log-none = []
 
 nrf = ["nrf-hal-common"]
 lpc55 = ["lpc55-hal"]
+
+aes-session = ["aes", "cmac", "rand"]
 
 [patch.crates-io]
 iso7816 = { git = "https://github.com/sosthene-nitrokey/iso7816.git", rev = "936a815fa1bf9ce99e7baef584099e8353bae45a"}
