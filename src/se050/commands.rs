@@ -117,7 +117,7 @@ pub struct ExchangeSessionDataResponse<'data> {
 
 impl<'data> Se050Response<'data> for ExchangeSessionDataResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let r_mac = rem;
+        let r_mac = rem.try_into()?;
         let _ = rem;
         Ok(Self { r_mac })
     }
@@ -275,6 +275,112 @@ impl<'data> Se050Response<'data> for VerifySessionUserIdResponse {
 
 impl<'data, W: Writer> Se050Command<W> for VerifySessionUserId<'data> {
     type Response<'rdata> = VerifySessionUserIdResponse;
+}
+
+// ************* ScpInitializeUpdate ************* //
+
+#[derive(Clone, Debug)]
+pub struct ScpInitializeUpdate {
+    /// Serialized to remaining data
+    pub host_challenge: [u8; 8],
+}
+
+impl ScpInitializeUpdate {
+    fn data(&self) -> [u8; 8] {
+        self.host_challenge
+    }
+    fn command(&self) -> CommandBuilder<[u8; 8]> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_INITIALIZE_UPDATE,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            self.data(),
+            ExpectedLen::Max,
+        )
+    }
+}
+
+impl DataSource for ScpInitializeUpdate {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for ScpInitializeUpdate {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ScpInitializeUpdateResponse {
+    /// Parsed from remaining data
+    pub se05x_challenge: Se05xChallenge,
+}
+
+impl<'data> Se050Response<'data> for ScpInitializeUpdateResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let se05x_challenge = rem.try_into()?;
+        let _ = rem;
+        Ok(Self { se05x_challenge })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for ScpInitializeUpdate {
+    type Response<'rdata> = ScpInitializeUpdateResponse;
+}
+
+// ************* ScpExternalAuthenticate ************* //
+
+#[derive(Clone, Debug)]
+pub struct ScpExternalAuthenticate {
+    /// Serialized to remaining data
+    pub host_cryptogram: [u8; 8],
+}
+
+impl ScpExternalAuthenticate {
+    fn data(&self) -> [u8; 8] {
+        self.host_cryptogram
+    }
+    fn command(&self) -> CommandBuilder<[u8; 8]> {
+        CommandBuilder::new(
+            SM_CLA,
+            INS_EXTERNAL_AUTHENTICATE,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl DataSource for ScpExternalAuthenticate {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<W: Writer> DataStream<W> for ScpExternalAuthenticate {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ScpExternalAuthenticateResponse {}
+
+impl<'data> Se050Response<'data> for ScpExternalAuthenticateResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let _ = rem;
+        Ok(Self {})
+    }
+}
+
+impl<W: Writer> Se050Command<W> for ScpExternalAuthenticate {
+    type Response<'rdata> = ScpExternalAuthenticateResponse;
 }
 
 // ************* SetLockState ************* //

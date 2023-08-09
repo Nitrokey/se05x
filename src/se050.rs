@@ -8,7 +8,7 @@ use embedded_hal::blocking::delay::DelayUs;
 use hex_literal::hex;
 use iso7816::{
     command::{
-        class::{NO_SM_CLA, ZERO_CLA},
+        class::{NO_SM_CLA, SM_CLA, ZERO_CLA},
         writer::IntoWriter,
         CommandBuilder, DataSource, DataStream, ExpectedLen, Writer,
     },
@@ -338,6 +338,37 @@ impl<W: Writer, C: Se050Command<W>> Se050Command<W> for ProcessSessionCmd<C> {
     type Response<'a> = C::Response<'a>;
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Se05xChallenge {
+    pub key_diversification_data: [u8; 10],
+    pub key_information: [u8; 2],
+    pub card_challenge: [u8; 8],
+    pub card_cryptogram: [u8; 8],
+}
+
+impl From<&[u8; 26]> for Se05xChallenge {
+    fn from(value: &[u8; 26]) -> Self {
+        let key_diversification_data: [u8; 10] = value[..10].try_into().unwrap();
+        let key_information: [u8; 2] = value[..10][..2].try_into().unwrap();
+        let card_challenge: [u8; 8] = value[..12][..8].try_into().unwrap();
+        let card_cryptogram: [u8; 8] = value[..12][..8].try_into().unwrap();
+        Self {
+            key_diversification_data,
+            key_information,
+            card_challenge,
+            card_cryptogram,
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for Se05xChallenge {
+    type Error = Error;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let value: &[u8; 26] = value.try_into().map_err(|_| Error::Line(line!()))?;
+        Ok(value.into())
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CryptoObjectId(pub [u8; 2]);
 
@@ -486,6 +517,9 @@ pub const INS_CRYPTO: Instruction = Instruction::Unknown(0x03);
 pub const INS_MGMT: Instruction = Instruction::Unknown(0x04);
 pub const INS_PROCESS: Instruction = Instruction::Unknown(0x05);
 pub const INS_IMPORT_EXTERNAL: Instruction = Instruction::Unknown(0x06);
+
+pub const INS_INITIALIZE_UPDATE: Instruction = Instruction::Unknown(0x50);
+pub const INS_EXTERNAL_AUTHENTICATE: Instruction = Instruction::Unknown(0x82);
 
 /// Highest bit not used
 pub const P1_UNUSED: u8 = 0x80;

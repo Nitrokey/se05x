@@ -57,7 +57,7 @@ DEFAULT_TYPE = "&'data [u8]"
 def parse_for_resp(arg, name, outfile):
     tab = " "*8
     if name == "then":
-        outfile.write(f'{tab}let {arg["name"]} = rem;\n')
+        outfile.write(f'{tab}let {arg["name"]} = rem.try_into()?;\n')
         return
 
     outfile.write(PARSE_PATTERN % (arg["name"], name))

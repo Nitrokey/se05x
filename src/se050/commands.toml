@@ -67,6 +67,32 @@ TAG_1 = { name = "user_id" }
 
 
 # TODO ScpInitializeUpdate
+
+[scp_initialize_update]
+cla = "NO_SM_CLA"
+ins = "INS_INITIALIZE_UPDATE"
+p1 = "P1_DEFAULT"
+p2 = "P2_DEFAULT"
+le = "ExpectedLen::Max"
+
+[scp_initialize_update.payload]
+then = { name = "host_challenge", type = "[u8; 8]" }
+
+[scp_initialize_update.response]
+then = { name = "se05x_challenge", type = "Se05xChallenge" }
+
+[scp_external_authenticate]
+cla = "SM_CLA"
+ins = "INS_EXTERNAL_AUTHENTICATE"
+p1 = "P1_DEFAULT" # TODO support security levels
+p2 = "P2_DEFAULT"
+
+[scp_external_authenticate.payload]
+then = { name = "host_cryptogram", type = "[u8; 8]" }
+
+[scp_external_authenticate.response]
+
+
 # TODO ScpExternalAuthenticate
 # TODO ECKeySessionInternalAuthenticate
 # TODO ECKeySessionGetECKAPublicKey
