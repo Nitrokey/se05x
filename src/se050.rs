@@ -364,7 +364,10 @@ impl From<&[u8; 26]> for Se05xChallenge {
 impl TryFrom<&[u8]> for Se05xChallenge {
     type Error = Error;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let value: &[u8; 26] = value.try_into().map_err(|_| Error::Line(line!()))?;
+        if value.len() < 26 {
+            return Err(Error::Line(line!()));
+        }
+        let value: &[u8; 26] = value[..26].try_into()?;
         Ok(value.into())
     }
 }
