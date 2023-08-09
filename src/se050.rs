@@ -114,9 +114,9 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
                 Status::from([buffer[len - 2], buffer[len - 1]]),
             )),
             DataReceived::SBlock {
-                block,
-                i_data,
-                s_data,
+                block: _,
+                i_data: _,
+                s_data: _,
             } => Err(Error::Line(line!())),
             _ => {
                 error!("Got too short apdu");
