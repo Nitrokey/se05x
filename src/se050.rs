@@ -211,41 +211,70 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         use cmac::{Cmac, Mac};
         use rand::{CryptoRng, Rng, RngCore};
 
-        use crate::se050::commands::ScpInitializeUpdate;
+        use crate::se050::commands::{ScpExternalAuthenticate, ScpInitializeUpdate};
         let host_challenge: [u8; 8] = rng.gen();
         let chal = self.run_command(&ScpInitializeUpdate { host_challenge }, &mut buf)?;
 
-        fn calculate_session_keys(
-            host_challenge: [u8; 8],
-            card_challenge: [u8; 8],
-            key: &[u8; 16],
-        ) -> [u8; 16] {
-            /// Data Derivation to generate Sess ENC Key
-            pub const DATA_DERIVATION_SENC: u8 = 0x04;
-            /// Data Derivation to generate Sess MAC Key
-            pub const DATA_DERIVATION_SMAC: u8 = 0x06;
-            /// Data Derivation to generate Sess RMAC Key
-            pub const DATA_DERIVATION_RMAC: u8 = 0x07;
-            pub const DATA_DERIVATION_L_128_BIT: u16 = 0x0080;
-            pub const DATA_DERIVATION_L_128_BIT_BE: [u8; 2] =
-                DATA_DERIVATION_L_128_BIT.to_be_bytes();
-            pub const DATA_DERIVATION_KDF_CTR: u8 = 0x01;
-            let mut context = [0u8; 16];
-            context[..8].copy_from_slice(&host_challenge);
-            context[8..][..8].copy_from_slice(&card_challenge);
-            let mut dda = [0u8; 22];
-            dda[11] = DATA_DERIVATION_SENC;
-            dda[12 + 1] = DATA_DERIVATION_L_128_BIT_BE[0];
-            dda[12 + 2] = DATA_DERIVATION_L_128_BIT_BE[1];
-            dda[12 + 3] = DATA_DERIVATION_KDF_CTR;
-            dda[12 + 4..][..16].copy_from_slice(&context);
+        // *** Calculating keys *** //
 
-            let mut mac = Cmac::<Aes128>::new(key.into());
-            mac.update(&dda);
-            let tag = mac.finalize().into_bytes().into();
-            tag
+        /// Data Derivation to generate Sess ENC Key
+        const DATA_DERIVATION_SENC: u8 = 0x04;
+        /// Data Derivation to generate Sess MAC Key
+        const DATA_DERIVATION_SMAC: u8 = 0x06;
+        /// Data Derivation to generate Sess RMAC Key
+        const DATA_DERIVATION_SRMAC: u8 = 0x07;
+        const DATA_DERIVATION_L_128_BIT: u16 = 0x0080;
+        const DATA_DERIVATION_L_128_BIT_BE: [u8; 2] = DATA_DERIVATION_L_128_BIT.to_be_bytes();
+        const DATA_DERIVATION_KDF_CTR: u8 = 0x01;
+
+        let mut context = [0u8; 16];
+        context[..8].copy_from_slice(&host_challenge);
+        context[8..][..8].copy_from_slice(&chal.se05x_challenge.card_challenge);
+        let mut dda = [0u8; 22];
+        dda[12 + 1] = DATA_DERIVATION_L_128_BIT_BE[0];
+        dda[12 + 2] = DATA_DERIVATION_L_128_BIT_BE[1];
+        dda[12 + 3] = DATA_DERIVATION_KDF_CTR;
+        dda[12 + 4..][..16].copy_from_slice(&context);
+
+        dda[11] = DATA_DERIVATION_SENC;
+        let mut mac = Cmac::<Aes128>::new(key.into());
+        mac.update(&dda);
+        let tag_senc: [u8; 16] = mac.finalize().into_bytes().into();
+
+        dda[11] = DATA_DERIVATION_SMAC;
+        let mut mac = Cmac::<Aes128>::new(key.into());
+        mac.update(&dda);
+        let tag_smac: [u8; 16] = mac.finalize().into_bytes().into();
+
+        dda[11] = DATA_DERIVATION_SRMAC;
+        let mut mac = Cmac::<Aes128>::new(key.into());
+        mac.update(&dda);
+        let tag_srmac: [u8; 16] = mac.finalize().into_bytes().into();
+
+        // *** Verifying card cryptogram *** //
+        const DATA_CARD_CRYPTOGRAM: u8 = 0;
+        const DATA_HOST_CRYPTOGRAM: u8 = 1;
+        const DATA_DERIVATION_L_64_BIT: u16 = 0x0080;
+        const DATA_DERIVATION_L_64_BIT_BE: [u8; 2] = DATA_DERIVATION_L_64_BIT.to_be_bytes();
+
+        dda[12 + 1] = DATA_DERIVATION_L_64_BIT_BE[0];
+        dda[12 + 2] = DATA_DERIVATION_L_64_BIT_BE[1];
+        dda[11] = DATA_CARD_CRYPTOGRAM;
+        let mut mac = Cmac::<Aes128>::new(key.into());
+        mac.update(&dda);
+        let calculated_card_cryptogram: [u8; 16] = mac.finalize().into_bytes().into();
+        if calculated_card_cryptogram[..8] != chal.se05x_challenge.card_cryptogram {
+            return Err(Error::Line(line!()));
         }
-        todo!()
+
+        dda[11] = DATA_HOST_CRYPTOGRAM;
+        let mut mac = Cmac::<Aes128>::new(key.into());
+        mac.update(&dda);
+        let host_cryptogram: [u8; 16] = mac.finalize().into_bytes().into();
+        let host_cryptogram: [u8; 8] = host_cryptogram[..8].try_into().unwrap();
+
+        self.run_command(&ScpExternalAuthenticate { host_cryptogram }, &mut buf)?;
+        Ok(())
     }
 }
 
