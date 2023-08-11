@@ -296,7 +296,7 @@ impl ScpInitializeUpdate {
             P1_DEFAULT,
             P2_DEFAULT,
             self.data(),
-            ExpectedLen::Max,
+            256,
         )
     }
 }
@@ -338,13 +338,15 @@ impl<W: Writer> Se050Command<W> for ScpInitializeUpdate {
 pub struct ScpExternalAuthenticate {
     /// Serialized to remaining data
     pub host_cryptogram: [u8; 8],
+    /// Serialized to remaining data
+    pub mac: [u8; 8],
 }
 
 impl ScpExternalAuthenticate {
-    fn data(&self) -> [u8; 8] {
-        self.host_cryptogram
+    fn data(&self) -> ([u8; 8], [u8; 8]) {
+        (self.host_cryptogram, self.mac)
     }
-    fn command(&self) -> CommandBuilder<[u8; 8]> {
+    fn command(&self) -> CommandBuilder<([u8; 8], [u8; 8])> {
         CommandBuilder::new(
             SM_CLA,
             INS_EXTERNAL_AUTHENTICATE,

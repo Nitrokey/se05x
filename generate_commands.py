@@ -62,7 +62,13 @@ def parse_for_resp(arg, name, outfile):
 
     outfile.write(PARSE_PATTERN % (arg["name"], name))
 
-
+def flatten(items):
+    for arg_name, arg in items:
+        if type(arg) is list:
+            for elem in arg:
+                yield arg_name, elem
+        else:
+            yield arg_name, arg
 
 if len(sys.argv) != 3:
     print("Usage: ./generate_commands.py <toml data> <target file>")
@@ -98,7 +104,7 @@ for command, v in data.items():
     le = v.get("le", 0)
 
     payload_has_lifetime = False
-    for a in v["payload"].values():
+    for _, a in flatten(v["payload"].items()):
         if "type" not in a:
             payload_has_lifetime = True
             break
@@ -149,11 +155,9 @@ for command, v in data.items():
         pre_ins += f'        let p1: u8 = self.{a["name"]}.map(|v| v | {p1_val} ).unwrap_or({p1});\n'
         p1_val = "p1"
 
-
-
-        
-
-    for arg_name, arg in v["payload"].items():
+    arg_count = 0
+    for arg_name, arg in flatten(v["payload"].items()):
+        arg_count += 1
         if "value" in arg:
             continue
         if "comment" in arg:
@@ -171,9 +175,9 @@ for command, v in data.items():
     else:
         outfile.write(f'impl {name} {{\n')
 
-    tup_ty = ", ".join([ty_for_arg(arg,name) for name, arg in v["payload"].items()])
-    tup_val = ", ".join([data_for_arg(arg,name) for name, arg in v["payload"].items()])
-    if len(v["payload"].values()) != 1:
+    tup_ty = ", ".join([ty_for_arg(arg,name) for name, arg in flatten(v["payload"].items())])
+    tup_val = ", ".join([data_for_arg(arg,name) for name, arg in flatten(v["payload"].items())])
+    if arg_count != 1:
         tup_ty = f'({tup_ty})'
         tup_val = f'({tup_val})'
 

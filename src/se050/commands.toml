@@ -73,7 +73,7 @@ cla = "NO_SM_CLA"
 ins = "INS_INITIALIZE_UPDATE"
 p1 = "P1_DEFAULT"
 p2 = "P2_DEFAULT"
-le = "ExpectedLen::Max"
+le = "256"
 
 [scp_initialize_update.payload]
 then = { name = "host_challenge", type = "[u8; 8]" }
@@ -88,7 +88,10 @@ p1 = "P1_DEFAULT" # TODO support security levels
 p2 = "P2_DEFAULT"
 
 [scp_external_authenticate.payload]
-then = { name = "host_cryptogram", type = "[u8; 8]" }
+then = [
+  { name = "host_cryptogram", type = "[u8; 8]" }
+  { name = "mac", type = "[u8; 8]" }
+]
 
 [scp_external_authenticate.response]
 

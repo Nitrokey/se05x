@@ -206,14 +206,22 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         key: &[u8; 16],
         rng: &mut R,
     ) -> Result<(), Error> {
+        debug_now!("authenticating AES session");
         let mut buf = [0; 1024];
         use aes::Aes128;
         use cmac::{Cmac, Mac};
-        use rand::{CryptoRng, Rng, RngCore};
+        use rand::Rng;
 
         use crate::se050::commands::{ScpExternalAuthenticate, ScpInitializeUpdate};
         let host_challenge: [u8; 8] = rng.gen();
-        let chal = self.run_command(&ScpInitializeUpdate { host_challenge }, &mut buf)?;
+        let chal = self.run_command(
+            &ProcessSessionCmd {
+                session_id,
+                apdu: ScpInitializeUpdate { host_challenge },
+            },
+            &mut buf,
+        )?;
+        debug_now!("InitializeUpdate successful");
 
         // *** Calculating keys *** //
 
@@ -230,7 +238,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         let mut context = [0u8; 16];
         context[..8].copy_from_slice(&host_challenge);
         context[8..][..8].copy_from_slice(&chal.se05x_challenge.card_challenge);
-        let mut dda = [0u8; 22];
+        let mut dda = [0u8; 12 + 4 + 16];
         dda[12 + 1] = DATA_DERIVATION_L_128_BIT_BE[0];
         dda[12 + 2] = DATA_DERIVATION_L_128_BIT_BE[1];
         dda[12 + 3] = DATA_DERIVATION_KDF_CTR;
@@ -239,41 +247,68 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         dda[11] = DATA_DERIVATION_SENC;
         let mut mac = Cmac::<Aes128>::new(key.into());
         mac.update(&dda);
-        let tag_senc: [u8; 16] = mac.finalize().into_bytes().into();
+        let tag_senc: &[u8; 16] = &mac.finalize().into_bytes().into();
 
         dda[11] = DATA_DERIVATION_SMAC;
         let mut mac = Cmac::<Aes128>::new(key.into());
         mac.update(&dda);
-        let tag_smac: [u8; 16] = mac.finalize().into_bytes().into();
+        let tag_smac: &[u8; 16] = &mac.finalize().into_bytes().into();
 
         dda[11] = DATA_DERIVATION_SRMAC;
         let mut mac = Cmac::<Aes128>::new(key.into());
         mac.update(&dda);
-        let tag_srmac: [u8; 16] = mac.finalize().into_bytes().into();
+        let tag_srmac: &[u8; 16] = &mac.finalize().into_bytes().into();
 
         // *** Verifying card cryptogram *** //
         const DATA_CARD_CRYPTOGRAM: u8 = 0;
         const DATA_HOST_CRYPTOGRAM: u8 = 1;
-        const DATA_DERIVATION_L_64_BIT: u16 = 0x0080;
+        const DATA_DERIVATION_L_64_BIT: u16 = 0x0040;
         const DATA_DERIVATION_L_64_BIT_BE: [u8; 2] = DATA_DERIVATION_L_64_BIT.to_be_bytes();
 
         dda[12 + 1] = DATA_DERIVATION_L_64_BIT_BE[0];
         dda[12 + 2] = DATA_DERIVATION_L_64_BIT_BE[1];
+
         dda[11] = DATA_CARD_CRYPTOGRAM;
-        let mut mac = Cmac::<Aes128>::new(key.into());
+        let mut mac = Cmac::<Aes128>::new(tag_smac.into());
         mac.update(&dda);
         let calculated_card_cryptogram: [u8; 16] = mac.finalize().into_bytes().into();
         if calculated_card_cryptogram[..8] != chal.se05x_challenge.card_cryptogram {
+            debug_now!(
+                "{dda:02x?} {host_challenge:02x?} {:02x?} {:02x?} {calculated_card_cryptogram:02x?}",
+                chal.se05x_challenge.card_challenge,
+                chal.se05x_challenge.card_cryptogram
+            );
             return Err(Error::Line(line!()));
         }
 
+        debug_now!("Verified card cryptogram");
+
         dda[11] = DATA_HOST_CRYPTOGRAM;
-        let mut mac = Cmac::<Aes128>::new(key.into());
+        let mut mac = Cmac::<Aes128>::new(tag_smac.into());
         mac.update(&dda);
         let host_cryptogram: [u8; 16] = mac.finalize().into_bytes().into();
         let host_cryptogram: [u8; 8] = host_cryptogram[..8].try_into().unwrap();
 
-        self.run_command(&ScpExternalAuthenticate { host_cryptogram }, &mut buf)?;
+        let mut mac = Cmac::<Aes128>::new(tag_smac.into());
+        mac.update(&[0; 16]);
+        // APDU header
+        // FIXME: Secure messaging should be handled by `run_command`
+        // BLOCKING: Expected len is not authenticated, so need adapted API from CommandBuilder
+        mac.update(&hex!("84 82 0000 10"));
+        mac.update(&host_cryptogram);
+
+        debug_now!("Running external authenticate");
+        self.run_command(
+            &ProcessSessionCmd {
+                session_id,
+                apdu: ScpExternalAuthenticate {
+                    host_cryptogram,
+                    mac: mac.finalize().into_bytes()[..8].try_into().unwrap(),
+                },
+            },
+            &mut buf,
+        )?;
+        debug_now!("Authenticate success");
         Ok(())
     }
 }
@@ -419,22 +454,23 @@ impl<W: Writer, C: Se050Command<W>> Se050Command<W> for ProcessSessionCmd<C> {
 #[derive(Debug, Clone, Copy)]
 pub struct Se05xChallenge {
     pub key_diversification_data: [u8; 10],
-    pub key_information: [u8; 2],
+    pub key_information: [u8; 3],
     pub card_challenge: [u8; 8],
     pub card_cryptogram: [u8; 8],
 }
 
-impl From<&[u8; 28]> for Se05xChallenge {
-    fn from(value: &[u8; 28]) -> Self {
-        let key_diversification_data: [u8; 10] = value[..10].try_into().unwrap();
-        let key_information: [u8; 2] = value[..10][..2].try_into().unwrap();
-        let card_challenge: [u8; 8] = value[..12][..8].try_into().unwrap();
-        let card_cryptogram: [u8; 8] = value[..20][..8].try_into().unwrap();
+impl From<&[u8; 29]> for Se05xChallenge {
+    fn from(value: &[u8; 29]) -> Self {
+        let (key_diversification_data, rem) = value.split_at(10);
+        let (key_information, rem) = rem.split_at(3);
+        let (card_challenge, rem) = rem.split_at(8);
+        let (card_cryptogram, rem) = rem.split_at(8);
+        assert!(rem.is_empty());
         Self {
-            key_diversification_data,
-            key_information,
-            card_challenge,
-            card_cryptogram,
+            key_diversification_data: key_diversification_data.try_into().unwrap(),
+            key_information: key_information.try_into().unwrap(),
+            card_challenge: card_challenge.try_into().unwrap(),
+            card_cryptogram: card_cryptogram.try_into().unwrap(),
         }
     }
 }
@@ -442,10 +478,12 @@ impl From<&[u8; 28]> for Se05xChallenge {
 impl TryFrom<&[u8]> for Se05xChallenge {
     type Error = Error;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        if value.len() < 28 {
+        if value.len() < 29 {
             return Err(Error::Line(line!()));
         }
-        let value: &[u8; 28] = value[..28].try_into()?;
+        debug_now!("Challenge value: {:02x?}", value);
+        debug_now!("Challenge len: {}", value.len());
+        let value: &[u8; 29] = value[..29].try_into()?;
         Ok(value.into())
     }
 }
