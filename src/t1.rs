@@ -410,9 +410,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             Ok(_) => return Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
-            Err(err) => {
-                warn!("Got error");
-                warn!("{:?}", err);
+            Err(_err) => {
+                warn!("Got error: {:?}", _err);
                 Err(Error::Line(line!()))
             }
         }
@@ -423,9 +422,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             Ok(_) => return Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
-            Err(err) => {
-                warn!("Got error");
-                warn!("{:?}", err);
+            Err(_err) => {
+                warn!("Got error: {:?}", _err);
                 Err(Error::Line(line!()))
             }
         }
@@ -437,8 +435,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
             Ok(_) => return Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
-            Err(err) => {
-                warn!("Unknown error when writing & reading: {:?}", err);
+            Err(_err) => {
+                warn!("Unknown error when writing & reading: {:?}", _err);
                 Err(Error::Line(line!()))
             }
         }

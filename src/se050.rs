@@ -247,7 +247,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         dda[11] = DATA_DERIVATION_SENC;
         let mut mac = Cmac::<Aes128>::new(key.into());
         mac.update(&dda);
-        let tag_senc: &[u8; 16] = &mac.finalize().into_bytes().into();
+        let _tag_senc: &[u8; 16] = &mac.finalize().into_bytes().into();
 
         dda[11] = DATA_DERIVATION_SMAC;
         let mut mac = Cmac::<Aes128>::new(key.into());
@@ -257,7 +257,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         dda[11] = DATA_DERIVATION_SRMAC;
         let mut mac = Cmac::<Aes128>::new(key.into());
         mac.update(&dda);
-        let tag_srmac: &[u8; 16] = &mac.finalize().into_bytes().into();
+        let _tag_srmac: &[u8; 16] = &mac.finalize().into_bytes().into();
 
         // *** Verifying card cryptogram *** //
         const DATA_CARD_CRYPTOGRAM: u8 = 0;
