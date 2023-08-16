@@ -1072,10 +1072,12 @@ pub struct ImportObject<'data> {
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
+    /// Inlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key
+    ///
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
-    pub key_component: RsaKeyComponent,
+    pub rsa_key_component: Option<RsaKeyComponent>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
-    pub serialized_object: Option<&'data [u8]>,
+    pub serialized_object: &'data [u8],
 }
 
 impl<'data> ImportObject<'data> {
@@ -1083,21 +1085,21 @@ impl<'data> ImportObject<'data> {
         &self,
     ) -> (
         Tlv<ObjectId>,
-        Tlv<RsaKeyComponent>,
-        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<RsaKeyComponent>>,
+        Tlv<&'data [u8]>,
     ) {
         (
             Tlv::new(TAG_1, self.object_id),
-            Tlv::new(TAG_2, self.key_component),
-            self.serialized_object.map(|data| Tlv::new(TAG_3, data)),
+            self.rsa_key_component.map(|data| Tlv::new(TAG_2, data)),
+            Tlv::new(TAG_3, self.serialized_object),
         )
     }
     fn command(
         &self,
     ) -> CommandBuilder<(
         Tlv<ObjectId>,
-        Tlv<RsaKeyComponent>,
-        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<RsaKeyComponent>>,
+        Tlv<&'data [u8]>,
     )> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
@@ -1130,7 +1132,7 @@ impl<'data, W: Writer> Se050Command<W> for ImportObject<'data> {
 // ************* ReadObject ************* //
 
 #[derive(Clone, Debug)]
-pub struct ReadObject<'data> {
+pub struct ReadObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
@@ -1138,17 +1140,17 @@ pub struct ReadObject<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
-    pub rsa_key_component: Option<&'data [u8]>,
+    pub rsa_key_component: Option<RsaKeyComponent>,
 }
 
-impl<'data> ReadObject<'data> {
+impl ReadObject {
     fn data(
         &self,
     ) -> (
         Tlv<ObjectId>,
         Option<Tlv<Be<u16>>>,
         Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<RsaKeyComponent>>,
     ) {
         (
             Tlv::new(TAG_1, self.object_id),
@@ -1163,7 +1165,7 @@ impl<'data> ReadObject<'data> {
         Tlv<ObjectId>,
         Option<Tlv<Be<u16>>>,
         Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
+        Option<Tlv<RsaKeyComponent>>,
     )> {
         CommandBuilder::new(
             NO_SM_CLA,
@@ -1176,7 +1178,7 @@ impl<'data> ReadObject<'data> {
     }
 }
 
-impl<'data> DataSource for ReadObject<'data> {
+impl DataSource for ReadObject {
     fn len(&self) -> usize {
         self.command().len()
     }
@@ -1184,7 +1186,7 @@ impl<'data> DataSource for ReadObject<'data> {
         self.command().is_empty()
     }
 }
-impl<'data, W: Writer> DataStream<W> for ReadObject<'data> {
+impl<W: Writer> DataStream<W> for ReadObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         self.command().to_writer(writer)
     }
@@ -1210,7 +1212,7 @@ impl<'data> Se050Response<'data> for ReadObjectResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for ReadObject<'data> {
+impl<W: Writer> Se050Command<W> for ReadObject {
     type Response<'rdata> = ReadObjectResponse<'rdata>;
 }
 
@@ -1381,33 +1383,28 @@ impl<'data, W: Writer> Se050Command<W> for ReadAttestObject<'data> {
 // ************* ExportObject ************* //
 
 #[derive(Clone, Debug)]
-pub struct ExportObject<'data> {
+pub struct ExportObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
+    /// Always present. Use [`RsaKeyComponent::Na`][] if not exporting an RSA key
+    ///
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
-    pub rsa_key_component: Option<&'data [u8]>,
+    pub rsa_key_component: RsaKeyComponent,
 }
 
-impl<'data> ExportObject<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Option<Tlv<&'data [u8]>>) {
+impl ExportObject {
+    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaKeyComponent>) {
         (
             Tlv::new(TAG_1, self.object_id),
-            self.rsa_key_component.map(|data| Tlv::new(TAG_2, data)),
+            Tlv::new(TAG_2, self.rsa_key_component),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Option<Tlv<&'data [u8]>>)> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_READ,
-            P1_DEFAULT,
-            P2_EXPORT,
-            self.data(),
-            ExpectedLen::Max,
-        )
+    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaKeyComponent>)> {
+        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, self.data(), 256)
     }
 }
 
-impl<'data> DataSource for ExportObject<'data> {
+impl DataSource for ExportObject {
     fn len(&self) -> usize {
         self.command().len()
     }
@@ -1415,14 +1412,34 @@ impl<'data> DataSource for ExportObject<'data> {
         self.command().is_empty()
     }
 }
-impl<'data, W: Writer> DataStream<W> for ExportObject<'data> {
+impl<W: Writer> DataStream<W> for ExportObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         self.command().to_writer(writer)
     }
 }
+#[derive(Clone, Debug)]
+pub struct ExportObjectResponse<'data> {
+    /// Parsed from TLV tag [`TAG_1`](TAG_1)
+    pub data: &'data [u8],
+}
 
-impl<'data, W: Writer> Se050Command<W> for ExportObject<'data> {
-    type Response<'rdata> = ();
+impl<'data> Se050Response<'data> for ExportObjectResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (data, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_1 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { data })
+    }
+}
+
+impl<W: Writer> Se050Command<W> for ExportObject {
+    type Response<'rdata> = ExportObjectResponse<'rdata>;
 }
 
 // ************* ReadType ************* //

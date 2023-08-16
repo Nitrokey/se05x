@@ -247,8 +247,8 @@ p2 = "P2_IMPORT"
 
 [import_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }
-TAG_2 = { name = "key_component", type = "RsaKeyComponent" }
-TAG_3 = { name = "serialized_object", optional = true  }
+TAG_2 = { name = "rsa_key_component", type = "RsaKeyComponent", optional = true, comment = "Inlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key"  }
+TAG_3 = { name = "serialized_object" }
 
 # TODO import external object
 
@@ -263,7 +263,7 @@ le = "ExpectedLen::Max"
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "offset", type = "Be<u16>", optional = true  }
 TAG_3 = { name = "length", type = "Be<u16>", optional = true  }
-TAG_4 = { name = "rsa_key_component", optional = true  }
+TAG_4 = { name = "rsa_key_component", optional = true, type = "RsaKeyComponent" }
 
 [read_object.response]
 TAG_1 = { name = "data" }
@@ -296,11 +296,14 @@ cla = "NO_SM_CLA"
 ins = "INS_READ"
 p1 = "P1_DEFAULT"
 p2 = "P2_EXPORT"
-le = "ExpectedLen::Max"
+le = "256"
 
 [export_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }
-TAG_2 = { name = "rsa_key_component", optional = true  }
+TAG_2 = { name = "rsa_key_component", type = "RsaKeyComponent", comment = "Always present. Use [`RsaKeyComponent::Na`][] if not exporting an RSA key" }
+
+[export_object.response]
+TAG_1 = { name = "data" }
 
 [read_type]
 cla = "NO_SM_CLA"

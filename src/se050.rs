@@ -906,6 +906,8 @@ pub const RSA_COMP_DP: u8 = 0x05;
 pub const RSA_COMP_DQ: u8 = 0x06;
 /// CRT component q_inv
 pub const RSA_COMP_INVQ: u8 = 0x07;
+/// Not applicable
+pub const RSA_COMP_NA: u8 = 0xFF;
 
 /// Typically using DESKey identifiers
 pub const DES_CBC_NOPAD: u8 = 0x01;
@@ -1297,6 +1299,7 @@ enum_data!(
         Dp = RSA_COMP_DP,
         Dq = RSA_COMP_DQ,
         InvQ = RSA_COMP_INVQ,
+        Na = RSA_COMP_NA,
     }
 );
 
