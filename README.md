@@ -7,20 +7,20 @@ SE05X driver
 ===========
 
 This crate contains a Rust driver for the SE05x series of secure elements from NXP.
-It contains an implementation of the T=1 protocol and the ISO7816-4 APDUs that are used to communicate with the SE050.
+It contains an implementation of the T=1 protocol and the ISO7816-4 APDUs that are used to communicate with the se05x.
 
 This crate is under heavy development.
 
 ```rust,ignore
 let i2c: impl I2CForT1 = todo!();
 let delay: impl DelayUs<u32> = todo!();
-let mut se050 = Se050::new(i2c, address, delay);
+let mut se05x = se05x::new(i2c, address, delay);
 let user_id = ObjectId(hex!("01020304"));
 
-let atr = se050.enable();
+let atr = se05x.enable();
 
 // Running a WriteUserId command:
-se050.run_command(&WriteUserId {
+se05x.run_command(&WriteUserId {
     policy: None,
     max_attempts: None,
     object_id: user_id,
@@ -35,7 +35,7 @@ let policy = &[Policy {
     ),
 }];
 
-se050.run_command(
+se05x.run_command(
     &WriteBinary {
         transient: false,
         policy: Some(PolicySet(policy)),
@@ -48,10 +48,10 @@ se050.run_command(
 )?;
 
 // Opening a session with teh UserID
-let session = se050.run_command(&CreateSession { object_id: user_id }, &mut buf)?;
+let session = se05x.run_command(&CreateSession { object_id: user_id }, &mut buf)?;
 
 // Verifying the UserId
-se050.run_command(
+se05x.run_command(
     &ProcessSessionCmd {
         session_id: session.session_id,
         apdu: VerifySessionUserId {
@@ -61,7 +61,7 @@ se050.run_command(
     &mut buf,
 )?;
 // Reading the data with the verified session
-let data = se050.run_command(
+let data = se05x.run_command(
     &ProcessSessionCmd {
         session_id: session.session_id,
         apdu: ReadObject {
@@ -80,7 +80,7 @@ Architecture
 
 ### T=1
 
-This driver communicates with the SE050 over the T=1 protocol over I2C, as described in [UM11225](https://www.nxp.com/webapp/Download?colCode=UM11225).
+This driver communicates with the se05x over the T=1 protocol over I2C, as described in [UM11225](https://www.nxp.com/webapp/Download?colCode=UM11225).
 
 To do so and be compatible with most embedded controlers, it depends on the I2C [Read](https://docs.rs/embedded-hal/latest/embedded_hal/blocking/i2c/trait.Read.html) and [Write](https://docs.rs/embedded-hal/latest/embedded_hal/blocking/i2c/trait.Write.html) from [embedded-hal](https://docs.rs/embedded-hal/latest/embedded_hal).
 However these traits do not expose the enough, as the T=1 protocol requires detecting I2C NACKs, which are not exposed in this protocol.
@@ -97,8 +97,8 @@ This driver uses the [`iso7816`](https://docs.rs/iso7816/latest/iso7816/) crate 
 
 ### Generation of commands
 
-To simplify implementation, all supported SE050 APDUs are described in `src/se050/commands.toml`.
-The python script `generate_commands.py` parses the `command.toml` file and generates `src/se050/commands.rs`, which implements all the APDUs.
+To simplify implementation, all supported se05x APDUs are described in `src/se05x/commands.toml`.
+The python script `generate_commands.py` parses the `command.toml` file and generates `src/se05x/commands.rs`, which implements all the APDUs.
 
 Funding
 -------

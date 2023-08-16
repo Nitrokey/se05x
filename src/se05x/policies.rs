@@ -4,7 +4,7 @@
 use bitflags::bitflags;
 use iso7816::command::{DataSource, DataStream, Writer};
 
-use crate::se050::ObjectId;
+use crate::se05x::ObjectId;
 
 bitflags! {
     #[derive(Clone, Copy,PartialEq,Eq, Debug)]

@@ -25,7 +25,7 @@ pub mod commands;
 pub mod constants;
 pub mod policies;
 
-pub struct Se050<Twi, D> {
+pub struct Se05X<Twi, D> {
     t1: T1oI2C<Twi, D>,
 }
 
@@ -77,23 +77,23 @@ impl From<t1::Error> for Error {
     }
 }
 
-pub trait Se050Response<'a>: Sized {
+pub trait Se05XResponse<'a>: Sized {
     fn from_response(data: &'a [u8]) -> Result<Self, Error>;
 }
 
-impl<'a> Se050Response<'a> for () {
+impl<'a> Se05XResponse<'a> for () {
     fn from_response(_data: &'a [u8]) -> Result<Self, Error> {
         Ok(())
     }
 }
 
-pub trait Se050Command<W: Writer>: DataStream<W> {
-    type Response<'a>: Se050Response<'a>;
+pub trait Se05XCommand<W: Writer>: DataStream<W> {
+    type Response<'a>: Se05XResponse<'a>;
 }
 
 pub const APP_ID: [u8; 0x10] = hex!("A0000003965453000000010300000000");
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
+impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         Self {
             t1: T1oI2C::new(twi, se_address, delay),
@@ -134,11 +134,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         Ok(atr)
     }
 
-    pub fn run_command<'buf, C: for<'a> Se050Command<FrameSender<'a, Twi, D>>>(
+    pub fn run_command<'buf, C: for<'a> Se05XCommand<FrameSender<'a, Twi, D>>>(
         &mut self,
         command: &C,
         response_buf: &'buf mut [u8],
-    ) -> Result<<C as Se050Command<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
+    ) -> Result<<C as Se05XCommand<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
         let mut sender = self.t1.into_writer(command.len())?;
         command.to_writer(&mut sender)?;
         self.t1.wait_segt();
@@ -212,7 +212,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se050<Twi, D> {
         use cmac::{Cmac, Mac};
         use rand::Rng;
 
-        use crate::se050::commands::{ScpExternalAuthenticate, ScpInitializeUpdate};
+        use crate::se05x::commands::{ScpExternalAuthenticate, ScpInitializeUpdate};
         let host_challenge: [u8; 8] = rng.gen();
         let chal = self.run_command(
             &ProcessSessionCmd {
@@ -367,7 +367,7 @@ impl Atr {
     }
 }
 
-impl<'a> Se050Response<'a> for Atr {
+impl<'a> Se05XResponse<'a> for Atr {
     fn from_response(data: &'a [u8]) -> Result<Self, Error> {
         Self::parse(data)
     }
@@ -403,7 +403,7 @@ impl<W: Writer> DataStream<W> for Select {
     }
 }
 
-impl<W: Writer> Se050Command<W> for Select {
+impl<W: Writer> Se05XCommand<W> for Select {
     type Response<'a> = Atr;
 }
 
@@ -447,7 +447,7 @@ impl<W: Writer, C: DataStream<W>> DataStream<W> for ProcessSessionCmd<C> {
     }
 }
 
-impl<W: Writer, C: Se050Command<W>> Se050Command<W> for ProcessSessionCmd<C> {
+impl<W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for ProcessSessionCmd<C> {
     type Response<'a> = C::Response<'a>;
 }
 
@@ -1385,7 +1385,7 @@ enum_data!(
 enum_data!(
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
-    pub enum Se050Result {
+    pub enum Se05XResult {
         Success = RESULT_SUCCESS,
         Failure = RESULT_FAILURE,
     }

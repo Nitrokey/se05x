@@ -230,7 +230,7 @@ for command, v in data.items():
             outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
         outfile.write("}\n")
 
-        outfile.write(f'\nimpl<\'data> Se050Response<\'data> for {name}Response{response_lifetime} {{\n')
+        outfile.write(f'\nimpl<\'data> Se05XResponse<\'data> for {name}Response{response_lifetime} {{\n')
         outfile.write("    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {\n")
         for arg_name, arg in v["response"].items():
              parse_for_resp(arg, arg_name, outfile)
@@ -240,7 +240,7 @@ for command, v in data.items():
         outfile.write("}\n")
 
     outfile.write("\n")
-    outfile.write(f'impl{bound} Se050Command<W> for {name}{payload_lifetime} {{\n')
+    outfile.write(f'impl{bound} Se05XCommand<W> for {name}{payload_lifetime} {{\n')
     if "response" not in v: 
         outfile.write(f'    type Response<\'rdata> = ();\n')
     elif response_has_lifetime:

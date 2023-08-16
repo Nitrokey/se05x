@@ -51,7 +51,7 @@ pub struct CreateSessionResponse {
     pub session_id: SessionId,
 }
 
-impl<'data> Se050Response<'data> for CreateSessionResponse {
+impl<'data> Se05XResponse<'data> for CreateSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (session_id, rem) = loop {
             let mut rem_inner = rem;
@@ -66,7 +66,7 @@ impl<'data> Se050Response<'data> for CreateSessionResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for CreateSession {
+impl<W: Writer> Se05XCommand<W> for CreateSession {
     type Response<'rdata> = CreateSessionResponse;
 }
 
@@ -115,7 +115,7 @@ pub struct ExchangeSessionDataResponse<'data> {
     pub r_mac: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ExchangeSessionDataResponse<'data> {
+impl<'data> Se05XResponse<'data> for ExchangeSessionDataResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let r_mac = rem.try_into()?;
         let _ = rem;
@@ -123,7 +123,7 @@ impl<'data> Se050Response<'data> for ExchangeSessionDataResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for ExchangeSessionData<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for ExchangeSessionData<'data> {
     type Response<'rdata> = ExchangeSessionDataResponse<'rdata>;
 }
 
@@ -167,14 +167,14 @@ impl<W: Writer> DataStream<W> for RefreshSession {
 #[derive(Clone, Debug)]
 pub struct RefreshSessionResponse {}
 
-impl<'data> Se050Response<'data> for RefreshSessionResponse {
+impl<'data> Se05XResponse<'data> for RefreshSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
     }
 }
 
-impl<W: Writer> Se050Command<W> for RefreshSession {
+impl<W: Writer> Se05XCommand<W> for RefreshSession {
     type Response<'rdata> = RefreshSessionResponse;
 }
 
@@ -215,14 +215,14 @@ impl<W: Writer> DataStream<W> for CloseSession {
 #[derive(Clone, Debug)]
 pub struct CloseSessionResponse {}
 
-impl<'data> Se050Response<'data> for CloseSessionResponse {
+impl<'data> Se05XResponse<'data> for CloseSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
     }
 }
 
-impl<W: Writer> Se050Command<W> for CloseSession {
+impl<W: Writer> Se05XCommand<W> for CloseSession {
     type Response<'rdata> = CloseSessionResponse;
 }
 
@@ -266,14 +266,14 @@ impl<'data, W: Writer> DataStream<W> for VerifySessionUserId<'data> {
 #[derive(Clone, Debug)]
 pub struct VerifySessionUserIdResponse {}
 
-impl<'data> Se050Response<'data> for VerifySessionUserIdResponse {
+impl<'data> Se05XResponse<'data> for VerifySessionUserIdResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for VerifySessionUserId<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for VerifySessionUserId<'data> {
     type Response<'rdata> = VerifySessionUserIdResponse;
 }
 
@@ -320,7 +320,7 @@ pub struct ScpInitializeUpdateResponse {
     pub se05x_challenge: Se05xChallenge,
 }
 
-impl<'data> Se050Response<'data> for ScpInitializeUpdateResponse {
+impl<'data> Se05XResponse<'data> for ScpInitializeUpdateResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let se05x_challenge = rem.try_into()?;
         let _ = rem;
@@ -328,7 +328,7 @@ impl<'data> Se050Response<'data> for ScpInitializeUpdateResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ScpInitializeUpdate {
+impl<W: Writer> Se05XCommand<W> for ScpInitializeUpdate {
     type Response<'rdata> = ScpInitializeUpdateResponse;
 }
 
@@ -374,14 +374,14 @@ impl<W: Writer> DataStream<W> for ScpExternalAuthenticate {
 #[derive(Clone, Debug)]
 pub struct ScpExternalAuthenticateResponse {}
 
-impl<'data> Se050Response<'data> for ScpExternalAuthenticateResponse {
+impl<'data> Se05XResponse<'data> for ScpExternalAuthenticateResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
     }
 }
 
-impl<W: Writer> Se050Command<W> for ScpExternalAuthenticate {
+impl<W: Writer> Se05XCommand<W> for ScpExternalAuthenticate {
     type Response<'rdata> = ScpExternalAuthenticateResponse;
 }
 
@@ -428,7 +428,7 @@ impl<W: Writer> DataStream<W> for SetLockState {
     }
 }
 
-impl<W: Writer> Se050Command<W> for SetLockState {
+impl<W: Writer> Se05XCommand<W> for SetLockState {
     type Response<'rdata> = ();
 }
 
@@ -514,7 +514,7 @@ impl<'data, W: Writer> DataStream<W> for WriteEcKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WriteEcKey<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WriteEcKey<'data> {
     type Response<'rdata> = ();
 }
 
@@ -630,7 +630,7 @@ impl<'data, W: Writer> DataStream<W> for WriteRsaKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WriteRsaKey<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WriteRsaKey<'data> {
     type Response<'rdata> = ();
 }
 
@@ -704,7 +704,7 @@ impl<'data, W: Writer> DataStream<W> for GenRsaKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for GenRsaKey<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for GenRsaKey<'data> {
     type Response<'rdata> = ();
 }
 
@@ -785,7 +785,7 @@ impl<'data, W: Writer> DataStream<W> for WriteSymmKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WriteSymmKey<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WriteSymmKey<'data> {
     type Response<'rdata> = ();
 }
 
@@ -859,7 +859,7 @@ impl<'data, W: Writer> DataStream<W> for WriteBinary<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WriteBinary<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WriteBinary<'data> {
     type Response<'rdata> = ();
 }
 
@@ -927,7 +927,7 @@ impl<'data, W: Writer> DataStream<W> for WriteUserId<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WriteUserId<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WriteUserId<'data> {
     type Response<'rdata> = ();
 }
 
@@ -994,7 +994,7 @@ impl<'data, W: Writer> DataStream<W> for WriteCounter<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WriteCounter<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WriteCounter<'data> {
     type Response<'rdata> = ();
 }
 
@@ -1061,7 +1061,7 @@ impl<'data, W: Writer> DataStream<W> for WritePcr<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for WritePcr<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for WritePcr<'data> {
     type Response<'rdata> = ();
 }
 
@@ -1125,7 +1125,7 @@ impl<'data, W: Writer> DataStream<W> for ImportObject<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for ImportObject<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for ImportObject<'data> {
     type Response<'rdata> = ();
 }
 
@@ -1197,7 +1197,7 @@ pub struct ReadObjectResponse<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ReadObjectResponse<'data> {
+impl<'data> Se05XResponse<'data> for ReadObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -1212,7 +1212,7 @@ impl<'data> Se050Response<'data> for ReadObjectResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ReadObject {
+impl<W: Writer> Se05XCommand<W> for ReadObject {
     type Response<'rdata> = ReadObjectResponse<'rdata>;
 }
 
@@ -1309,7 +1309,7 @@ pub struct ReadAttestObjectResponse<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ReadAttestObjectResponse<'data> {
+impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -1376,7 +1376,7 @@ impl<'data> Se050Response<'data> for ReadAttestObjectResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for ReadAttestObject<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for ReadAttestObject<'data> {
     type Response<'rdata> = ReadAttestObjectResponse<'rdata>;
 }
 
@@ -1423,7 +1423,7 @@ pub struct ExportObjectResponse<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ExportObjectResponse<'data> {
+impl<'data> Se05XResponse<'data> for ExportObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -1438,7 +1438,7 @@ impl<'data> Se050Response<'data> for ExportObjectResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ExportObject {
+impl<W: Writer> Se05XCommand<W> for ExportObject {
     type Response<'rdata> = ExportObjectResponse<'rdata>;
 }
 
@@ -1487,7 +1487,7 @@ pub struct ReadTypeResponse {
     pub transient_indicator: TransientIndicator,
 }
 
-impl<'data> Se050Response<'data> for ReadTypeResponse {
+impl<'data> Se05XResponse<'data> for ReadTypeResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (ty, rem) = loop {
             let mut rem_inner = rem;
@@ -1514,7 +1514,7 @@ impl<'data> Se050Response<'data> for ReadTypeResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ReadType {
+impl<W: Writer> Se05XCommand<W> for ReadType {
     type Response<'rdata> = ReadTypeResponse;
 }
 
@@ -1561,7 +1561,7 @@ pub struct ReadSizeResponse {
     pub size: Be<u64>,
 }
 
-impl<'data> Se050Response<'data> for ReadSizeResponse {
+impl<'data> Se05XResponse<'data> for ReadSizeResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (size, rem) = loop {
             let mut rem_inner = rem;
@@ -1576,7 +1576,7 @@ impl<'data> Se050Response<'data> for ReadSizeResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ReadSize {
+impl<W: Writer> Se05XCommand<W> for ReadSize {
     type Response<'rdata> = ReadSizeResponse;
 }
 
@@ -1627,7 +1627,7 @@ pub struct ReadIdListResponse<'data> {
     pub ids: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ReadIdListResponse<'data> {
+impl<'data> Se05XResponse<'data> for ReadIdListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (more, rem) = loop {
             let mut rem_inner = rem;
@@ -1651,7 +1651,7 @@ impl<'data> Se050Response<'data> for ReadIdListResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ReadIdList {
+impl<W: Writer> Se05XCommand<W> for ReadIdList {
     type Response<'rdata> = ReadIdListResponse<'rdata>;
 }
 
@@ -1695,10 +1695,10 @@ impl<W: Writer> DataStream<W> for CheckObjectExists {
 #[derive(Clone, Debug)]
 pub struct CheckObjectExistsResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub result: Se050Result,
+    pub result: Se05XResult,
 }
 
-impl<'data> Se050Response<'data> for CheckObjectExistsResponse {
+impl<'data> Se05XResponse<'data> for CheckObjectExistsResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (result, rem) = loop {
             let mut rem_inner = rem;
@@ -1713,7 +1713,7 @@ impl<'data> Se050Response<'data> for CheckObjectExistsResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for CheckObjectExists {
+impl<W: Writer> Se05XCommand<W> for CheckObjectExists {
     type Response<'rdata> = CheckObjectExistsResponse;
 }
 
@@ -1755,7 +1755,7 @@ impl<W: Writer> DataStream<W> for DeleteSecureObject {
     }
 }
 
-impl<W: Writer> Se050Command<W> for DeleteSecureObject {
+impl<W: Writer> Se05XCommand<W> for DeleteSecureObject {
     type Response<'rdata> = ();
 }
 
@@ -1790,7 +1790,7 @@ impl<W: Writer> DataStream<W> for CreateEcCurve {
     }
 }
 
-impl<W: Writer> Se050Command<W> for CreateEcCurve {
+impl<W: Writer> Se05XCommand<W> for CreateEcCurve {
     type Response<'rdata> = ();
 }
 
@@ -1833,7 +1833,7 @@ impl<'data, W: Writer> DataStream<W> for SetEcCurveParam<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for SetEcCurveParam<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for SetEcCurveParam<'data> {
     type Response<'rdata> = ();
 }
 
@@ -1873,7 +1873,7 @@ pub struct GetEcCurveIdResponse {
     pub curve: EcCurve,
 }
 
-impl<'data> Se050Response<'data> for GetEcCurveIdResponse {
+impl<'data> Se05XResponse<'data> for GetEcCurveIdResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (curve, rem) = loop {
             let mut rem_inner = rem;
@@ -1888,7 +1888,7 @@ impl<'data> Se050Response<'data> for GetEcCurveIdResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for GetEcCurveId {
+impl<W: Writer> Se05XCommand<W> for GetEcCurveId {
     type Response<'rdata> = GetEcCurveIdResponse;
 }
 
@@ -1925,7 +1925,7 @@ pub struct ReadEcCurveListResponse<'data> {
     pub ids: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ReadEcCurveListResponse<'data> {
+impl<'data> Se05XResponse<'data> for ReadEcCurveListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (ids, rem) = loop {
             let mut rem_inner = rem;
@@ -1940,7 +1940,7 @@ impl<'data> Se050Response<'data> for ReadEcCurveListResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ReadEcCurveList {
+impl<W: Writer> Se05XCommand<W> for ReadEcCurveList {
     type Response<'rdata> = ReadEcCurveListResponse<'rdata>;
 }
 
@@ -1982,7 +1982,7 @@ impl<W: Writer> DataStream<W> for DeleteEcCurve {
     }
 }
 
-impl<W: Writer> Se050Command<W> for DeleteEcCurve {
+impl<W: Writer> Se05XCommand<W> for DeleteEcCurve {
     type Response<'rdata> = ();
 }
 
@@ -2030,7 +2030,7 @@ impl<W: Writer> DataStream<W> for CreateDigestObject {
     }
 }
 
-impl<W: Writer> Se050Command<W> for CreateDigestObject {
+impl<W: Writer> Se05XCommand<W> for CreateDigestObject {
     type Response<'rdata> = ();
 }
 
@@ -2080,7 +2080,7 @@ impl<W: Writer> DataStream<W> for CreateCipherObject {
     }
 }
 
-impl<W: Writer> Se050Command<W> for CreateCipherObject {
+impl<W: Writer> Se05XCommand<W> for CreateCipherObject {
     type Response<'rdata> = ();
 }
 
@@ -2128,7 +2128,7 @@ impl<W: Writer> DataStream<W> for CreateSignatureObject {
     }
 }
 
-impl<W: Writer> Se050Command<W> for CreateSignatureObject {
+impl<W: Writer> Se05XCommand<W> for CreateSignatureObject {
     type Response<'rdata> = ();
 }
 
@@ -2165,7 +2165,7 @@ pub struct ReadCryptoObjListResponse<'data> {
     pub list: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for ReadCryptoObjListResponse<'data> {
+impl<'data> Se05XResponse<'data> for ReadCryptoObjListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (list, rem) = loop {
             let mut rem_inner = rem;
@@ -2180,7 +2180,7 @@ impl<'data> Se050Response<'data> for ReadCryptoObjListResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for ReadCryptoObjList {
+impl<W: Writer> Se05XCommand<W> for ReadCryptoObjList {
     type Response<'rdata> = ReadCryptoObjListResponse<'rdata>;
 }
 
@@ -2222,7 +2222,7 @@ impl<W: Writer> DataStream<W> for DeleteCryptoObj {
     }
 }
 
-impl<W: Writer> Se050Command<W> for DeleteCryptoObj {
+impl<W: Writer> Se05XCommand<W> for DeleteCryptoObj {
     type Response<'rdata> = ();
 }
 
@@ -2279,7 +2279,7 @@ pub struct EcdsaSignResponse<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for EcdsaSignResponse<'data> {
+impl<'data> Se05XResponse<'data> for EcdsaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (signature, rem) = loop {
             let mut rem_inner = rem;
@@ -2294,7 +2294,7 @@ impl<'data> Se050Response<'data> for EcdsaSignResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for EcdsaSign<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for EcdsaSign<'data> {
     type Response<'rdata> = EcdsaSignResponse<'rdata>;
 }
 
@@ -2349,7 +2349,7 @@ pub struct EddsaSignResponse<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for EddsaSignResponse<'data> {
+impl<'data> Se05XResponse<'data> for EddsaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (signature, rem) = loop {
             let mut rem_inner = rem;
@@ -2364,7 +2364,7 @@ impl<'data> Se050Response<'data> for EddsaSignResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for EddsaSign<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for EddsaSign<'data> {
     type Response<'rdata> = EddsaSignResponse<'rdata>;
 }
 
@@ -2434,7 +2434,7 @@ pub struct EcdaaSignResponse<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for EcdaaSignResponse<'data> {
+impl<'data> Se05XResponse<'data> for EcdaaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (signature, rem) = loop {
             let mut rem_inner = rem;
@@ -2449,7 +2449,7 @@ impl<'data> Se050Response<'data> for EcdaaSignResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for EcdaaSign {
+impl<W: Writer> Se05XCommand<W> for EcdaaSign {
     type Response<'rdata> = EcdaaSignResponse<'rdata>;
 }
 
@@ -2518,10 +2518,10 @@ impl<'data, W: Writer> DataStream<W> for EcdsaVerify<'data> {
 #[derive(Clone, Debug)]
 pub struct EcdsaVerifyResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub result: Se050Result,
+    pub result: Se05XResult,
 }
 
-impl<'data> Se050Response<'data> for EcdsaVerifyResponse {
+impl<'data> Se05XResponse<'data> for EcdsaVerifyResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (result, rem) = loop {
             let mut rem_inner = rem;
@@ -2536,7 +2536,7 @@ impl<'data> Se050Response<'data> for EcdsaVerifyResponse {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for EcdsaVerify<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for EcdsaVerify<'data> {
     type Response<'rdata> = EcdsaVerifyResponse;
 }
 
@@ -2603,10 +2603,10 @@ impl<'data, W: Writer> DataStream<W> for EddsaVerify<'data> {
 #[derive(Clone, Debug)]
 pub struct EddsaVerifyResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub result: Se050Result,
+    pub result: Se05XResult,
 }
 
-impl<'data> Se050Response<'data> for EddsaVerifyResponse {
+impl<'data> Se05XResponse<'data> for EddsaVerifyResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (result, rem) = loop {
             let mut rem_inner = rem;
@@ -2621,7 +2621,7 @@ impl<'data> Se050Response<'data> for EddsaVerifyResponse {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for EddsaVerify<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for EddsaVerify<'data> {
     type Response<'rdata> = EddsaVerifyResponse;
 }
 
@@ -2673,7 +2673,7 @@ pub struct EcdhGenerateSharedSecretResponse<'data> {
     pub shared_secret: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for EcdhGenerateSharedSecretResponse<'data> {
+impl<'data> Se05XResponse<'data> for EcdhGenerateSharedSecretResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (shared_secret, rem) = loop {
             let mut rem_inner = rem;
@@ -2688,7 +2688,7 @@ impl<'data> Se050Response<'data> for EcdhGenerateSharedSecretResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for EcdhGenerateSharedSecret<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for EcdhGenerateSharedSecret<'data> {
     type Response<'rdata> = EcdhGenerateSharedSecretResponse<'rdata>;
 }
 
@@ -2743,7 +2743,7 @@ pub struct RsaSignResponse<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for RsaSignResponse<'data> {
+impl<'data> Se05XResponse<'data> for RsaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (signature, rem) = loop {
             let mut rem_inner = rem;
@@ -2758,7 +2758,7 @@ impl<'data> Se050Response<'data> for RsaSignResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for RsaSign<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for RsaSign<'data> {
     type Response<'rdata> = RsaSignResponse<'rdata>;
 }
 
@@ -2827,10 +2827,10 @@ impl<'data, W: Writer> DataStream<W> for RsaVerify<'data> {
 #[derive(Clone, Debug)]
 pub struct RsaVerifyResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub result: Se050Result,
+    pub result: Se05XResult,
 }
 
-impl<'data> Se050Response<'data> for RsaVerifyResponse {
+impl<'data> Se05XResponse<'data> for RsaVerifyResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (result, rem) = loop {
             let mut rem_inner = rem;
@@ -2845,7 +2845,7 @@ impl<'data> Se050Response<'data> for RsaVerifyResponse {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for RsaVerify<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for RsaVerify<'data> {
     type Response<'rdata> = RsaVerifyResponse;
 }
 
@@ -2900,7 +2900,7 @@ pub struct RsaEncryptResponse<'data> {
     pub ciphertext: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for RsaEncryptResponse<'data> {
+impl<'data> Se05XResponse<'data> for RsaEncryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (ciphertext, rem) = loop {
             let mut rem_inner = rem;
@@ -2915,7 +2915,7 @@ impl<'data> Se050Response<'data> for RsaEncryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for RsaEncrypt<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for RsaEncrypt<'data> {
     type Response<'rdata> = RsaEncryptResponse<'rdata>;
 }
 
@@ -2970,7 +2970,7 @@ pub struct RsaDecryptResponse<'data> {
     pub plaintext: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for RsaDecryptResponse<'data> {
+impl<'data> Se05XResponse<'data> for RsaDecryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (plaintext, rem) = loop {
             let mut rem_inner = rem;
@@ -2985,7 +2985,7 @@ impl<'data> Se050Response<'data> for RsaDecryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for RsaDecrypt<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for RsaDecrypt<'data> {
     type Response<'rdata> = RsaDecryptResponse<'rdata>;
 }
 
@@ -3030,7 +3030,7 @@ impl<'data, W: Writer> DataStream<W> for CipherEncryptInit<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for CipherEncryptInit<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for CipherEncryptInit<'data> {
     type Response<'rdata> = ();
 }
 
@@ -3075,7 +3075,7 @@ impl<'data, W: Writer> DataStream<W> for CipherDecryptInit<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for CipherDecryptInit<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for CipherDecryptInit<'data> {
     type Response<'rdata> = ();
 }
 
@@ -3128,7 +3128,7 @@ pub struct CipherUpdateResponse<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for CipherUpdateResponse<'data> {
+impl<'data> Se05XResponse<'data> for CipherUpdateResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -3143,7 +3143,7 @@ impl<'data> Se050Response<'data> for CipherUpdateResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for CipherUpdate<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for CipherUpdate<'data> {
     type Response<'rdata> = CipherUpdateResponse<'rdata>;
 }
 
@@ -3196,7 +3196,7 @@ pub struct CipherFinalResponse<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for CipherFinalResponse<'data> {
+impl<'data> Se05XResponse<'data> for CipherFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -3211,7 +3211,7 @@ impl<'data> Se050Response<'data> for CipherFinalResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for CipherFinal<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for CipherFinal<'data> {
     type Response<'rdata> = CipherFinalResponse<'rdata>;
 }
 
@@ -3283,7 +3283,7 @@ pub struct CipherOneShotEncryptResponse<'data> {
     pub ciphertext: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for CipherOneShotEncryptResponse<'data> {
+impl<'data> Se05XResponse<'data> for CipherOneShotEncryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (ciphertext, rem) = loop {
             let mut rem_inner = rem;
@@ -3298,7 +3298,7 @@ impl<'data> Se050Response<'data> for CipherOneShotEncryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for CipherOneShotEncrypt<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotEncrypt<'data> {
     type Response<'rdata> = CipherOneShotEncryptResponse<'rdata>;
 }
 
@@ -3370,7 +3370,7 @@ pub struct CipherOneShotDecryptResponse<'data> {
     pub plaintext: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for CipherOneShotDecryptResponse<'data> {
+impl<'data> Se05XResponse<'data> for CipherOneShotDecryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (plaintext, rem) = loop {
             let mut rem_inner = rem;
@@ -3385,7 +3385,7 @@ impl<'data> Se050Response<'data> for CipherOneShotDecryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for CipherOneShotDecrypt<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotDecrypt<'data> {
     type Response<'rdata> = CipherOneShotDecryptResponse<'rdata>;
 }
 
@@ -3422,7 +3422,7 @@ impl<W: Writer> DataStream<W> for MacGenerateInit {
     }
 }
 
-impl<W: Writer> Se050Command<W> for MacGenerateInit {
+impl<W: Writer> Se05XCommand<W> for MacGenerateInit {
     type Response<'rdata> = ();
 }
 
@@ -3459,7 +3459,7 @@ impl<W: Writer> DataStream<W> for MacValidateInit {
     }
 }
 
-impl<W: Writer> Se050Command<W> for MacValidateInit {
+impl<W: Writer> Se05XCommand<W> for MacValidateInit {
     type Response<'rdata> = ();
 }
 
@@ -3496,7 +3496,7 @@ impl<'data, W: Writer> DataStream<W> for MacUpdate<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for MacUpdate<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for MacUpdate<'data> {
     type Response<'rdata> = ();
 }
 
@@ -3545,7 +3545,7 @@ pub struct MacGenerateFinalResponse<'data> {
     pub tag: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for MacGenerateFinalResponse<'data> {
+impl<'data> Se05XResponse<'data> for MacGenerateFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (tag, rem) = loop {
             let mut rem_inner = rem;
@@ -3560,7 +3560,7 @@ impl<'data> Se050Response<'data> for MacGenerateFinalResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for MacGenerateFinal<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for MacGenerateFinal<'data> {
     type Response<'rdata> = MacGenerateFinalResponse<'rdata>;
 }
 
@@ -3614,10 +3614,10 @@ impl<'data, W: Writer> DataStream<W> for MacValidateFinal<'data> {
 #[derive(Clone, Debug)]
 pub struct MacValidateFinalResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub result: Se050Result,
+    pub result: Se05XResult,
 }
 
-impl<'data> Se050Response<'data> for MacValidateFinalResponse {
+impl<'data> Se05XResponse<'data> for MacValidateFinalResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (result, rem) = loop {
             let mut rem_inner = rem;
@@ -3632,7 +3632,7 @@ impl<'data> Se050Response<'data> for MacValidateFinalResponse {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for MacValidateFinal<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for MacValidateFinal<'data> {
     type Response<'rdata> = MacValidateFinalResponse;
 }
 
@@ -3687,7 +3687,7 @@ pub struct MacOneShotGenerateResponse<'data> {
     pub tag: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for MacOneShotGenerateResponse<'data> {
+impl<'data> Se05XResponse<'data> for MacOneShotGenerateResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (tag, rem) = loop {
             let mut rem_inner = rem;
@@ -3702,7 +3702,7 @@ impl<'data> Se050Response<'data> for MacOneShotGenerateResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for MacOneShotGenerate<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for MacOneShotGenerate<'data> {
     type Response<'rdata> = MacOneShotGenerateResponse<'rdata>;
 }
 
@@ -3773,10 +3773,10 @@ impl<'data, W: Writer> DataStream<W> for MacOneShotValidate<'data> {
 #[derive(Clone, Debug)]
 pub struct MacOneShotValidateResponse {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub result: Se050Result,
+    pub result: Se05XResult,
 }
 
-impl<'data> Se050Response<'data> for MacOneShotValidateResponse {
+impl<'data> Se05XResponse<'data> for MacOneShotValidateResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (result, rem) = loop {
             let mut rem_inner = rem;
@@ -3791,7 +3791,7 @@ impl<'data> Se050Response<'data> for MacOneShotValidateResponse {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for MacOneShotValidate<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for MacOneShotValidate<'data> {
     type Response<'rdata> = MacOneShotValidateResponse;
 }
 
@@ -3872,7 +3872,7 @@ pub struct HkdfResponse<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for HkdfResponse<'data> {
+impl<'data> Se05XResponse<'data> for HkdfResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -3887,7 +3887,7 @@ impl<'data> Se050Response<'data> for HkdfResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for Hkdf<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for Hkdf<'data> {
     type Response<'rdata> = HkdfResponse<'rdata>;
 }
 
@@ -3965,7 +3965,7 @@ pub struct Pbkdf2Response<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for Pbkdf2Response<'data> {
+impl<'data> Se05XResponse<'data> for Pbkdf2Response<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -3980,7 +3980,7 @@ impl<'data> Se050Response<'data> for Pbkdf2Response<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for Pbkdf2<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for Pbkdf2<'data> {
     type Response<'rdata> = Pbkdf2Response<'rdata>;
 }
 
@@ -4015,7 +4015,7 @@ impl<W: Writer> DataStream<W> for DigestInit {
     }
 }
 
-impl<W: Writer> Se050Command<W> for DigestInit {
+impl<W: Writer> Se05XCommand<W> for DigestInit {
     type Response<'rdata> = ();
 }
 
@@ -4052,7 +4052,7 @@ impl<'data, W: Writer> DataStream<W> for DigestUpdate<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for DigestUpdate<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for DigestUpdate<'data> {
     type Response<'rdata> = ();
 }
 
@@ -4101,7 +4101,7 @@ pub struct DigestFinalResponse<'data> {
     pub digest: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for DigestFinalResponse<'data> {
+impl<'data> Se05XResponse<'data> for DigestFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (digest, rem) = loop {
             let mut rem_inner = rem;
@@ -4116,7 +4116,7 @@ impl<'data> Se050Response<'data> for DigestFinalResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for DigestFinal<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for DigestFinal<'data> {
     type Response<'rdata> = DigestFinalResponse<'rdata>;
 }
 
@@ -4165,7 +4165,7 @@ pub struct DigestOneShotResponse<'data> {
     pub digest: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for DigestOneShotResponse<'data> {
+impl<'data> Se05XResponse<'data> for DigestOneShotResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (digest, rem) = loop {
             let mut rem_inner = rem;
@@ -4180,7 +4180,7 @@ impl<'data> Se050Response<'data> for DigestOneShotResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se050Command<W> for DigestOneShot<'data> {
+impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
     type Response<'rdata> = DigestOneShotResponse<'rdata>;
 }
 
@@ -4217,7 +4217,7 @@ pub struct GetVersionResponse {
     pub version_info: VersionInfo,
 }
 
-impl<'data> Se050Response<'data> for GetVersionResponse {
+impl<'data> Se05XResponse<'data> for GetVersionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (version_info, rem) = loop {
             let mut rem_inner = rem;
@@ -4232,7 +4232,7 @@ impl<'data> Se050Response<'data> for GetVersionResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for GetVersion {
+impl<W: Writer> Se05XCommand<W> for GetVersion {
     type Response<'rdata> = GetVersionResponse;
 }
 
@@ -4269,7 +4269,7 @@ pub struct GetTimestampResponse<'data> {
     pub timestamp: &'data [u8; 12],
 }
 
-impl<'data> Se050Response<'data> for GetTimestampResponse<'data> {
+impl<'data> Se05XResponse<'data> for GetTimestampResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (timestamp, rem) = loop {
             let mut rem_inner = rem;
@@ -4284,7 +4284,7 @@ impl<'data> Se050Response<'data> for GetTimestampResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for GetTimestamp {
+impl<W: Writer> Se05XCommand<W> for GetTimestamp {
     type Response<'rdata> = GetTimestampResponse<'rdata>;
 }
 
@@ -4324,7 +4324,7 @@ pub struct GetFreeMemoryResponse {
     pub available: Be<u16>,
 }
 
-impl<'data> Se050Response<'data> for GetFreeMemoryResponse {
+impl<'data> Se05XResponse<'data> for GetFreeMemoryResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (available, rem) = loop {
             let mut rem_inner = rem;
@@ -4339,7 +4339,7 @@ impl<'data> Se050Response<'data> for GetFreeMemoryResponse {
     }
 }
 
-impl<W: Writer> Se050Command<W> for GetFreeMemory {
+impl<W: Writer> Se05XCommand<W> for GetFreeMemory {
     type Response<'rdata> = GetFreeMemoryResponse;
 }
 
@@ -4386,7 +4386,7 @@ pub struct GetRandomResponse<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> Se050Response<'data> for GetRandomResponse<'data> {
+impl<'data> Se05XResponse<'data> for GetRandomResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let (data, rem) = loop {
             let mut rem_inner = rem;
@@ -4401,7 +4401,7 @@ impl<'data> Se050Response<'data> for GetRandomResponse<'data> {
     }
 }
 
-impl<W: Writer> Se050Command<W> for GetRandom {
+impl<W: Writer> Se05XCommand<W> for GetRandom {
     type Response<'rdata> = GetRandomResponse<'rdata>;
 }
 
@@ -4440,6 +4440,6 @@ impl<W: Writer> DataStream<W> for DeleteAll {
     }
 }
 
-impl<W: Writer> Se050Command<W> for DeleteAll {
+impl<W: Writer> Se05XCommand<W> for DeleteAll {
     type Response<'rdata> = ();
 }

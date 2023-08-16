@@ -348,7 +348,7 @@ pub struct T1oI2C<Twi, D> {
     delay: D,
     segt: u32,
     /// Block waiting time
-    /// Maximum time the SE050 can take to respond
+    /// Maximum time the se05x can take to respond
     ///
     /// Microseconds
     bwt: u32,

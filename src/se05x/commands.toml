@@ -358,7 +358,7 @@ le = "ExpectedLen::Max"
 TAG_1 = { name = "object_id", type = "ObjectId" }
 
 [check_object_exists.response]
-TAG_1 = { name = "result", type = "Se050Result" }
+TAG_1 = { name = "result", type = "Se05XResult" }
 
 [delete_secure_object]
 cla = "NO_SM_CLA"
@@ -547,7 +547,7 @@ TAG_3 = { name = "data" }
 TAG_5 = { name = "signature" }
 
 [ecdsa_verify.response]
-TAG_1 = { name = "result", type = "Se050Result" }
+TAG_1 = { name = "result", type = "Se05XResult" }
 
 [eddsa_verify]
 cla = "NO_SM_CLA"
@@ -563,7 +563,7 @@ TAG_3 = { name = "data" }
 TAG_5 = { name = "signature" }
 
 [eddsa_verify.response]
-TAG_1 = { name = "result", type = "Se050Result" }
+TAG_1 = { name = "result", type = "Se05XResult" }
 
 ## Shared secret generation
 
@@ -615,7 +615,7 @@ TAG_5 = { name = "signature" }
 
 [rsa_verify.response]
 # TODO type (ASN.1 signature)
-TAG_1 = { name = "result", type = "Se050Result" }
+TAG_1 = { name = "result", type = "Se05XResult" }
 
 [rsa_encrypt]
 cla = "NO_SM_CLA"
@@ -790,7 +790,7 @@ TAG_2 = { name = "mac_id", type = "CryptoObjectId" }
 TAG_3 = { name = "tag", comment = "Tag to validate"}
 
 [mac_validate_final.response]
-TAG_1 = { name = "result", type = "Se050Result" }
+TAG_1 = { name = "result", type = "Se05XResult" }
 
 [mac_one_shot_generate]
 cla = "NO_SM_CLA"
@@ -821,7 +821,7 @@ TAG_3 = { name = "data" }
 TAG_5 = { name = "tag", comment = "tag to validate" }
 
 [mac_one_shot_validate.response]
-TAG_1 = { name = "result", type = "Se050Result" }
+TAG_1 = { name = "result", type = "Se05XResult" }
 
 # Key derivation functions
 

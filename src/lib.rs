@@ -9,5 +9,5 @@ delog::generate_macros!();
 
 mod macros;
 
-pub mod se050;
+pub mod se05x;
 pub mod t1;
