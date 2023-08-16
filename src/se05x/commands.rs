@@ -1,4 +1,3 @@
-#![allow(clippy::all)]
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -17,11 +16,14 @@ pub struct CreateSession {
     pub object_id: ObjectId,
 }
 
+type CreateSessionData = Tlv<ObjectId>;
+
 impl CreateSession {
-    fn data(&self) -> Tlv<ObjectId> {
+    fn data(&self) -> CreateSessionData {
         Tlv::new(TAG_1, self.object_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+
+    fn command(&self) -> CommandBuilder<CreateSessionData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -81,11 +83,14 @@ pub struct ExchangeSessionData<'data> {
     pub c_mac: &'data [u8],
 }
 
+type ExchangeSessionDataData<'data> = (Tlv<SessionPolicy>, &'data [u8]);
+
 impl<'data> ExchangeSessionData<'data> {
-    fn data(&self) -> (Tlv<SessionPolicy>, &'data [u8]) {
+    fn data(&self) -> ExchangeSessionDataData<'data> {
         (Tlv::new(TAG_1, self.session_policy), self.c_mac)
     }
-    fn command(&self) -> CommandBuilder<(Tlv<SessionPolicy>, &'data [u8])> {
+
+    fn command(&self) -> CommandBuilder<ExchangeSessionDataData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -118,7 +123,7 @@ pub struct ExchangeSessionDataResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ExchangeSessionDataResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let r_mac = rem.try_into()?;
+        let r_mac = rem;
         let _ = rem;
         Ok(Self { r_mac })
     }
@@ -136,11 +141,14 @@ pub struct RefreshSession {
     pub policy: Option<SessionPolicy>,
 }
 
+type RefreshSessionData = Option<Tlv<SessionPolicy>>;
+
 impl RefreshSession {
-    fn data(&self) -> Option<Tlv<SessionPolicy>> {
+    fn data(&self) -> RefreshSessionData {
         self.policy.map(|data| Tlv::new(TAG_POLICY, data))
     }
-    fn command(&self) -> CommandBuilder<Option<Tlv<SessionPolicy>>> {
+
+    fn command(&self) -> CommandBuilder<RefreshSessionData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -184,19 +192,11 @@ impl<W: Writer> Se05XCommand<W> for RefreshSession {
 #[derive(Clone, Debug)]
 pub struct CloseSession {}
 
+type CloseSessionData = ();
+
 impl CloseSession {
-    fn data(&self) -> () {
-        ()
-    }
-    fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_MGMT,
-            P1_DEFAULT,
-            P2_SESSION_CLOSE,
-            self.data(),
-            0,
-        )
+    fn command(&self) -> CommandBuilder<CloseSessionData> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CLOSE, (), 0)
     }
 }
 
@@ -235,11 +235,14 @@ pub struct VerifySessionUserId<'data> {
     pub user_id: &'data [u8],
 }
 
+type VerifySessionUserIdData<'data> = Tlv<&'data [u8]>;
+
 impl<'data> VerifySessionUserId<'data> {
-    fn data(&self) -> Tlv<&'data [u8]> {
+    fn data(&self) -> VerifySessionUserIdData<'data> {
         Tlv::new(TAG_1, self.user_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<&'data [u8]>> {
+
+    fn command(&self) -> CommandBuilder<VerifySessionUserIdData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -286,11 +289,14 @@ pub struct ScpInitializeUpdate {
     pub host_challenge: [u8; 8],
 }
 
+type ScpInitializeUpdateData = [u8; 8];
+
 impl ScpInitializeUpdate {
-    fn data(&self) -> [u8; 8] {
+    fn data(&self) -> ScpInitializeUpdateData {
         self.host_challenge
     }
-    fn command(&self) -> CommandBuilder<[u8; 8]> {
+
+    fn command(&self) -> CommandBuilder<ScpInitializeUpdateData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_INITIALIZE_UPDATE,
@@ -343,11 +349,14 @@ pub struct ScpExternalAuthenticate {
     pub mac: [u8; 8],
 }
 
+type ScpExternalAuthenticateData = ([u8; 8], [u8; 8]);
+
 impl ScpExternalAuthenticate {
-    fn data(&self) -> ([u8; 8], [u8; 8]) {
+    fn data(&self) -> ScpExternalAuthenticateData {
         (self.host_cryptogram, self.mac)
     }
-    fn command(&self) -> CommandBuilder<([u8; 8], [u8; 8])> {
+
+    fn command(&self) -> CommandBuilder<ScpExternalAuthenticateData> {
         CommandBuilder::new(
             SM_CLA,
             INS_EXTERNAL_AUTHENTICATE,
@@ -396,14 +405,17 @@ pub struct SetLockState {
     pub lock_state: LockState,
 }
 
+type SetLockStateData = (Tlv<TransientIndicator>, Tlv<LockState>);
+
 impl SetLockState {
-    fn data(&self) -> (Tlv<TransientIndicator>, Tlv<LockState>) {
+    fn data(&self) -> SetLockStateData {
         (
             Tlv::new(TAG_1, self.lock_indicator),
             Tlv::new(TAG_2, self.lock_state),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<TransientIndicator>, Tlv<LockState>)> {
+
+    fn command(&self) -> CommandBuilder<SetLockStateData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -454,17 +466,17 @@ pub struct WriteEcKey<'data> {
     pub public_key: Option<&'data [u8]>,
 }
 
+type WriteEcKeyData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Option<Tlv<Be<u16>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<EcCurve>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+);
+
 impl<'data> WriteEcKey<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<EcCurve>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> WriteEcKeyData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             self.max_attempts
@@ -475,16 +487,8 @@ impl<'data> WriteEcKey<'data> {
             self.public_key.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<EcCurve>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WriteEcKeyData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -552,23 +556,23 @@ pub struct WriteRsaKey<'data> {
     pub n: Option<&'data [u8]>,
 }
 
+type WriteRsaKeyData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Option<Tlv<Be<u16>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+);
+
 impl<'data> WriteRsaKey<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> WriteRsaKeyData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             self.max_attempts
@@ -585,22 +589,8 @@ impl<'data> WriteRsaKey<'data> {
             self.n.map(|data| Tlv::new(TAG_10, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WriteRsaKeyData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -651,15 +641,15 @@ pub struct GenRsaKey<'data> {
     pub key_size: Option<Be<u16>>,
 }
 
+type GenRsaKeyData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Option<Tlv<Be<u16>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+);
+
 impl<'data> GenRsaKey<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-    ) {
+    fn data(&self) -> GenRsaKeyData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             self.max_attempts
@@ -668,14 +658,8 @@ impl<'data> GenRsaKey<'data> {
             self.key_size.map(|data| Tlv::new(TAG_2, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<GenRsaKeyData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -728,16 +712,16 @@ pub struct WriteSymmKey<'data> {
     pub value: &'data [u8],
 }
 
+type WriteSymmKeyData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Option<Tlv<Be<u16>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<ObjectId>>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> WriteSymmKey<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<ObjectId>>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> WriteSymmKeyData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             self.max_attempts
@@ -747,15 +731,8 @@ impl<'data> WriteSymmKey<'data> {
             Tlv::new(TAG_3, self.value),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u16>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<ObjectId>>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WriteSymmKeyData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -809,16 +786,16 @@ pub struct WriteBinary<'data> {
     pub data: Option<&'data [u8]>,
 }
 
+type WriteBinaryData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<&'data [u8]>>,
+);
+
 impl<'data> WriteBinary<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> WriteBinaryData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             Tlv::new(TAG_1, self.object_id),
@@ -827,15 +804,8 @@ impl<'data> WriteBinary<'data> {
             self.data.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WriteBinaryData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -878,15 +848,15 @@ pub struct WriteUserId<'data> {
     pub data: &'data [u8],
 }
 
+type WriteUserIdData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Option<Tlv<Be<u8>>>,
+    Tlv<ObjectId>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> WriteUserId<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u8>>>,
-        Tlv<ObjectId>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> WriteUserIdData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             self.max_attempts
@@ -895,14 +865,8 @@ impl<'data> WriteUserId<'data> {
             Tlv::new(TAG_2, self.data),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Option<Tlv<Be<u8>>>,
-        Tlv<ObjectId>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WriteUserIdData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_WRITE | INS_AUTH_OBJECT,
@@ -947,15 +911,15 @@ pub struct WriteCounter<'data> {
     pub value: Option<Be<u64>>,
 }
 
+type WriteCounterData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<CounterSize>>,
+    Option<Tlv<Be<u64>>>,
+);
+
 impl<'data> WriteCounter<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<CounterSize>>,
-        Option<Tlv<Be<u64>>>,
-    ) {
+    fn data(&self) -> WriteCounterData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             Tlv::new(TAG_1, self.object_id),
@@ -963,14 +927,8 @@ impl<'data> WriteCounter<'data> {
             self.value.map(|data| Tlv::new(TAG_3, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<CounterSize>>,
-        Option<Tlv<Be<u64>>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WriteCounterData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -1014,15 +972,15 @@ pub struct WritePcr<'data> {
     pub extend: Option<&'data [u8]>,
 }
 
+type WritePcrData<'data> = (
+    Option<Tlv<PolicySet<'data>>>,
+    Tlv<ObjectId>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+);
+
 impl<'data> WritePcr<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Option<Tlv<PolicySet<'data>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> WritePcrData<'data> {
         (
             self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
             Tlv::new(TAG_1, self.object_id),
@@ -1030,14 +988,8 @@ impl<'data> WritePcr<'data> {
             self.extend.map(|data| Tlv::new(TAG_3, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Option<Tlv<PolicySet<'data>>>,
-        Tlv<ObjectId>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<WritePcrData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -1081,27 +1033,22 @@ pub struct ImportObject<'data> {
     pub serialized_object: &'data [u8],
 }
 
+type ImportObjectData<'data> = (
+    Tlv<ObjectId>,
+    Option<Tlv<RsaKeyComponent>>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> ImportObject<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Option<Tlv<RsaKeyComponent>>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> ImportObjectData<'data> {
         (
             Tlv::new(TAG_1, self.object_id),
             self.rsa_key_component.map(|data| Tlv::new(TAG_2, data)),
             Tlv::new(TAG_3, self.serialized_object),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Option<Tlv<RsaKeyComponent>>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<ImportObjectData<'data>> {
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -1144,15 +1091,15 @@ pub struct ReadObject {
     pub rsa_key_component: Option<RsaKeyComponent>,
 }
 
+type ReadObjectData = (
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<RsaKeyComponent>>,
+);
+
 impl ReadObject {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<RsaKeyComponent>>,
-    ) {
+    fn data(&self) -> ReadObjectData {
         (
             Tlv::new(TAG_1, self.object_id),
             self.offset.map(|data| Tlv::new(TAG_2, data)),
@@ -1160,14 +1107,8 @@ impl ReadObject {
             self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<RsaKeyComponent>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<ReadObjectData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
@@ -1205,7 +1146,7 @@ impl<'data> Se05XResponse<'data> for ReadObjectResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -1237,18 +1178,18 @@ pub struct ReadAttestObject<'data> {
     pub freshness_random: Option<&'data [u8; 16]>,
 }
 
+type ReadAttestObjectData<'data> = (
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<&'data [u8]>>,
+    Tlv<ObjectId>,
+    Tlv<AttestationAlgo>,
+    Option<Tlv<&'data [u8; 16]>>,
+);
+
 impl<'data> ReadAttestObject<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
-        Tlv<ObjectId>,
-        Tlv<AttestationAlgo>,
-        Option<Tlv<&'data [u8; 16]>>,
-    ) {
+    fn data(&self) -> ReadAttestObjectData<'data> {
         (
             Tlv::new(TAG_1, self.object_id),
             self.offset.map(|data| Tlv::new(TAG_2, data)),
@@ -1259,17 +1200,8 @@ impl<'data> ReadAttestObject<'data> {
             self.freshness_random.map(|data| Tlv::new(TAG_7, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<Be<u16>>>,
-        Option<Tlv<&'data [u8]>>,
-        Tlv<ObjectId>,
-        Tlv<AttestationAlgo>,
-        Option<Tlv<&'data [u8; 16]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<ReadAttestObjectData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_READ | INS_ATTEST,
@@ -1317,7 +1249,7 @@ impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
 
@@ -1326,7 +1258,7 @@ impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_2 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
 
@@ -1362,7 +1294,7 @@ impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_6 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -1393,14 +1325,17 @@ pub struct ExportObject {
     pub rsa_key_component: RsaKeyComponent,
 }
 
+type ExportObjectData = (Tlv<ObjectId>, Tlv<RsaKeyComponent>);
+
 impl ExportObject {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaKeyComponent>) {
+    fn data(&self) -> ExportObjectData {
         (
             Tlv::new(TAG_1, self.object_id),
             Tlv::new(TAG_2, self.rsa_key_component),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaKeyComponent>)> {
+
+    fn command(&self) -> CommandBuilder<ExportObjectData> {
         CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, self.data(), 256)
     }
 }
@@ -1431,7 +1366,7 @@ impl<'data> Se05XResponse<'data> for ExportObjectResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -1451,11 +1386,14 @@ pub struct ReadType {
     pub object_id: ObjectId,
 }
 
+type ReadTypeData = Tlv<ObjectId>;
+
 impl ReadType {
-    fn data(&self) -> Tlv<ObjectId> {
+    fn data(&self) -> ReadTypeData {
         Tlv::new(TAG_1, self.object_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+
+    fn command(&self) -> CommandBuilder<ReadTypeData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
@@ -1527,11 +1465,14 @@ pub struct ReadSize {
     pub object_id: ObjectId,
 }
 
+type ReadSizeData = Tlv<ObjectId>;
+
 impl ReadSize {
-    fn data(&self) -> Tlv<ObjectId> {
+    fn data(&self) -> ReadSizeData {
         Tlv::new(TAG_1, self.object_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+
+    fn command(&self) -> CommandBuilder<ReadSizeData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
@@ -1591,11 +1532,14 @@ pub struct ReadIdList {
     pub filter: SecureObjectFilter,
 }
 
+type ReadIdListData = (Tlv<Be<u16>>, Tlv<SecureObjectFilter>);
+
 impl ReadIdList {
-    fn data(&self) -> (Tlv<Be<u16>>, Tlv<SecureObjectFilter>) {
+    fn data(&self) -> ReadIdListData {
         (Tlv::new(TAG_1, self.offset), Tlv::new(TAG_2, self.filter))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<Be<u16>>, Tlv<SecureObjectFilter>)> {
+
+    fn command(&self) -> CommandBuilder<ReadIdListData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
@@ -1644,7 +1588,7 @@ impl<'data> Se05XResponse<'data> for ReadIdListResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_2 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -1664,11 +1608,14 @@ pub struct CheckObjectExists {
     pub object_id: ObjectId,
 }
 
+type CheckObjectExistsData = Tlv<ObjectId>;
+
 impl CheckObjectExists {
-    fn data(&self) -> Tlv<ObjectId> {
+    fn data(&self) -> CheckObjectExistsData {
         Tlv::new(TAG_1, self.object_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+
+    fn command(&self) -> CommandBuilder<CheckObjectExistsData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
@@ -1726,11 +1673,14 @@ pub struct DeleteSecureObject {
     pub object_id: ObjectId,
 }
 
+type DeleteSecureObjectData = Tlv<ObjectId>;
+
 impl DeleteSecureObject {
-    fn data(&self) -> Tlv<ObjectId> {
+    fn data(&self) -> DeleteSecureObjectData {
         Tlv::new(TAG_1, self.object_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+
+    fn command(&self) -> CommandBuilder<DeleteSecureObjectData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -1768,11 +1718,14 @@ pub struct CreateEcCurve {
     pub curve: EcCurve,
 }
 
+type CreateEcCurveData = Tlv<EcCurve>;
+
 impl CreateEcCurve {
-    fn data(&self) -> Tlv<EcCurve> {
+    fn data(&self) -> CreateEcCurveData {
         Tlv::new(TAG_1, self.curve)
     }
-    fn command(&self) -> CommandBuilder<Tlv<EcCurve>> {
+
+    fn command(&self) -> CommandBuilder<CreateEcCurveData> {
         CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_CREATE, self.data(), 0)
     }
 }
@@ -1807,15 +1760,18 @@ pub struct SetEcCurveParam<'data> {
     pub value: &'data [u8],
 }
 
+type SetEcCurveParamData<'data> = (Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>);
+
 impl<'data> SetEcCurveParam<'data> {
-    fn data(&self) -> (Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>) {
+    fn data(&self) -> SetEcCurveParamData<'data> {
         (
             Tlv::new(TAG_1, self.curve),
             Tlv::new(TAG_2, self.param),
             Tlv::new(TAG_3, self.value),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<SetEcCurveParamData<'data>> {
         CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_PARAM, self.data(), 0)
     }
 }
@@ -1846,11 +1802,14 @@ pub struct GetEcCurveId {
     pub object_id: ObjectId,
 }
 
+type GetEcCurveIdData = Tlv<ObjectId>;
+
 impl GetEcCurveId {
-    fn data(&self) -> Tlv<ObjectId> {
+    fn data(&self) -> GetEcCurveIdData {
         Tlv::new(TAG_1, self.object_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<ObjectId>> {
+
+    fn command(&self) -> CommandBuilder<GetEcCurveIdData> {
         CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_ID, self.data(), 0)
     }
 }
@@ -1898,12 +1857,11 @@ impl<W: Writer> Se05XCommand<W> for GetEcCurveId {
 #[derive(Clone, Debug)]
 pub struct ReadEcCurveList {}
 
+type ReadEcCurveListData = ();
+
 impl ReadEcCurveList {
-    fn data(&self) -> () {
-        ()
-    }
-    fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_LIST, self.data(), 0)
+    fn command(&self) -> CommandBuilder<ReadEcCurveListData> {
+        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_LIST, (), 0)
     }
 }
 
@@ -1933,7 +1891,7 @@ impl<'data> Se05XResponse<'data> for ReadEcCurveListResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -1953,11 +1911,14 @@ pub struct DeleteEcCurve {
     pub curve: EcCurve,
 }
 
+type DeleteEcCurveData = Tlv<EcCurve>;
+
 impl DeleteEcCurve {
-    fn data(&self) -> Tlv<EcCurve> {
+    fn data(&self) -> DeleteEcCurveData {
         Tlv::new(TAG_1, self.curve)
     }
-    fn command(&self) -> CommandBuilder<Tlv<EcCurve>> {
+
+    fn command(&self) -> CommandBuilder<DeleteEcCurveData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -1997,15 +1958,18 @@ pub struct CreateDigestObject {
     pub subtype: Digest,
 }
 
+type CreateDigestObjectData = (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<Digest>);
+
 impl CreateDigestObject {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<Digest>) {
+    fn data(&self) -> CreateDigestObjectData {
         (
             Tlv::new(TAG_1, self.id),
             Tlv::new(TAG_2, CryptoContext::Digest),
             Tlv::new(TAG_3, self.subtype),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<Digest>)> {
+
+    fn command(&self) -> CommandBuilder<CreateDigestObjectData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_WRITE,
@@ -2045,17 +2009,18 @@ pub struct CreateCipherObject {
     pub subtype: CipherMode,
 }
 
+type CreateCipherObjectData = (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<CipherMode>);
+
 impl CreateCipherObject {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<CipherMode>) {
+    fn data(&self) -> CreateCipherObjectData {
         (
             Tlv::new(TAG_1, self.id),
             Tlv::new(TAG_2, CryptoContext::Cipher),
             Tlv::new(TAG_3, self.subtype),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<CipherMode>)> {
+
+    fn command(&self) -> CommandBuilder<CreateCipherObjectData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_WRITE,
@@ -2095,15 +2060,18 @@ pub struct CreateSignatureObject {
     pub subtype: MacAlgo,
 }
 
+type CreateSignatureObjectData = (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<MacAlgo>);
+
 impl CreateSignatureObject {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<MacAlgo>) {
+    fn data(&self) -> CreateSignatureObjectData {
         (
             Tlv::new(TAG_1, self.id),
             Tlv::new(TAG_2, CryptoContext::Signature),
             Tlv::new(TAG_3, self.subtype),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<MacAlgo>)> {
+
+    fn command(&self) -> CommandBuilder<CreateSignatureObjectData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_WRITE,
@@ -2138,12 +2106,11 @@ impl<W: Writer> Se05XCommand<W> for CreateSignatureObject {
 #[derive(Clone, Debug)]
 pub struct ReadCryptoObjList {}
 
+type ReadCryptoObjListData = ();
+
 impl ReadCryptoObjList {
-    fn data(&self) -> () {
-        ()
-    }
-    fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CRYPTO_OBJ, P2_LIST, self.data(), 0)
+    fn command(&self) -> CommandBuilder<ReadCryptoObjListData> {
+        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CRYPTO_OBJ, P2_LIST, (), 0)
     }
 }
 
@@ -2173,7 +2140,7 @@ impl<'data> Se05XResponse<'data> for ReadCryptoObjListResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2193,11 +2160,14 @@ pub struct DeleteCryptoObj {
     pub id: CryptoObjectId,
 }
 
+type DeleteCryptoObjData = Tlv<CryptoObjectId>;
+
 impl DeleteCryptoObj {
-    fn data(&self) -> Tlv<CryptoObjectId> {
+    fn data(&self) -> DeleteCryptoObjData {
         Tlv::new(TAG_1, self.id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<CryptoObjectId>> {
+
+    fn command(&self) -> CommandBuilder<DeleteCryptoObjData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -2239,17 +2209,18 @@ pub struct EcdsaSign<'data> {
     pub data: &'data [u8],
 }
 
+type EcdsaSignData<'data> = (Tlv<ObjectId>, Tlv<EcDsaSignatureAlgo>, Tlv<&'data [u8]>);
+
 impl<'data> EcdsaSign<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<EcDsaSignatureAlgo>, Tlv<&'data [u8]>) {
+    fn data(&self) -> EcdsaSignData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.data),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<EcDsaSignatureAlgo>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<EcdsaSignData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2287,7 +2258,7 @@ impl<'data> Se05XResponse<'data> for EcdsaSignResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2309,17 +2280,18 @@ pub struct EddsaSign<'data> {
     pub data: &'data [u8],
 }
 
+type EddsaSignData<'data> = (Tlv<ObjectId>, Tlv<EdDsaSignatureAlgo>, Tlv<&'data [u8]>);
+
 impl<'data> EddsaSign<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<EdDsaSignatureAlgo>, Tlv<&'data [u8]>) {
+    fn data(&self) -> EddsaSignData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure),
             Tlv::new(TAG_3, self.data),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<EdDsaSignatureAlgo>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<EddsaSignData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2357,7 +2329,7 @@ impl<'data> Se05XResponse<'data> for EddsaSignResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2381,15 +2353,15 @@ pub struct EcdaaSign {
     pub random_data: [u8; 32],
 }
 
+type EcdaaSignData = (
+    Tlv<ObjectId>,
+    Tlv<EcDaaSignatureAlgo>,
+    Tlv<[u8; 32]>,
+    Tlv<[u8; 32]>,
+);
+
 impl EcdaaSign {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<EcDaaSignatureAlgo>,
-        Tlv<[u8; 32]>,
-        Tlv<[u8; 32]>,
-    ) {
+    fn data(&self) -> EcdaaSignData {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, EcDaaSignatureAlgo::EcDaa),
@@ -2397,14 +2369,8 @@ impl EcdaaSign {
             Tlv::new(TAG_4, self.random_data),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<EcDaaSignatureAlgo>,
-        Tlv<[u8; 32]>,
-        Tlv<[u8; 32]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<EcdaaSignData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2442,7 +2408,7 @@ impl<'data> Se05XResponse<'data> for EcdaaSignResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2468,15 +2434,15 @@ pub struct EcdsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
+type EcdsaVerifyData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<EcDsaSignatureAlgo>,
+    Tlv<&'data [u8]>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> EcdsaVerify<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<EcDsaSignatureAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> EcdsaVerifyData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
@@ -2484,14 +2450,8 @@ impl<'data> EcdsaVerify<'data> {
             Tlv::new(TAG_5, self.signature),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<EcDsaSignatureAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<EcdsaVerifyData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2553,15 +2513,15 @@ pub struct EddsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
+type EddsaVerifyData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<EdDsaSignatureAlgo>,
+    Tlv<&'data [u8]>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> EddsaVerify<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<EdDsaSignatureAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> EddsaVerifyData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure),
@@ -2569,14 +2529,8 @@ impl<'data> EddsaVerify<'data> {
             Tlv::new(TAG_5, self.signature),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<EdDsaSignatureAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<EddsaVerifyData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2636,14 +2590,17 @@ pub struct EcdhGenerateSharedSecret<'data> {
     pub public_key: &'data [u8],
 }
 
+type EcdhGenerateSharedSecretData<'data> = (Tlv<ObjectId>, Tlv<&'data [u8]>);
+
 impl<'data> EcdhGenerateSharedSecret<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> EcdhGenerateSharedSecretData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.public_key),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<EcdhGenerateSharedSecretData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2681,7 +2638,7 @@ impl<'data> Se05XResponse<'data> for EcdhGenerateSharedSecretResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2705,15 +2662,18 @@ pub struct RsaSign<'data> {
     pub data: &'data [u8],
 }
 
+type RsaSignData<'data> = (Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>);
+
 impl<'data> RsaSign<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>) {
+    fn data(&self) -> RsaSignData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.data),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<RsaSignData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2751,7 +2711,7 @@ impl<'data> Se05XResponse<'data> for RsaSignResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2777,15 +2737,15 @@ pub struct RsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
+type RsaVerifyData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<RsaSignatureAlgo>,
+    Tlv<&'data [u8]>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> RsaVerify<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<RsaSignatureAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> RsaVerifyData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
@@ -2793,14 +2753,8 @@ impl<'data> RsaVerify<'data> {
             Tlv::new(TAG_5, self.signature),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<RsaSignatureAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<RsaVerifyData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2862,15 +2816,18 @@ pub struct RsaEncrypt<'data> {
     pub plaintext: &'data [u8],
 }
 
+type RsaEncryptData<'data> = (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>);
+
 impl<'data> RsaEncrypt<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>) {
+    fn data(&self) -> RsaEncryptData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.plaintext),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<RsaEncryptData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2908,7 +2865,7 @@ impl<'data> Se05XResponse<'data> for RsaEncryptResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -2932,15 +2889,18 @@ pub struct RsaDecrypt<'data> {
     pub ciphertext: &'data [u8],
 }
 
+type RsaDecryptData<'data> = (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>);
+
 impl<'data> RsaDecrypt<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>) {
+    fn data(&self) -> RsaDecryptData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.ciphertext),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<RsaDecryptData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -2978,7 +2938,7 @@ impl<'data> Se05XResponse<'data> for RsaDecryptResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3002,17 +2962,18 @@ pub struct CipherEncryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
+type CipherEncryptInitData<'data> = (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>);
+
 impl<'data> CipherEncryptInit<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>) {
+    fn data(&self) -> CipherEncryptInitData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.cipher_id),
             self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>)> {
+
+    fn command(&self) -> CommandBuilder<CipherEncryptInitData<'data>> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_ENCRYPT, self.data(), 0)
     }
 }
@@ -3047,17 +3008,18 @@ pub struct CipherDecryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
+type CipherDecryptInitData<'data> = (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>);
+
 impl<'data> CipherDecryptInit<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>) {
+    fn data(&self) -> CipherDecryptInitData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.cipher_id),
             self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>)> {
+
+    fn command(&self) -> CommandBuilder<CipherDecryptInitData<'data>> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_DECRYPT, self.data(), 0)
     }
 }
@@ -3092,11 +3054,14 @@ pub struct CipherUpdate<'data> {
     pub data: &'data [u8],
 }
 
+type CipherUpdateData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+
 impl<'data> CipherUpdate<'data> {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> CipherUpdateData<'data> {
         (Tlv::new(TAG_2, self.cipher_id), Tlv::new(TAG_3, self.data))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<CipherUpdateData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3136,7 +3101,7 @@ impl<'data> Se05XResponse<'data> for CipherUpdateResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3160,11 +3125,14 @@ pub struct CipherFinal<'data> {
     pub data: &'data [u8],
 }
 
+type CipherFinalData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+
 impl<'data> CipherFinal<'data> {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> CipherFinalData<'data> {
         (Tlv::new(TAG_2, self.cipher_id), Tlv::new(TAG_3, self.data))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<CipherFinalData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3204,7 +3172,7 @@ impl<'data> Se05XResponse<'data> for CipherFinalResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3230,15 +3198,15 @@ pub struct CipherOneShotEncrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
+type CipherOneShotEncryptData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<CipherMode>,
+    Tlv<&'data [u8]>,
+    Option<Tlv<&'data [u8]>>,
+);
+
 impl<'data> CipherOneShotEncrypt<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<CipherMode>,
-        Tlv<&'data [u8]>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> CipherOneShotEncryptData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.mode),
@@ -3246,14 +3214,8 @@ impl<'data> CipherOneShotEncrypt<'data> {
             self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<CipherMode>,
-        Tlv<&'data [u8]>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<CipherOneShotEncryptData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3291,7 +3253,7 @@ impl<'data> Se05XResponse<'data> for CipherOneShotEncryptResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3317,15 +3279,15 @@ pub struct CipherOneShotDecrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
+type CipherOneShotDecryptData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<CipherMode>,
+    Tlv<&'data [u8]>,
+    Option<Tlv<&'data [u8]>>,
+);
+
 impl<'data> CipherOneShotDecrypt<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<CipherMode>,
-        Tlv<&'data [u8]>,
-        Option<Tlv<&'data [u8]>>,
-    ) {
+    fn data(&self) -> CipherOneShotDecryptData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.mode),
@@ -3333,14 +3295,8 @@ impl<'data> CipherOneShotDecrypt<'data> {
             self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<CipherMode>,
-        Tlv<&'data [u8]>,
-        Option<Tlv<&'data [u8]>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<CipherOneShotDecryptData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3378,7 +3334,7 @@ impl<'data> Se05XResponse<'data> for CipherOneShotDecryptResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3400,11 +3356,14 @@ pub struct MacGenerateInit {
     pub mac_id: CryptoObjectId,
 }
 
+type MacGenerateInitData = (Tlv<ObjectId>, Tlv<CryptoObjectId>);
+
 impl MacGenerateInit {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>) {
+    fn data(&self) -> MacGenerateInitData {
         (Tlv::new(TAG_1, self.key_id), Tlv::new(TAG_2, self.mac_id))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>)> {
+
+    fn command(&self) -> CommandBuilder<MacGenerateInitData> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_GENERATE, self.data(), 0)
     }
 }
@@ -3437,11 +3396,14 @@ pub struct MacValidateInit {
     pub mac_id: CryptoObjectId,
 }
 
+type MacValidateInitData = (Tlv<ObjectId>, Tlv<CryptoObjectId>);
+
 impl MacValidateInit {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<CryptoObjectId>) {
+    fn data(&self) -> MacValidateInitData {
         (Tlv::new(TAG_1, self.key_id), Tlv::new(TAG_2, self.mac_id))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<CryptoObjectId>)> {
+
+    fn command(&self) -> CommandBuilder<MacValidateInitData> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_VALIDATE, self.data(), 0)
     }
 }
@@ -3474,11 +3436,14 @@ pub struct MacUpdate<'data> {
     pub mac_id: CryptoObjectId,
 }
 
+type MacUpdateData<'data> = (Tlv<&'data [u8]>, Tlv<CryptoObjectId>);
+
 impl<'data> MacUpdate<'data> {
-    fn data(&self) -> (Tlv<&'data [u8]>, Tlv<CryptoObjectId>) {
+    fn data(&self) -> MacUpdateData<'data> {
         (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>)> {
+
+    fn command(&self) -> CommandBuilder<MacUpdateData<'data>> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_UPDATE, self.data(), 0)
     }
 }
@@ -3511,11 +3476,14 @@ pub struct MacGenerateFinal<'data> {
     pub mac_id: CryptoObjectId,
 }
 
+type MacGenerateFinalData<'data> = (Tlv<&'data [u8]>, Tlv<CryptoObjectId>);
+
 impl<'data> MacGenerateFinal<'data> {
-    fn data(&self) -> (Tlv<&'data [u8]>, Tlv<CryptoObjectId>) {
+    fn data(&self) -> MacGenerateFinalData<'data> {
         (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>)> {
+
+    fn command(&self) -> CommandBuilder<MacGenerateFinalData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3553,7 +3521,7 @@ impl<'data> Se05XResponse<'data> for MacGenerateFinalResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3579,15 +3547,18 @@ pub struct MacValidateFinal<'data> {
     pub tag: &'data [u8],
 }
 
+type MacValidateFinalData<'data> = (Tlv<&'data [u8]>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+
 impl<'data> MacValidateFinal<'data> {
-    fn data(&self) -> (Tlv<&'data [u8]>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> MacValidateFinalData<'data> {
         (
             Tlv::new(TAG_1, self.data),
             Tlv::new(TAG_2, self.mac_id),
             Tlv::new(TAG_3, self.tag),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<&'data [u8]>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<MacValidateFinalData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3649,15 +3620,18 @@ pub struct MacOneShotGenerate<'data> {
     pub data: &'data [u8],
 }
 
+type MacOneShotGenerateData<'data> = (Tlv<ObjectId>, Tlv<MacAlgo>, Tlv<&'data [u8]>);
+
 impl<'data> MacOneShotGenerate<'data> {
-    fn data(&self) -> (Tlv<ObjectId>, Tlv<MacAlgo>, Tlv<&'data [u8]>) {
+    fn data(&self) -> MacOneShotGenerateData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
             Tlv::new(TAG_3, self.data),
         )
     }
-    fn command(&self) -> CommandBuilder<(Tlv<ObjectId>, Tlv<MacAlgo>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<MacOneShotGenerateData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3695,7 +3669,7 @@ impl<'data> Se05XResponse<'data> for MacOneShotGenerateResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3723,15 +3697,15 @@ pub struct MacOneShotValidate<'data> {
     pub tag: &'data [u8],
 }
 
+type MacOneShotValidateData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<MacAlgo>,
+    Tlv<&'data [u8]>,
+    Tlv<&'data [u8]>,
+);
+
 impl<'data> MacOneShotValidate<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<MacAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    ) {
+    fn data(&self) -> MacOneShotValidateData<'data> {
         (
             Tlv::new(TAG_1, self.key_id),
             Tlv::new(TAG_2, self.algo),
@@ -3739,14 +3713,8 @@ impl<'data> MacOneShotValidate<'data> {
             Tlv::new(TAG_5, self.tag),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<MacAlgo>,
-        Tlv<&'data [u8]>,
-        Tlv<&'data [u8]>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<MacOneShotValidateData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3816,16 +3784,16 @@ pub struct Hkdf<'data> {
     pub requested_len: Be<u16>,
 }
 
+type HkdfData<'data> = (
+    Tlv<ObjectId>,
+    Tlv<Digest>,
+    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<&'data [u8]>>,
+    Tlv<Be<u16>>,
+);
+
 impl<'data> Hkdf<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Tlv<Digest>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Tlv<Be<u16>>,
-    ) {
+    fn data(&self) -> HkdfData<'data> {
         (
             Tlv::new(TAG_1, self.ikm),
             Tlv::new(TAG_2, self.digest),
@@ -3834,15 +3802,8 @@ impl<'data> Hkdf<'data> {
             Tlv::new(TAG_5, self.requested_len),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Tlv<Digest>,
-        Option<Tlv<&'data [u8]>>,
-        Option<Tlv<&'data [u8]>>,
-        Tlv<Be<u16>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<HkdfData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3880,7 +3841,7 @@ impl<'data> Se05XResponse<'data> for HkdfResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3912,15 +3873,15 @@ pub struct Pbkdf2<'data> {
     pub requested_len: Be<u16>,
 }
 
+type Pbkdf2Data<'data> = (
+    Tlv<ObjectId>,
+    Option<Tlv<&'data [u8]>>,
+    Tlv<Be<u16>>,
+    Tlv<Be<u16>>,
+);
+
 impl<'data> Pbkdf2<'data> {
-    fn data(
-        &self,
-    ) -> (
-        Tlv<ObjectId>,
-        Option<Tlv<&'data [u8]>>,
-        Tlv<Be<u16>>,
-        Tlv<Be<u16>>,
-    ) {
+    fn data(&self) -> Pbkdf2Data<'data> {
         (
             Tlv::new(TAG_1, self.password),
             self.salt.map(|data| Tlv::new(TAG_2, data)),
@@ -3928,14 +3889,8 @@ impl<'data> Pbkdf2<'data> {
             Tlv::new(TAG_4, self.requested_len),
         )
     }
-    fn command(
-        &self,
-    ) -> CommandBuilder<(
-        Tlv<ObjectId>,
-        Option<Tlv<&'data [u8]>>,
-        Tlv<Be<u16>>,
-        Tlv<Be<u16>>,
-    )> {
+
+    fn command(&self) -> CommandBuilder<Pbkdf2Data<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -3973,7 +3928,7 @@ impl<'data> Se05XResponse<'data> for Pbkdf2Response<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -3993,11 +3948,14 @@ pub struct DigestInit {
     pub digest_id: CryptoObjectId,
 }
 
+type DigestInitData = Tlv<CryptoObjectId>;
+
 impl DigestInit {
-    fn data(&self) -> Tlv<CryptoObjectId> {
+    fn data(&self) -> DigestInitData {
         Tlv::new(TAG_2, self.digest_id)
     }
-    fn command(&self) -> CommandBuilder<Tlv<CryptoObjectId>> {
+
+    fn command(&self) -> CommandBuilder<DigestInitData> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_INIT, self.data(), 0)
     }
 }
@@ -4030,11 +3988,14 @@ pub struct DigestUpdate<'data> {
     pub data: &'data [u8],
 }
 
+type DigestUpdateData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+
 impl<'data> DigestUpdate<'data> {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> DigestUpdateData<'data> {
         (Tlv::new(TAG_2, self.digest_id), Tlv::new(TAG_3, self.data))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<DigestUpdateData<'data>> {
         CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_UPDATE, self.data(), 0)
     }
 }
@@ -4067,11 +4028,14 @@ pub struct DigestFinal<'data> {
     pub data: &'data [u8],
 }
 
+type DigestFinalData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+
 impl<'data> DigestFinal<'data> {
-    fn data(&self) -> (Tlv<CryptoObjectId>, Tlv<&'data [u8]>) {
+    fn data(&self) -> DigestFinalData<'data> {
         (Tlv::new(TAG_2, self.digest_id), Tlv::new(TAG_3, self.data))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<CryptoObjectId>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<DigestFinalData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -4109,7 +4073,7 @@ impl<'data> Se05XResponse<'data> for DigestFinalResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -4131,11 +4095,14 @@ pub struct DigestOneShot<'data> {
     pub data: &'data [u8],
 }
 
+type DigestOneShotData<'data> = (Tlv<Digest>, Tlv<&'data [u8]>);
+
 impl<'data> DigestOneShot<'data> {
-    fn data(&self) -> (Tlv<Digest>, Tlv<&'data [u8]>) {
+    fn data(&self) -> DigestOneShotData<'data> {
         (Tlv::new(TAG_1, self.algo), Tlv::new(TAG_2, self.data))
     }
-    fn command(&self) -> CommandBuilder<(Tlv<Digest>, Tlv<&'data [u8]>)> {
+
+    fn command(&self) -> CommandBuilder<DigestOneShotData<'data>> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
@@ -4173,7 +4140,7 @@ impl<'data> Se05XResponse<'data> for DigestOneShotResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -4190,12 +4157,11 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
 #[derive(Clone, Debug)]
 pub struct GetVersion {}
 
+type GetVersionData = ();
+
 impl GetVersion {
-    fn data(&self) -> () {
-        ()
-    }
-    fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_VERSION, self.data(), 11)
+    fn command(&self) -> CommandBuilder<GetVersionData> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_VERSION, (), 11)
     }
 }
 
@@ -4242,12 +4208,11 @@ impl<W: Writer> Se05XCommand<W> for GetVersion {
 #[derive(Clone, Debug)]
 pub struct GetTimestamp {}
 
+type GetTimestampData = ();
+
 impl GetTimestamp {
-    fn data(&self) -> () {
-        ()
-    }
-    fn command(&self) -> CommandBuilder<()> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TIME, self.data(), 20)
+    fn command(&self) -> CommandBuilder<GetTimestampData> {
+        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TIME, (), 20)
     }
 }
 
@@ -4297,11 +4262,14 @@ pub struct GetFreeMemory {
     pub memory: Memory,
 }
 
+type GetFreeMemoryData = Tlv<Memory>;
+
 impl GetFreeMemory {
-    fn data(&self) -> Tlv<Memory> {
+    fn data(&self) -> GetFreeMemoryData {
         Tlv::new(TAG_1, self.memory)
     }
-    fn command(&self) -> CommandBuilder<Tlv<Memory>> {
+
+    fn command(&self) -> CommandBuilder<GetFreeMemoryData> {
         CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_MEMORY, self.data(), 6)
     }
 }
@@ -4352,11 +4320,14 @@ pub struct GetRandom {
     pub length: Be<u16>,
 }
 
+type GetRandomData = Tlv<Be<u16>>;
+
 impl GetRandom {
-    fn data(&self) -> Tlv<Be<u16>> {
+    fn data(&self) -> GetRandomData {
         Tlv::new(TAG_1, self.length)
     }
-    fn command(&self) -> CommandBuilder<Tlv<Be<u16>>> {
+
+    fn command(&self) -> CommandBuilder<GetRandomData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
@@ -4394,7 +4365,7 @@ impl<'data> Se05XResponse<'data> for GetRandomResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value, rem_inner);
             }
         };
         let _ = rem;
@@ -4411,17 +4382,16 @@ impl<W: Writer> Se05XCommand<W> for GetRandom {
 #[derive(Clone, Debug)]
 pub struct DeleteAll {}
 
+type DeleteAllData = ();
+
 impl DeleteAll {
-    fn data(&self) -> () {
-        ()
-    }
-    fn command(&self) -> CommandBuilder<()> {
+    fn command(&self) -> CommandBuilder<DeleteAllData> {
         CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_DELETE_ALL,
-            self.data(),
+            (),
             ExpectedLen::Max,
         )
     }

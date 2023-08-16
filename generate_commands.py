@@ -47,7 +47,7 @@ PARSE_PATTERN = """
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == %s {
-                break (value.try_into()?, rem_inner);
+                break (value%s, rem_inner);
             }
         };
 """
@@ -56,11 +56,16 @@ DEFAULT_TYPE = "&'data [u8]"
 
 def parse_for_resp(arg, name, outfile):
     tab = " "*8
+    ty = arg.get("type", None)
+    conversion = "" 
+    if ty is not None:
+        conversion = ".try_into()?"
+
     if name == "then":
-        outfile.write(f'{tab}let {arg["name"]} = rem.try_into()?;\n')
+        outfile.write(f'{tab}let {arg["name"]} = rem{conversion};\n')
         return
 
-    outfile.write(PARSE_PATTERN % (arg["name"], name))
+    outfile.write(PARSE_PATTERN % (arg["name"], name, conversion))
 
 def flatten(items):
     for arg_name, arg in items:
@@ -170,26 +175,34 @@ for command, v in data.items():
         outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 
-    if payload_has_lifetime:
-        outfile.write(f'impl<\'data> {name}<\'data> {{\n')
-    else:
-        outfile.write(f'impl {name} {{\n')
-
     tup_ty = ", ".join([ty_for_arg(arg,name) for name, arg in flatten(v["payload"].items())])
     tup_val = ", ".join([data_for_arg(arg,name) for name, arg in flatten(v["payload"].items())])
     if arg_count != 1:
         tup_ty = f'({tup_ty})'
         tup_val = f'({tup_val})'
 
+    data_name = f'{name}Data'
+    if payload_has_lifetime:
+        data_name = f'{name}Data<\'data>'
+        outfile.write(f'type {data_name} = {tup_ty};\n\n')
+        outfile.write(f'impl<\'data> {name}<\'data> {{\n')
+    else:
+        outfile.write(f'type {data_name} = {tup_ty};\n\n')
+        outfile.write(f'impl {name} {{\n')
+
 
     
-    outfile.write(f'    fn data(&self) -> {tup_ty} {{\n')
-    outfile.write(f'        {tup_val}\n')
-    outfile.write("    }\n")
-    outfile.write(f'    fn command(&self) -> CommandBuilder<{tup_ty}> {{\n')
+    if arg_count != 0:
+        outfile.write(f'    fn data(&self) -> {data_name} {{\n')
+        outfile.write(f'        {tup_val}\n')
+        outfile.write("    }\n\n")
+    outfile.write(f'    fn command(&self) -> CommandBuilder<{data_name}> {{\n')
     if pre_ins != "": 
         outfile.write(f'{pre_ins}\n')
-    outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, self.data(), {le})\n')
+    if arg_count == 0:
+        outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, (), {le})\n')
+    else:
+        outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, self.data(), {le})\n')
     outfile.write("    }\n")
 
     outfile.write("}\n")
