@@ -1004,7 +1004,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u8> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        Ok(u8::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)?)
+        u8::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
     }
 }
 
@@ -1012,9 +1012,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u16> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        Ok(u16::from_be_bytes(*arr)
-            .try_into()
-            .map_err(|_| Error::Tlv)?)
+        u16::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
     }
 }
 
@@ -1022,9 +1020,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u32> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        Ok(u32::from_be_bytes(*arr)
-            .try_into()
-            .map_err(|_| Error::Tlv)?)
+        u32::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
     }
 }
 
@@ -1032,9 +1028,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u64> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        Ok(u64::from_be_bytes(*arr)
-            .try_into()
-            .map_err(|_| Error::Tlv)?)
+        u64::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
     }
 }
 
@@ -1085,7 +1079,7 @@ macro_rules! enum_data {
             type Error = Error;
             fn try_from(val: &'a [u8]) -> ::core::result::Result<Self, Error> {
                 let arr: &'a _ = val.try_into().map_err(|_| Error::Tlv)?;
-                Ok($repr::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)?)
+                $repr::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
             }
         }
 

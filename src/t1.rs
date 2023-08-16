@@ -250,7 +250,7 @@ impl Pcb {
                 Seq::ONE
             };
 
-            let more = !(value & I_BLOCK_MOR == 0);
+            let more = (value & I_BLOCK_MOR) != 0;
             return Ok(Self::I(seq, more));
         }
 
@@ -407,7 +407,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     pub fn write(&mut self, data: &[u8]) -> Result<(), Error> {
         trace!("Writing");
         match self.twi.write(self.se_address, data) {
-            Ok(_) => return Ok(()),
+            Ok(_) => Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(_err) => {
@@ -419,7 +419,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
 
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         match self.twi.read(self.se_address, buffer) {
-            Ok(_) => return Ok(()),
+            Ok(_) => Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(_err) => {
@@ -432,7 +432,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     // Not actually used as discouraged by 3.1.1.1
     pub fn write_read(&mut self, data: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
         match self.twi.write_read(self.se_address, data, buffer) {
-            Ok(_) => return Ok(()),
+            Ok(_) => Ok(()),
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(_err) => {
@@ -522,10 +522,10 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
                     continue;
                 }
                 Pcb::S(block) => {
-                    current_buf.copy_from_slice(&data_buf);
+                    current_buf.copy_from_slice(data_buf);
                     return Ok(DataReceived::SBlock {
                         block,
-                        i_data: written as usize,
+                        i_data: written,
                         s_data: len as usize,
                     });
                 }
@@ -664,6 +664,8 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     }
 
     pub fn write_data(&mut self, data: &[u8]) -> Result<usize, Error> {
+        // Prevent false positive when delog is disabled
+        #[allow(clippy::if_same_then_else)]
         if data.len() < 10 {
             debug!("Writing data: {:02x?}", data);
         } else {
@@ -686,11 +688,12 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
         self.current_frame_buffer[HEADER_LEN + current_offset..][..chunk_len]
             .copy_from_slice(chunk);
 
-        if chunk_len == available_in_frame {
-            // frame is full
-            self.send_current_frame()?;
-        } else if self.written == self.data {
-            // if fully written, send remaining buffered data
+        // frame is full, must flush
+        let full_frame = chunk_len == available_in_frame;
+        // fully written, send remaining buffered data
+        let final_data = self.written == self.data;
+
+        if full_frame || final_data {
             self.send_current_frame()?;
         }
 

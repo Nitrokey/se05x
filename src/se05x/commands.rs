@@ -1,3 +1,4 @@
+#![allow(clippy::all)]
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
