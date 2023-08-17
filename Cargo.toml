@@ -8,8 +8,8 @@ authors = ["Nitrokey GmbH <info@nitrokey.com>"]
 
 edition = "2021"
 repository = "https://github.com/Nitrokey/se05x"
-license = "Apache-2.0 OR MIT"
-description = "Driver for NXP SE05X"
+license = "LGPL-3.0-only"
+description = "Driver for the NXP SE05X"
 
 [dependencies]
 aes = { version = "0.8.3", optional = true }
