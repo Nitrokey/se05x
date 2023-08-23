@@ -489,13 +489,18 @@ impl TryFrom<&[u8]> for Se05xChallenge {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct CryptoObjectId(pub [u8; 2]);
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct CryptoObjectId(
+    #[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 2],
+);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct SessionId(pub [u8; 8]);
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct SessionId(#[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 8]);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct ObjectId(pub [u8; 4]);
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ObjectId(#[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 4]);
 
 impl ObjectId {
     /// Invalid object ID.
