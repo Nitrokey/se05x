@@ -349,7 +349,7 @@ TAG_2 = { name = "ids" } # TODO type
 
 [check_object_exists]
 cla = "NO_SM_CLA"
-ins = "INS_READ"
+ins = "INS_MGMT"
 p1 = "P1_DEFAULT"
 p2 = "P2_EXIST"
 le = "ExpectedLen::Max"

@@ -1618,7 +1618,7 @@ impl CheckObjectExists {
     fn command(&self) -> CommandBuilder<CheckObjectExistsData> {
         CommandBuilder::new(
             NO_SM_CLA,
-            INS_READ,
+            INS_MGMT,
             P1_DEFAULT,
             P2_EXIST,
             self.data(),
