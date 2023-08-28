@@ -11,6 +11,7 @@ use iso7816::tlv::{take_do, Tlv};
 // ************* CreateSession ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateSession {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -76,6 +77,7 @@ impl<W: Writer> Se05XCommand<W> for CreateSession {
 // ************* ExchangeSessionData ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ExchangeSessionData<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub session_policy: SessionPolicy,
@@ -136,8 +138,10 @@ impl<'data, W: Writer> Se05XCommand<W> for ExchangeSessionData<'data> {
 // ************* RefreshSession ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RefreshSession {
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<SessionPolicy>,
 }
 
@@ -190,6 +194,7 @@ impl<W: Writer> Se05XCommand<W> for RefreshSession {
 // ************* CloseSession ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CloseSession {}
 
 type CloseSessionData = ();
@@ -230,6 +235,7 @@ impl<W: Writer> Se05XCommand<W> for CloseSession {
 // ************* VerifySessionUserId ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct VerifySessionUserId<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub user_id: &'data [u8],
@@ -284,6 +290,7 @@ impl<'data, W: Writer> Se05XCommand<W> for VerifySessionUserId<'data> {
 // ************* ScpInitializeUpdate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ScpInitializeUpdate {
     /// Serialized to remaining data
     pub host_challenge: [u8; 8],
@@ -342,6 +349,7 @@ impl<W: Writer> Se05XCommand<W> for ScpInitializeUpdate {
 // ************* ScpExternalAuthenticate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ScpExternalAuthenticate {
     /// Serialized to remaining data
     pub host_cryptogram: [u8; 8],
@@ -398,6 +406,7 @@ impl<W: Writer> Se05XCommand<W> for ScpExternalAuthenticate {
 // ************* SetLockState ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct SetLockState {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub lock_indicator: TransientIndicator,
@@ -448,21 +457,30 @@ impl<W: Writer> Se05XCommand<W> for SetLockState {
 // ************* WriteEcKey ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteEcKey<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
+    #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub key_type: Option<P1KeyType>,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub curve: Option<EcCurve>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub private_key: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub public_key: Option<&'data [u8]>,
 }
 
@@ -526,33 +544,48 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteEcKey<'data> {
 // ************* WriteRsaKey ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteRsaKey<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
+    #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub key_type: Option<P1KeyType>,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub key_size: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub p: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub q: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_5`](TAG_5)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub dp: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_6`](TAG_6)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub dq: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_7`](TAG_7)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub inv_q: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_8`](TAG_8)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub e: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_9`](TAG_9)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub d: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_10`](TAG_10)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub n: Option<&'data [u8]>,
 }
 
@@ -628,16 +661,22 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteRsaKey<'data> {
 // ************* GenRsaKey ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GenRsaKey<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
+    #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub key_size: Option<Be<u16>>,
 }
 
@@ -696,17 +735,23 @@ impl<'data, W: Writer> Se05XCommand<W> for GenRsaKey<'data> {
 // ************* WriteSymmKey ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteSymmKey<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
+    #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
     pub key_type: SymmKeyType,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub kek_id: Option<ObjectId>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub value: &'data [u8],
@@ -770,19 +815,25 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteSymmKey<'data> {
 // ************* WriteBinary ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteBinary<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub offset: Option<Be<u16>>,
     /// Only when the object does not yet exists
     ///
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub file_length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub data: Option<&'data [u8]>,
 }
 
@@ -837,10 +888,13 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteBinary<'data> {
 // ************* WriteUserId ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteUserId<'data> {
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`](TAG_MAX_ATTEMPTS)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub max_attempts: Option<Be<u8>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -899,15 +953,20 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteUserId<'data> {
 // ************* WriteCounter ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteCounter<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub data: Option<CounterSize>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub value: Option<Be<u64>>,
 }
 
@@ -960,15 +1019,20 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteCounter<'data> {
 // ************* WritePcr ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WritePcr<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub initial_value: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub extend: Option<&'data [u8]>,
 }
 
@@ -1021,13 +1085,16 @@ impl<'data, W: Writer> Se05XCommand<W> for WritePcr<'data> {
 // ************* ImportObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ImportObject<'data> {
+    #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Inlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key
     ///
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub rsa_key_component: Option<RsaKeyComponent>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub serialized_object: &'data [u8],
@@ -1080,14 +1147,18 @@ impl<'data, W: Writer> Se05XCommand<W> for ImportObject<'data> {
 // ************* ReadObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub offset: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub rsa_key_component: Option<RsaKeyComponent>,
 }
 
@@ -1161,20 +1232,25 @@ impl<W: Writer> Se05XCommand<W> for ReadObject {
 // ************* ReadAttestObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadAttestObject<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub offset: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub rsa_key_component: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_5`](TAG_5)
     pub attestation_object: ObjectId,
     /// Serialized to TLV tag [`TAG_6`](TAG_6)
     pub attestation_algo: AttestationAlgo,
     /// Serialized to TLV tag [`TAG_7`](TAG_7)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub freshness_random: Option<&'data [u8; 16]>,
 }
 
@@ -1316,6 +1392,7 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttestObject<'data> {
 // ************* ExportObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ExportObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -1381,6 +1458,7 @@ impl<W: Writer> Se05XCommand<W> for ExportObject {
 // ************* ReadType ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadType {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -1460,6 +1538,7 @@ impl<W: Writer> Se05XCommand<W> for ReadType {
 // ************* ReadSize ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadSize {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -1525,6 +1604,7 @@ impl<W: Writer> Se05XCommand<W> for ReadSize {
 // ************* ReadIdList ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadIdList {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub offset: Be<u16>,
@@ -1603,6 +1683,7 @@ impl<W: Writer> Se05XCommand<W> for ReadIdList {
 // ************* CheckObjectExists ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CheckObjectExists {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -1668,6 +1749,7 @@ impl<W: Writer> Se05XCommand<W> for CheckObjectExists {
 // ************* DeleteSecureObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteSecureObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -1713,6 +1795,7 @@ impl<W: Writer> Se05XCommand<W> for DeleteSecureObject {
 // ************* CreateEcCurve ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateEcCurve {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub curve: EcCurve,
@@ -1751,6 +1834,7 @@ impl<W: Writer> Se05XCommand<W> for CreateEcCurve {
 // ************* SetEcCurveParam ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct SetEcCurveParam<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub curve: EcCurve,
@@ -1797,6 +1881,7 @@ impl<'data, W: Writer> Se05XCommand<W> for SetEcCurveParam<'data> {
 // ************* GetEcCurveId ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetEcCurveId {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
@@ -1855,6 +1940,7 @@ impl<W: Writer> Se05XCommand<W> for GetEcCurveId {
 // ************* ReadEcCurveList ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadEcCurveList {}
 
 type ReadEcCurveListData = ();
@@ -1906,6 +1992,7 @@ impl<W: Writer> Se05XCommand<W> for ReadEcCurveList {
 // ************* DeleteEcCurve ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteEcCurve {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub curve: EcCurve,
@@ -1951,6 +2038,7 @@ impl<W: Writer> Se05XCommand<W> for DeleteEcCurve {
 // ************* CreateDigestObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateDigestObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub id: CryptoObjectId,
@@ -2002,6 +2090,7 @@ impl<W: Writer> Se05XCommand<W> for CreateDigestObject {
 // ************* CreateCipherObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateCipherObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub id: CryptoObjectId,
@@ -2053,6 +2142,7 @@ impl<W: Writer> Se05XCommand<W> for CreateCipherObject {
 // ************* CreateSignatureObject ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateSignatureObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub id: CryptoObjectId,
@@ -2104,6 +2194,7 @@ impl<W: Writer> Se05XCommand<W> for CreateSignatureObject {
 // ************* ReadCryptoObjList ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadCryptoObjList {}
 
 type ReadCryptoObjListData = ();
@@ -2155,6 +2246,7 @@ impl<W: Writer> Se05XCommand<W> for ReadCryptoObjList {
 // ************* DeleteCryptoObj ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteCryptoObj {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub id: CryptoObjectId,
@@ -2200,6 +2292,7 @@ impl<W: Writer> Se05XCommand<W> for DeleteCryptoObj {
 // ************* EcdsaSign ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdsaSign<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2273,6 +2366,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EcdsaSign<'data> {
 // ************* EddsaSign ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EddsaSign<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2344,6 +2438,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EddsaSign<'data> {
 // ************* EcdaaSign ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdaaSign {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2423,6 +2518,7 @@ impl<W: Writer> Se05XCommand<W> for EcdaaSign {
 // ************* EcdsaVerify ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdsaVerify<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2504,6 +2600,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EcdsaVerify<'data> {
 // ************* EddsaVerify ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EddsaVerify<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2583,6 +2680,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EddsaVerify<'data> {
 // ************* EcdhGenerateSharedSecret ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdhGenerateSharedSecret<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2653,6 +2751,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EcdhGenerateSharedSecret<'data> {
 // ************* RsaSign ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaSign<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2726,6 +2825,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaSign<'data> {
 // ************* RsaVerify ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaVerify<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2807,6 +2907,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaVerify<'data> {
 // ************* RsaEncrypt ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2880,6 +2981,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaEncrypt<'data> {
 // ************* RsaDecrypt ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -2953,12 +3055,14 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaDecrypt<'data> {
 // ************* CipherEncryptInit ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherEncryptInit<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub cipher_id: CryptoObjectId,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -2999,12 +3103,14 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherEncryptInit<'data> {
 // ************* CipherDecryptInit ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherDecryptInit<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub cipher_id: CryptoObjectId,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3045,6 +3151,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherDecryptInit<'data> {
 // ************* CipherUpdate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherUpdate<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub cipher_id: CryptoObjectId,
@@ -3116,6 +3223,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherUpdate<'data> {
 // ************* CipherFinal ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherFinal<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub cipher_id: CryptoObjectId,
@@ -3187,6 +3295,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherFinal<'data> {
 // ************* CipherOneShotEncrypt ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherOneShotEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -3195,6 +3304,7 @@ pub struct CipherOneShotEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub plaintext: &'data [u8],
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3268,6 +3378,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotEncrypt<'data> {
 // ************* CipherOneShotDecrypt ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherOneShotDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -3276,6 +3387,7 @@ pub struct CipherOneShotDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub ciphertext: &'data [u8],
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3349,6 +3461,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotDecrypt<'data> {
 // ************* MacGenerateInit ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacGenerateInit {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -3389,6 +3502,7 @@ impl<W: Writer> Se05XCommand<W> for MacGenerateInit {
 // ************* MacValidateInit ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacValidateInit {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -3429,6 +3543,7 @@ impl<W: Writer> Se05XCommand<W> for MacValidateInit {
 // ************* MacUpdate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacUpdate<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub data: &'data [u8],
@@ -3469,6 +3584,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacUpdate<'data> {
 // ************* MacGenerateFinal ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacGenerateFinal<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub data: &'data [u8],
@@ -3536,6 +3652,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacGenerateFinal<'data> {
 // ************* MacValidateFinal ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacValidateFinal<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub data: &'data [u8],
@@ -3611,6 +3728,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacValidateFinal<'data> {
 // ************* MacOneShotGenerate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacOneShotGenerate<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -3684,6 +3802,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacOneShotGenerate<'data> {
 // ************* MacOneShotValidate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacOneShotValidate<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub key_id: ObjectId,
@@ -3767,6 +3886,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacOneShotValidate<'data> {
 // ************* Hkdf ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct Hkdf<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub ikm: ObjectId,
@@ -3775,8 +3895,10 @@ pub struct Hkdf<'data> {
     /// up to 64 bytes
     ///
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub salt: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub info: Option<&'data [u8]>,
     /// Up to MAX_APDU_PAYLOAD_LENGTH (= 889)
     ///
@@ -3856,12 +3978,14 @@ impl<'data, W: Writer> Se05XCommand<W> for Hkdf<'data> {
 // ************* Pbkdf2 ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct Pbkdf2<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub password: ObjectId,
     /// up to 64 bytes
     ///
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub salt: Option<&'data [u8]>,
     /// Up to 0x7FFF
     ///
@@ -3943,6 +4067,7 @@ impl<'data, W: Writer> Se05XCommand<W> for Pbkdf2<'data> {
 // ************* DigestInit ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestInit {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub digest_id: CryptoObjectId,
@@ -3981,6 +4106,7 @@ impl<W: Writer> Se05XCommand<W> for DigestInit {
 // ************* DigestUpdate ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestUpdate<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub digest_id: CryptoObjectId,
@@ -4021,6 +4147,7 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestUpdate<'data> {
 // ************* DigestFinal ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestFinal<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub digest_id: CryptoObjectId,
@@ -4088,6 +4215,7 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestFinal<'data> {
 // ************* DigestOneShot ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestOneShot<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub algo: Digest,
@@ -4155,6 +4283,7 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
 // ************* GetVersion ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetVersion {}
 
 type GetVersionData = ();
@@ -4206,6 +4335,7 @@ impl<W: Writer> Se05XCommand<W> for GetVersion {
 // ************* GetTimestamp ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetTimestamp {}
 
 type GetTimestampData = ();
@@ -4257,6 +4387,7 @@ impl<W: Writer> Se05XCommand<W> for GetTimestamp {
 // ************* GetFreeMemory ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetFreeMemory {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub memory: Memory,
@@ -4315,6 +4446,7 @@ impl<W: Writer> Se05XCommand<W> for GetFreeMemory {
 // ************* GetRandom ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetRandom {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub length: Be<u16>,
@@ -4380,6 +4512,7 @@ impl<W: Writer> Se05XCommand<W> for GetRandom {
 // ************* DeleteAll ************* //
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteAll {}
 
 type DeleteAllData = ();

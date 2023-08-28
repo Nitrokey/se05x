@@ -137,18 +137,21 @@ for command, v in data.items():
 
 
     outfile.write("#[derive(Clone, Debug)]\n")
+    outfile.write("#[cfg_attr(feature = \"builder\", derive(typed_builder::TypedBuilder))]\n")
     outfile.write(f'pub struct {name}{payload_lifetime} {{\n')
 
     pre_ins = ""
 
     if v.get("maybe_transient", False):
+        outfile.write("    #[cfg_attr(feature = \"builder\", builder(default))]\n")
         outfile.write("    pub transient: bool,\n")
         pre_ins = f'        let ins = if self.transient {{ {ins} | INS_TRANSIENT }} else {{ {ins} }};\n'
         ins = "ins"
     if v.get("maybe_auth", False):
+        outfile.write("    #[cfg_attr(feature = \"builder\", builder(default))]\n")
+        outfile.write("    pub is_auth: bool,\n")
         pre_ins += f'        let ins = if self.is_auth {{ {ins} | INS_AUTH_OBJECT }} else {{ {ins} }};\n'
         ins = "ins"
-        outfile.write("    pub is_auth: bool,\n")
     if not isinstance(p1, str):
         outfile.write(f'    pub {p1["name"]}: {p1["type"]},\n')
         pre_ins += f'        let p1: u8 = self.{p1["name"]}.into();\n'
@@ -156,6 +159,7 @@ for command, v in data.items():
 
     if "maybe_p1_mask" in v:
         a = v["maybe_p1_mask"]
+        outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
         outfile.write(f'    pub {a["name"]}: Option<{a["type"]}>,\n')
         pre_ins += f'        let p1: u8 = self.{a["name"]}.map(|v| v | {p1_val} ).unwrap_or({p1});\n'
         p1_val = "p1"
@@ -172,6 +176,9 @@ for command, v in data.items():
             outfile.write(f'    /// Serialized to TLV tag [`{arg_name}`]({arg_name})\n')
         else:
             outfile.write(f'    /// Serialized to remaining data\n')
+
+        if "optional" in arg and arg["optional"] == True:
+            outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
         outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 
