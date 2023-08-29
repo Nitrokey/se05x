@@ -179,6 +179,9 @@ for command, v in data.items():
 
         if "optional" in arg and arg["optional"] == True:
             outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
+        elif "default" in arg:
+            outfile.write(f'    #[cfg_attr(feature = "builder", builder(default={arg["default"]}))]\n')
+            
         outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 

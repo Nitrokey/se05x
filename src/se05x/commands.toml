@@ -247,7 +247,7 @@ p2 = "P2_IMPORT"
 
 [import_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }
-TAG_2 = { name = "rsa_key_component", type = "RsaKeyComponent", optional = true, comment = "Inlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key"  }
+TAG_2 = { name = "rsa_key_component", type = "RsaKeyComponent", optional = true, comment = "Unlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key"  }
 TAG_3 = { name = "serialized_object" }
 
 # TODO import external object
@@ -300,7 +300,7 @@ le = "256"
 
 [export_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }
-TAG_2 = { name = "rsa_key_component", type = "RsaKeyComponent", comment = "Always present. Use [`RsaKeyComponent::Na`][] if not exporting an RSA key" }
+TAG_2 = { name = "rsa_key_component", type = "RsaKeyComponent", comment = "Always present. Use [`RsaKeyComponent::Na`][] if not exporting an RSA key. It is the default value with the builder API", default = "RsaKeyComponent::Na" }
 
 [export_object.response]
 TAG_1 = { name = "data" }

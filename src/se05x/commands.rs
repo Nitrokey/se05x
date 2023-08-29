@@ -1091,7 +1091,7 @@ pub struct ImportObject<'data> {
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
-    /// Inlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key
+    /// Unlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key
     ///
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
@@ -1396,9 +1396,10 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttestObject<'data> {
 pub struct ExportObject {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
-    /// Always present. Use [`RsaKeyComponent::Na`][] if not exporting an RSA key
+    /// Always present. Use [`RsaKeyComponent::Na`][] if not exporting an RSA key. It is the default value with the builder API
     ///
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default=RsaKeyComponent::Na))]
     pub rsa_key_component: RsaKeyComponent,
 }
 
