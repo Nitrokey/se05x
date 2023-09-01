@@ -205,7 +205,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         session_id: SessionId,
         key: &[u8; 16],
         rng: &mut R,
-    ) -> Result<(), Error> {
+    ) -> Result<bool, Error> {
         debug_now!("authenticating AES session");
         let mut buf = [0; 1024];
         use aes::Aes128;
@@ -278,7 +278,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
                 chal.se05x_challenge.card_challenge,
                 chal.se05x_challenge.card_cryptogram
             );
-            return Err(Error::Line(line!()));
+            return Ok(false);
         }
 
         debug_now!("Verified card cryptogram");
@@ -309,7 +309,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             &mut buf,
         )?;
         debug_now!("Authenticate success");
-        Ok(())
+        Ok(true)
     }
 }
 
@@ -350,7 +350,8 @@ pub struct Atr {
 impl Atr {
     fn parse(atr: &[u8]) -> Result<Self, Error> {
         debug!("Parsing SELECT atr");
-        let [major, minor, patch, config1, config2, secure_box_major, secure_box_minor] = atr else {
+        let [major, minor, patch, config1, config2, secure_box_major, secure_box_minor] = atr
+        else {
             return Err(Error::Line(line!()));
         };
 

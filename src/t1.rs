@@ -99,7 +99,8 @@ impl<'a> Atr<'a> {
             return Err(Error::Line(line!()));
         }
         let (plp, rem) = rem.split_at(plp_len as usize);
-        let [mcf1, mcf2, config, mpot,_rfu1, _rfu2,_rfu3,segt1,segt2,wut1,wut2,..] = plp else {
+        let [mcf1, mcf2, config, mpot, _rfu1, _rfu2, _rfu3, segt1, segt2, wut1, wut2, ..] = plp
+        else {
             error!("ATR Error 7");
             return Err(Error::Line(line!()));
         };
