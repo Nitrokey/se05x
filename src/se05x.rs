@@ -91,6 +91,10 @@ pub trait Se05XCommand<W: Writer>: DataStream<W> {
     type Response<'a>: Se05XResponse<'a>;
 }
 
+impl<'b, W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &'b C {
+    type Response<'a> = C::Response<'a>;
+}
+
 pub const APP_ID: [u8; 0x10] = hex!("A0000003965453000000010300000000");
 
 impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
@@ -147,6 +151,22 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             return Err(Error::Status(status));
         }
         C::Response::from_response(response)
+    }
+
+    /// Run a command within a session
+    pub fn run_session_command<'buf, C: for<'a> Se05XCommand<FrameSender<'a, Twi, D>>>(
+        &mut self,
+        session_id: SessionId,
+        command: &C,
+        response_buf: &'buf mut [u8],
+    ) -> Result<<C as Se05XCommand<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
+        self.run_command(
+            &ProcessSessionCmd {
+                session_id,
+                apdu: command,
+            },
+            response_buf,
+        )
     }
 
     pub fn create_and_set_curve(&mut self, curve: EcCurve) -> Result<(), Error> {
