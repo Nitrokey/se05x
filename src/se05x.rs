@@ -403,6 +403,80 @@ impl<'a> TryFrom<&'a [u8]> for Atr {
 
 pub type VersionInfo = Atr;
 
+#[derive(Debug, Clone)]
+pub struct ObjectAttributes {
+    identifier: ObjectId,
+    class: SecureObjectType,
+    authentication_indicator: SetIndicator,
+    authentication_attempts_counter: u16,
+    authentication_object_identifier: ObjectId,
+    max_authentication_attempts: u16,
+}
+
+impl ObjectAttributes {
+    fn parse(data: &[u8]) -> Result<Self, Error> {
+        let [obj_id0, obj_id1, obj_id2, obj_id3, class, auth_indicator, attempts_counter0, attempts_counter1, auth_obj_id0, auth_obj_id1, auth_obj_id2, auth_obj_id3, max_auth_attempts0, max_auth_attempts1, _policy @ ..] =
+            data
+        else {
+            return Err(Error::Line(line!()));
+        };
+
+        Ok(Self {
+            identifier: ObjectId([*obj_id0, *obj_id1, *obj_id2, *obj_id3]),
+            class: (*class).try_into().map_err(|_| Error::Line(line!()))?,
+            authentication_indicator: (*auth_indicator)
+                .try_into()
+                .map_err(|_| Error::Line(line!()))?,
+            authentication_attempts_counter: u16::from_be_bytes([
+                *attempts_counter0,
+                *attempts_counter1,
+            ]),
+            authentication_object_identifier: ObjectId([
+                *auth_obj_id0,
+                *auth_obj_id1,
+                *auth_obj_id2,
+                *auth_obj_id3,
+            ]),
+            max_authentication_attempts: u16::from_be_bytes([
+                *max_auth_attempts0,
+                *max_auth_attempts1,
+            ]),
+        })
+    }
+
+    pub fn identifier(&self) -> ObjectId {
+        self.identifier
+    }
+    pub fn class(&self) -> SecureObjectType {
+        self.class
+    }
+    pub fn authentication_indicator(&self) -> SetIndicator {
+        self.authentication_indicator
+    }
+    pub fn authentication_attempts_counter(&self) -> u16 {
+        self.authentication_attempts_counter
+    }
+    pub fn authentication_object_identifier(&self) -> ObjectId {
+        self.authentication_object_identifier
+    }
+    pub fn max_authentication_attempts(&self) -> u16 {
+        self.max_authentication_attempts
+    }
+}
+
+impl<'a> Se05XResponse<'a> for ObjectAttributes {
+    fn from_response(data: &'a [u8]) -> Result<Self, Error> {
+        Self::parse(data)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for ObjectAttributes {
+    type Error = Error;
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        Self::parse(value)
+    }
+}
+
 impl Select {
     fn command(&self) -> CommandBuilder<&'static [u8]> {
         CommandBuilder::new(ZERO_CLA, 0xA4.into(), 0x04, 0x00, &APP_ID, 7)
@@ -1546,6 +1620,15 @@ enum_data!(
         NoPad = RSA_NO_PAD,
         Pkcs1 = RSA_PKCS1,
         Pkcs1Oaep = RSA_PKCS1_OAEP,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum SetIndicator {
+        Set = SET,
+        NotSet = NOT_SET,
     }
 );
 

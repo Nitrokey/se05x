@@ -285,7 +285,7 @@ TAG_7 = { name = "freshness_random", type = "&'data [u8; 16]", optional = true  
 
 [read_attest_object.response]
 TAG_1 = { name = "data" }
-TAG_2 = { name = "attributes" } # TODO type
+TAG_2 = { name = "attributes", type = "ObjectAttributes" } # TODO type
 TAG_3 = { name = "timestamp", type = "&'data [u8; 12]" }
 TAG_4 = { name = "freshness_random", type = "&'data [u8; 16]" }
 TAG_5 = { name = "chip_unique_id", type = "&'data [u8; 18]" }

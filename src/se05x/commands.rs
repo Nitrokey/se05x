@@ -1307,7 +1307,7 @@ pub struct ReadAttestObjectResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
     pub data: &'data [u8],
     /// Parsed from TLV tag [`TAG_2`](TAG_2)
-    pub attributes: &'data [u8],
+    pub attributes: ObjectAttributes,
     /// Parsed from TLV tag [`TAG_3`](TAG_3)
     pub timestamp: &'data [u8; 12],
     /// Parsed from TLV tag [`TAG_4`](TAG_4)
@@ -1334,7 +1334,7 @@ impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
             let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == TAG_2 {
-                break (value, rem_inner);
+                break (value.try_into()?, rem_inner);
             }
         };
 
