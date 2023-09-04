@@ -1474,6 +1474,154 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttributes<'data> {
     type Response<'rdata> = ReadAttributesResponse;
 }
 
+// ************* ReadAttributesAttest ************* //
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
+pub struct ReadAttributesAttest<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub object_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub offset: Option<Be<u16>>,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub length: Option<Be<u16>>,
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub rsa_key_component: Option<&'data [u8]>,
+    /// Serialized to TLV tag [`TAG_5`](TAG_5)
+    pub attestation_object: ObjectId,
+    /// Serialized to TLV tag [`TAG_6`](TAG_6)
+    pub attestation_algo: AttestationAlgo,
+    /// Serialized to TLV tag [`TAG_7`](TAG_7)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub freshness_random: Option<&'data [u8; 16]>,
+}
+
+type ReadAttributesAttestData<'data> = (
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<&'data [u8]>>,
+    Tlv<ObjectId>,
+    Tlv<AttestationAlgo>,
+    Option<Tlv<&'data [u8; 16]>>,
+);
+
+impl<'data> ReadAttributesAttest<'data> {
+    fn data(&self) -> ReadAttributesAttestData<'data> {
+        (
+            Tlv::new(TAG_1, self.object_id),
+            self.offset.map(|data| Tlv::new(TAG_2, data)),
+            self.length.map(|data| Tlv::new(TAG_3, data)),
+            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
+            Tlv::new(TAG_5, self.attestation_object),
+            Tlv::new(TAG_6, self.attestation_algo),
+            self.freshness_random.map(|data| Tlv::new(TAG_7, data)),
+        )
+    }
+
+    fn command(&self) -> CommandBuilder<ReadAttributesAttestData<'data>> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ | INS_ATTEST,
+            P1_DEFAULT,
+            P2_ATTRIBUTES,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl<'data> DataSource for ReadAttributesAttest<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for ReadAttributesAttest<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ReadAttributesAttestResponse<'data> {
+    /// Parsed from TLV tag [`TAG_2`](TAG_2)
+    pub attributes: ObjectAttributes,
+    /// Parsed from TLV tag [`TAG_3`](TAG_3)
+    pub timestamp: &'data [u8; 12],
+    /// Parsed from TLV tag [`TAG_4`](TAG_4)
+    pub freshness_random: &'data [u8; 16],
+    /// Parsed from TLV tag [`TAG_5`](TAG_5)
+    pub chip_unique_id: &'data [u8; 18],
+    /// Parsed from TLV tag [`TAG_6`](TAG_6)
+    pub signature: &'data [u8],
+}
+
+impl<'data> Se05XResponse<'data> for ReadAttributesAttestResponse<'data> {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (attributes, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_2 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+
+        let (timestamp, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_3 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+
+        let (freshness_random, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_4 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+
+        let (chip_unique_id, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_5 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+
+        let (signature, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_6 {
+                break (value, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self {
+            attributes,
+            timestamp,
+            freshness_random,
+            chip_unique_id,
+            signature,
+        })
+    }
+}
+
+impl<'data, W: Writer> Se05XCommand<W> for ReadAttributesAttest<'data> {
+    type Response<'rdata> = ReadAttributesAttestResponse<'rdata>;
+}
+
 // ************* ExportObject ************* //
 
 #[derive(Clone, Debug)]
