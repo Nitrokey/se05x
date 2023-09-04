@@ -1389,6 +1389,91 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttestObject<'data> {
     type Response<'rdata> = ReadAttestObjectResponse<'rdata>;
 }
 
+// ************* ReadAttributes ************* //
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
+pub struct ReadAttributes<'data> {
+    /// Serialized to TLV tag [`TAG_1`](TAG_1)
+    pub object_id: ObjectId,
+    /// Serialized to TLV tag [`TAG_2`](TAG_2)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub offset: Option<Be<u16>>,
+    /// Serialized to TLV tag [`TAG_3`](TAG_3)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub length: Option<Be<u16>>,
+    /// Serialized to TLV tag [`TAG_4`](TAG_4)
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub rsa_key_component: Option<&'data [u8]>,
+}
+
+type ReadAttributesData<'data> = (
+    Tlv<ObjectId>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<Be<u16>>>,
+    Option<Tlv<&'data [u8]>>,
+);
+
+impl<'data> ReadAttributes<'data> {
+    fn data(&self) -> ReadAttributesData<'data> {
+        (
+            Tlv::new(TAG_1, self.object_id),
+            self.offset.map(|data| Tlv::new(TAG_2, data)),
+            self.length.map(|data| Tlv::new(TAG_3, data)),
+            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
+        )
+    }
+
+    fn command(&self) -> CommandBuilder<ReadAttributesData<'data>> {
+        CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_ATTRIBUTES,
+            self.data(),
+            0,
+        )
+    }
+}
+
+impl<'data> DataSource for ReadAttributes<'data> {
+    fn len(&self) -> usize {
+        self.command().len()
+    }
+    fn is_empty(&self) -> bool {
+        self.command().is_empty()
+    }
+}
+impl<'data, W: Writer> DataStream<W> for ReadAttributes<'data> {
+    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
+        self.command().to_writer(writer)
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ReadAttributesResponse {
+    /// Parsed from TLV tag [`TAG_2`](TAG_2)
+    pub attributes: ObjectAttributes,
+}
+
+impl<'data> Se05XResponse<'data> for ReadAttributesResponse {
+    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
+        let (attributes, rem) = loop {
+            let mut rem_inner = rem;
+            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            rem_inner = r;
+            if tag == TAG_2 {
+                break (value.try_into()?, rem_inner);
+            }
+        };
+        let _ = rem;
+        Ok(Self { attributes })
+    }
+}
+
+impl<'data, W: Writer> Se05XCommand<W> for ReadAttributes<'data> {
+    type Response<'rdata> = ReadAttributesResponse;
+}
+
 // ************* ExportObject ************* //
 
 #[derive(Clone, Debug)]

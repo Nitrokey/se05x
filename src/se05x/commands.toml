@@ -291,6 +291,21 @@ TAG_4 = { name = "freshness_random", type = "&'data [u8; 16]" }
 TAG_5 = { name = "chip_unique_id", type = "&'data [u8; 18]" }
 TAG_6 = { name = "signature" }
 
+[read_attributes]
+cla = "NO_SM_CLA"
+ins = "INS_READ"
+p1 = "P1_DEFAULT"
+p2 = "P2_ATTRIBUTES"
+
+[read_attributes.payload]
+TAG_1 = { name = "object_id", type = "ObjectId" }
+TAG_2 = { name = "offset", type = "Be<u16>", optional = true  }
+TAG_3 = { name = "length", type = "Be<u16>", optional = true  }
+TAG_4 = { name = "rsa_key_component", optional = true  }
+
+[read_attributes.response]
+TAG_2 = { name = "attributes", type = "ObjectAttributes" } # TODO type
+
 [export_object]
 cla = "NO_SM_CLA"
 ins = "INS_READ"
