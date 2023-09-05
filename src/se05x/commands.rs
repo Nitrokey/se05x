@@ -1242,9 +1242,11 @@ pub struct ReadAttestObject<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub length: Option<Be<u16>>,
+    /// Either [`Mod`][RsaKeyComponent::Mod] or [`PubExp`][RsaKeyComponent::PubExp]
+    ///
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
-    pub rsa_key_component: Option<&'data [u8]>,
+    pub rsa_key_component: Option<RsaKeyComponent>,
     /// Serialized to TLV tag [`TAG_5`](TAG_5)
     pub attestation_object: ObjectId,
     /// Serialized to TLV tag [`TAG_6`](TAG_6)
@@ -1258,7 +1260,7 @@ type ReadAttestObjectData<'data> = (
     Tlv<ObjectId>,
     Option<Tlv<Be<u16>>>,
     Option<Tlv<Be<u16>>>,
-    Option<Tlv<&'data [u8]>>,
+    Option<Tlv<RsaKeyComponent>>,
     Tlv<ObjectId>,
     Tlv<AttestationAlgo>,
     Option<Tlv<&'data [u8; 16]>>,

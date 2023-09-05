@@ -278,7 +278,7 @@ p2 = "P2_DEFAULT"
 TAG_1 = { name = "object_id", type = "ObjectId" }
 TAG_2 = { name = "offset", type = "Be<u16>", optional = true  }
 TAG_3 = { name = "length", type = "Be<u16>", optional = true  }
-TAG_4 = { name = "rsa_key_component", optional = true  }
+TAG_4 = { name = "rsa_key_component", type = "RsaKeyComponent", optional = true, comment = "Either [`Mod`][RsaKeyComponent::Mod] or [`PubExp`][RsaKeyComponent::PubExp]" }
 TAG_5 = { name = "attestation_object", type = "ObjectId" }
 TAG_6 = { name = "attestation_algo", type = "AttestationAlgo" }
 TAG_7 = { name = "freshness_random", type = "&'data [u8; 16]", optional = true  }
