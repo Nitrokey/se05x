@@ -44,7 +44,7 @@ def ty_for_arg(arg, name):
 PARSE_PATTERN = """
         let (%s, rem) = loop {
             let mut rem_inner = rem;
-            let (tag, value, r) = take_do(rem_inner).ok_or(Error::Tlv)?;
+            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == %s {
                 break (value%s, rem_inner);
@@ -92,7 +92,7 @@ outfile.write("// Generated Automatically by `generate_commands.py DO NOT MODIFY
 outfile.write("use super::policies::*;\n")
 outfile.write("use super::*;\n")
 outfile.write("use iso7816::command::{CommandBuilder, ExpectedLen};\n")
-outfile.write("use iso7816::tlv::{take_do, Tlv};\n")
+outfile.write("use iso7816::tlv::{take_data_object, Tlv};\n")
 
 for command, v in data.items():
     name = camel_case(command) 

@@ -47,4 +47,4 @@ lpc55 = ["lpc55-hal"]
 aes-session = ["aes", "cmac", "rand"]
 
 [patch.crates-io]
-iso7816 = { git = "https://github.com/sosthene-nitrokey/iso7816.git", rev = "936a815fa1bf9ce99e7baef584099e8353bae45a"}
+iso7816 = { git = "https://github.com/sosthene-nitrokey/iso7816.git", rev = "b463b5a1c6c7fe80b8e33c247694605247ac34b8"}
