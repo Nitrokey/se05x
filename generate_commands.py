@@ -41,20 +41,39 @@ def ty_for_arg(arg, name):
     else:
         return f'Tlv<{arg.get("type", DEFAULT_TYPE)}>'
 
+def ty_for_resp(arg):
+    if arg.get("optional", False):
+        return f'Option<{arg.get("type", DEFAULT_TYPE)}>'
+    else:
+        return f'{arg.get("type", DEFAULT_TYPE)}'
+
 PARSE_PATTERN = """
         let mut rem_inner = rem;
         let (%s, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == %s {
-                break (value%s, rem_inner);
+                break (value%s, r);
             }
+            rem_inner = r;
+        };
+"""
+
+PARSE_PATTERN_OPTIONAL = """
+        let mut rem_inner = rem;
+        let (%s, rem) = loop {
+            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
+            if tag == %s {
+                break (Some(value%s), r);
+            } else if %s.contains(&tag) {
+                break (None, rem_inner);
+            }
+            rem_inner = r;
         };
 """
 
 DEFAULT_TYPE = "&'data [u8]"
 
-def parse_for_resp(arg, name, outfile):
+def parse_for_resp(arg, name, outfile, full_response):
     tab = " "*8
     ty = arg.get("type", None)
     conversion = "" 
@@ -65,7 +84,12 @@ def parse_for_resp(arg, name, outfile):
         outfile.write(f'{tab}let {arg["name"]} = rem{conversion};\n')
         return
 
-    outfile.write(PARSE_PATTERN % (arg["name"], name, conversion))
+    if arg.get("optional", False):
+        next = [k for k in full_response.keys() if k != "then"]
+        next = f"[{','.join(next)}]"
+        outfile.write(PARSE_PATTERN_OPTIONAL % (arg["name"], name, conversion, next))
+    else:
+        outfile.write(PARSE_PATTERN % (arg["name"], name, conversion))
 
 def flatten(items):
     for arg_name, arg in items:
@@ -250,13 +274,13 @@ for command, v in data.items():
                 outfile.write(f'    /// Parsed from TLV tag [`{arg_name}`]({arg_name})\n')
             else:
                 outfile.write(f'    /// Parsed from remaining data\n')
-            outfile.write(f'    pub {arg["name"]}: {arg.get("type", DEFAULT_TYPE)},\n')
+            outfile.write(f'    pub {arg["name"]}: {ty_for_resp(arg)},\n')
         outfile.write("}\n")
 
         outfile.write(f'\nimpl<\'data> Se05XResponse<\'data> for {name}Response{response_lifetime} {{\n')
         outfile.write("    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {\n")
         for arg_name, arg in v["response"].items():
-             parse_for_resp(arg, arg_name, outfile)
+            parse_for_resp(arg, arg_name, outfile, v["response"])
         outfile.write("        let _ = rem;\n")
         outfile.write(f'        Ok(Self {{ {", ".join([arg["name"] for arg in v["response"].values()])} }})\n')
         outfile.write("    }\n")

@@ -284,7 +284,7 @@ TAG_6 = { name = "attestation_algo", type = "AttestationAlgo" }
 TAG_7 = { name = "freshness_random", type = "&'data [u8; 16]" }
 
 [read_attest_object.response]
-TAG_1 = { name = "data" }
+TAG_1 = { name = "data", optional = true, comment = "Is None when the object is a private key" }
 TAG_2 = { name = "attributes", type = "ObjectAttributes" }
 TAG_3 = { name = "timestamp", type = "&'data [u8; 12]" }
 TAG_4 = { name = "freshness_random", type = "&'data [u8; 16]" }

@@ -60,10 +60,10 @@ impl<'data> Se05XResponse<'data> for CreateSessionResponse {
         let mut rem_inner = rem;
         let (session_id, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { session_id })
@@ -1215,10 +1215,10 @@ impl<'data> Se05XResponse<'data> for ReadObjectResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
@@ -1305,8 +1305,10 @@ impl<'data, W: Writer> DataStream<W> for ReadAttestObject<'data> {
 }
 #[derive(Clone, Debug)]
 pub struct ReadAttestObjectResponse<'data> {
+    /// Is None when the object is a private key
+    ///
     /// Parsed from TLV tag [`TAG_1`](TAG_1)
-    pub data: &'data [u8],
+    pub data: Option<&'data [u8]>,
     /// Parsed from TLV tag [`TAG_2`](TAG_2)
     pub attributes: ObjectAttributes,
     /// Parsed from TLV tag [`TAG_3`](TAG_3)
@@ -1324,55 +1326,57 @@ impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (Some(value), r);
+            } else if [TAG_1, TAG_2, TAG_3, TAG_4, TAG_5, TAG_6].contains(&tag) {
+                break (None, rem_inner);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (attributes, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_2 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (timestamp, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_3 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (freshness_random, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_4 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (chip_unique_id, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_5 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (signature, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_6 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self {
@@ -1461,10 +1465,10 @@ impl<'data> Se05XResponse<'data> for ReadAttributesResponse {
         let mut rem_inner = rem;
         let (attributes, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_2 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { attributes })
@@ -1567,46 +1571,46 @@ impl<'data> Se05XResponse<'data> for ReadAttributesAttestResponse<'data> {
         let mut rem_inner = rem;
         let (attributes, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_2 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (timestamp, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_3 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (freshness_random, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_4 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (chip_unique_id, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_5 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (signature, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_6 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self {
@@ -1676,10 +1680,10 @@ impl<'data> Se05XResponse<'data> for ExportObjectResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
@@ -1744,19 +1748,19 @@ impl<'data> Se05XResponse<'data> for ReadTypeResponse {
         let mut rem_inner = rem;
         let (ty, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (transient_indicator, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_2 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self {
@@ -1822,10 +1826,10 @@ impl<'data> Se05XResponse<'data> for ReadSizeResponse {
         let mut rem_inner = rem;
         let (size, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { size })
@@ -1892,19 +1896,19 @@ impl<'data> Se05XResponse<'data> for ReadIdListResponse<'data> {
         let mut rem_inner = rem;
         let (more, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
 
         let mut rem_inner = rem;
         let (ids, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_2 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { more, ids })
@@ -1967,10 +1971,10 @@ impl<'data> Se05XResponse<'data> for CheckObjectExistsResponse {
         let mut rem_inner = rem;
         let (result, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { result })
@@ -2158,10 +2162,10 @@ impl<'data> Se05XResponse<'data> for GetEcCurveIdResponse {
         let mut rem_inner = rem;
         let (curve, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { curve })
@@ -2210,10 +2214,10 @@ impl<'data> Se05XResponse<'data> for ReadEcCurveListResponse<'data> {
         let mut rem_inner = rem;
         let (ids, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { ids })
@@ -2464,10 +2468,10 @@ impl<'data> Se05XResponse<'data> for ReadCryptoObjListResponse<'data> {
         let mut rem_inner = rem;
         let (list, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { list })
@@ -2584,10 +2588,10 @@ impl<'data> Se05XResponse<'data> for EcdsaSignResponse<'data> {
         let mut rem_inner = rem;
         let (signature, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { signature })
@@ -2656,10 +2660,10 @@ impl<'data> Se05XResponse<'data> for EddsaSignResponse<'data> {
         let mut rem_inner = rem;
         let (signature, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { signature })
@@ -2736,10 +2740,10 @@ impl<'data> Se05XResponse<'data> for EcdaaSignResponse<'data> {
         let mut rem_inner = rem;
         let (signature, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { signature })
@@ -2818,10 +2822,10 @@ impl<'data> Se05XResponse<'data> for EcdsaVerifyResponse {
         let mut rem_inner = rem;
         let (result, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { result })
@@ -2898,10 +2902,10 @@ impl<'data> Se05XResponse<'data> for EddsaVerifyResponse {
         let mut rem_inner = rem;
         let (result, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { result })
@@ -2969,10 +2973,10 @@ impl<'data> Se05XResponse<'data> for EcdhGenerateSharedSecretResponse<'data> {
         let mut rem_inner = rem;
         let (shared_secret, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { shared_secret })
@@ -3043,10 +3047,10 @@ impl<'data> Se05XResponse<'data> for RsaSignResponse<'data> {
         let mut rem_inner = rem;
         let (signature, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { signature })
@@ -3125,10 +3129,10 @@ impl<'data> Se05XResponse<'data> for RsaVerifyResponse {
         let mut rem_inner = rem;
         let (result, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { result })
@@ -3199,10 +3203,10 @@ impl<'data> Se05XResponse<'data> for RsaEncryptResponse<'data> {
         let mut rem_inner = rem;
         let (ciphertext, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { ciphertext })
@@ -3273,10 +3277,10 @@ impl<'data> Se05XResponse<'data> for RsaDecryptResponse<'data> {
         let mut rem_inner = rem;
         let (plaintext, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { plaintext })
@@ -3441,10 +3445,10 @@ impl<'data> Se05XResponse<'data> for CipherUpdateResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
@@ -3513,10 +3517,10 @@ impl<'data> Se05XResponse<'data> for CipherFinalResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
@@ -3596,10 +3600,10 @@ impl<'data> Se05XResponse<'data> for CipherOneShotEncryptResponse<'data> {
         let mut rem_inner = rem;
         let (ciphertext, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { ciphertext })
@@ -3679,10 +3683,10 @@ impl<'data> Se05XResponse<'data> for CipherOneShotDecryptResponse<'data> {
         let mut rem_inner = rem;
         let (plaintext, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { plaintext })
@@ -3870,10 +3874,10 @@ impl<'data> Se05XResponse<'data> for MacGenerateFinalResponse<'data> {
         let mut rem_inner = rem;
         let (tag, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { tag })
@@ -3946,10 +3950,10 @@ impl<'data> Se05XResponse<'data> for MacValidateFinalResponse {
         let mut rem_inner = rem;
         let (result, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { result })
@@ -4020,10 +4024,10 @@ impl<'data> Se05XResponse<'data> for MacOneShotGenerateResponse<'data> {
         let mut rem_inner = rem;
         let (tag, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { tag })
@@ -4104,10 +4108,10 @@ impl<'data> Se05XResponse<'data> for MacOneShotValidateResponse {
         let mut rem_inner = rem;
         let (result, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { result })
@@ -4196,10 +4200,10 @@ impl<'data> Se05XResponse<'data> for HkdfResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
@@ -4285,10 +4289,10 @@ impl<'data> Se05XResponse<'data> for Pbkdf2Response<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
@@ -4433,10 +4437,10 @@ impl<'data> Se05XResponse<'data> for DigestFinalResponse<'data> {
         let mut rem_inner = rem;
         let (digest, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { digest })
@@ -4501,10 +4505,10 @@ impl<'data> Se05XResponse<'data> for DigestOneShotResponse<'data> {
         let mut rem_inner = rem;
         let (digest, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { digest })
@@ -4553,10 +4557,10 @@ impl<'data> Se05XResponse<'data> for GetVersionResponse {
         let mut rem_inner = rem;
         let (version_info, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { version_info })
@@ -4605,10 +4609,10 @@ impl<'data> Se05XResponse<'data> for GetTimestampResponse<'data> {
         let mut rem_inner = rem;
         let (timestamp, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { timestamp })
@@ -4664,10 +4668,10 @@ impl<'data> Se05XResponse<'data> for GetFreeMemoryResponse {
         let mut rem_inner = rem;
         let (available, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value.try_into()?, rem_inner);
+                break (value.try_into()?, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { available })
@@ -4730,10 +4734,10 @@ impl<'data> Se05XResponse<'data> for GetRandomResponse<'data> {
         let mut rem_inner = rem;
         let (data, rem) = loop {
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            rem_inner = r;
             if tag == TAG_1 {
-                break (value, rem_inner);
+                break (value, r);
             }
+            rem_inner = r;
         };
         let _ = rem;
         Ok(Self { data })
