@@ -42,8 +42,8 @@ def ty_for_arg(arg, name):
         return f'Tlv<{arg.get("type", DEFAULT_TYPE)}>'
 
 PARSE_PATTERN = """
+        let mut rem_inner = rem;
         let (%s, rem) = loop {
-            let mut rem_inner = rem;
             let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
             rem_inner = r;
             if tag == %s {
