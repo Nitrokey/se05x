@@ -1252,8 +1252,7 @@ pub struct ReadAttestObject<'data> {
     /// Serialized to TLV tag [`TAG_6`](TAG_6)
     pub attestation_algo: AttestationAlgo,
     /// Serialized to TLV tag [`TAG_7`](TAG_7)
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
-    pub freshness_random: Option<&'data [u8; 16]>,
+    pub freshness_random: &'data [u8; 16],
 }
 
 type ReadAttestObjectData<'data> = (
@@ -1263,7 +1262,7 @@ type ReadAttestObjectData<'data> = (
     Option<Tlv<RsaKeyComponent>>,
     Tlv<ObjectId>,
     Tlv<AttestationAlgo>,
-    Option<Tlv<&'data [u8; 16]>>,
+    Tlv<&'data [u8; 16]>,
 );
 
 impl<'data> ReadAttestObject<'data> {
@@ -1275,7 +1274,7 @@ impl<'data> ReadAttestObject<'data> {
             self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
             Tlv::new(TAG_5, self.attestation_object),
             Tlv::new(TAG_6, self.attestation_algo),
-            self.freshness_random.map(|data| Tlv::new(TAG_7, data)),
+            Tlv::new(TAG_7, self.freshness_random),
         )
     }
 

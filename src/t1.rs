@@ -719,12 +719,17 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
             &self.current_frame_buffer[HEADER_LEN..][..data_len],
             &self.current_frame_buffer[HEADER_LEN + data_len..][..TRAILER_LEN],
         );
+
+        let mut wrote_success = false;
         for _ in 0..self.writer.retry_count {
             match self
                 .writer
                 .write(&self.current_frame_buffer[..data_len + HEADER_LEN + TRAILER_LEN])
             {
-                Ok(()) => break,
+                Ok(()) => {
+                    wrote_success = true;
+                    break;
+                }
                 // Err(Error::DataNack) => {
                 //     self.writer.wait_segt();
                 //     continue;
@@ -736,6 +741,15 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
                 Err(e) => return Err(e),
             }
         }
+
+        if !wrote_success {
+            debug_now!(
+                "Failed to send data after {} tries",
+                self.writer.retry_count
+            );
+            return Err(Error::Timeout);
+        }
+
         self.sent += data_len;
 
         if is_last {
