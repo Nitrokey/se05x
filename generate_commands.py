@@ -47,29 +47,9 @@ def ty_for_resp(arg):
     else:
         return f'{arg.get("type", DEFAULT_TYPE)}'
 
-PARSE_PATTERN = """
-        let mut rem_inner = rem;
-        let (%s, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == %s {
-                break (value%s, r);
-            }
-            rem_inner = r;
-        };
-"""
+PARSE_PATTERN = """        let (%s, rem) = take_do_until(%s, rem)?;"""
 
-PARSE_PATTERN_OPTIONAL = """
-        let mut rem_inner = rem;
-        let (%s, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == %s {
-                break (Some(value%s), r);
-            } else if %s.contains(&tag) {
-                break (None, rem_inner);
-            }
-            rem_inner = r;
-        };
-"""
+PARSE_PATTERN_OPTIONAL = """        let (%s, rem) = take_opt_do_until(%s, %s, rem)?;"""
 
 DEFAULT_TYPE = "&'data [u8]"
 
@@ -86,10 +66,10 @@ def parse_for_resp(arg, name, outfile, full_response):
 
     if arg.get("optional", False):
         next = [k for k in full_response.keys() if k != "then"]
-        next = f"[{','.join(next)}]"
-        outfile.write(PARSE_PATTERN_OPTIONAL % (arg["name"], name, conversion, next))
+        next = f"&[{','.join(next)}]"
+        outfile.write(PARSE_PATTERN_OPTIONAL % (arg["name"], name, next))
     else:
-        outfile.write(PARSE_PATTERN % (arg["name"], name, conversion))
+        outfile.write(PARSE_PATTERN % (arg["name"], name))
 
 def flatten(items):
     for arg_name, arg in items:
@@ -116,7 +96,6 @@ outfile.write("// Generated Automatically by `generate_commands.py DO NOT MODIFY
 outfile.write("use super::policies::*;\n")
 outfile.write("use super::*;\n")
 outfile.write("use iso7816::command::{CommandBuilder, ExpectedLen};\n")
-outfile.write("use iso7816::tlv::{take_data_object, Tlv};\n")
 
 for command, v in data.items():
     name = camel_case(command) 

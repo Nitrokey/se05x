@@ -6,7 +6,6 @@
 use super::policies::*;
 use super::*;
 use iso7816::command::{CommandBuilder, ExpectedLen};
-use iso7816::tlv::{take_data_object, Tlv};
 
 // ************* CreateSession ************* //
 
@@ -57,14 +56,7 @@ pub struct CreateSessionResponse {
 
 impl<'data> Se05XResponse<'data> for CreateSessionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (session_id, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (session_id, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { session_id })
     }
@@ -1212,14 +1204,7 @@ pub struct ReadObjectResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ReadObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -1323,61 +1308,13 @@ pub struct ReadAttestObjectResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (Some(value), r);
-            } else if [TAG_1, TAG_2, TAG_3, TAG_4, TAG_5, TAG_6].contains(&tag) {
-                break (None, rem_inner);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (attributes, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (timestamp, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_3 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (freshness_random, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_4 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (chip_unique_id, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_5 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_6 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) =
+            take_opt_do_until(TAG_1, &[TAG_1, TAG_2, TAG_3, TAG_4, TAG_5, TAG_6], rem)?;
+        let (attributes, rem) = take_do_until(TAG_2, rem)?;
+        let (timestamp, rem) = take_do_until(TAG_3, rem)?;
+        let (freshness_random, rem) = take_do_until(TAG_4, rem)?;
+        let (chip_unique_id, rem) = take_do_until(TAG_5, rem)?;
+        let (signature, rem) = take_do_until(TAG_6, rem)?;
         let _ = rem;
         Ok(Self {
             data,
@@ -1462,14 +1399,7 @@ pub struct ReadAttributesResponse {
 
 impl<'data> Se05XResponse<'data> for ReadAttributesResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (attributes, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (attributes, rem) = take_do_until(TAG_2, rem)?;
         let _ = rem;
         Ok(Self { attributes })
     }
@@ -1568,50 +1498,11 @@ pub struct ReadAttributesAttestResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ReadAttributesAttestResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (attributes, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (timestamp, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_3 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (freshness_random, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_4 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (chip_unique_id, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_5 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_6 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (attributes, rem) = take_do_until(TAG_2, rem)?;
+        let (timestamp, rem) = take_do_until(TAG_3, rem)?;
+        let (freshness_random, rem) = take_do_until(TAG_4, rem)?;
+        let (chip_unique_id, rem) = take_do_until(TAG_5, rem)?;
+        let (signature, rem) = take_do_until(TAG_6, rem)?;
         let _ = rem;
         Ok(Self {
             attributes,
@@ -1677,14 +1568,7 @@ pub struct ExportObjectResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ExportObjectResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -1745,23 +1629,8 @@ pub struct ReadTypeResponse {
 
 impl<'data> Se05XResponse<'data> for ReadTypeResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ty, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (transient_indicator, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (ty, rem) = take_do_until(TAG_1, rem)?;
+        let (transient_indicator, rem) = take_do_until(TAG_2, rem)?;
         let _ = rem;
         Ok(Self {
             ty,
@@ -1823,14 +1692,7 @@ pub struct ReadSizeResponse {
 
 impl<'data> Se05XResponse<'data> for ReadSizeResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (size, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (size, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { size })
     }
@@ -1893,23 +1755,8 @@ pub struct ReadIdListResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ReadIdListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (more, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (ids, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (more, rem) = take_do_until(TAG_1, rem)?;
+        let (ids, rem) = take_do_until(TAG_2, rem)?;
         let _ = rem;
         Ok(Self { more, ids })
     }
@@ -1968,14 +1815,7 @@ pub struct CheckObjectExistsResponse {
 
 impl<'data> Se05XResponse<'data> for CheckObjectExistsResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -2159,14 +1999,7 @@ pub struct GetEcCurveIdResponse {
 
 impl<'data> Se05XResponse<'data> for GetEcCurveIdResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (curve, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (curve, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { curve })
     }
@@ -2211,14 +2044,7 @@ pub struct ReadEcCurveListResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ReadEcCurveListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ids, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (ids, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { ids })
     }
@@ -2465,14 +2291,7 @@ pub struct ReadCryptoObjListResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for ReadCryptoObjListResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (list, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (list, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { list })
     }
@@ -2585,14 +2404,7 @@ pub struct EcdsaSignResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for EcdsaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -2657,14 +2469,7 @@ pub struct EddsaSignResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for EddsaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -2737,14 +2542,7 @@ pub struct EcdaaSignResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for EcdaaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -2819,14 +2617,7 @@ pub struct EcdsaVerifyResponse {
 
 impl<'data> Se05XResponse<'data> for EcdsaVerifyResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -2899,14 +2690,7 @@ pub struct EddsaVerifyResponse {
 
 impl<'data> Se05XResponse<'data> for EddsaVerifyResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -2970,14 +2754,7 @@ pub struct EcdhGenerateSharedSecretResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for EcdhGenerateSharedSecretResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (shared_secret, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (shared_secret, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { shared_secret })
     }
@@ -3044,14 +2821,7 @@ pub struct RsaSignResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for RsaSignResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -3126,14 +2896,7 @@ pub struct RsaVerifyResponse {
 
 impl<'data> Se05XResponse<'data> for RsaVerifyResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -3200,14 +2963,7 @@ pub struct RsaEncryptResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for RsaEncryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ciphertext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (ciphertext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { ciphertext })
     }
@@ -3274,14 +3030,7 @@ pub struct RsaDecryptResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for RsaDecryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (plaintext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (plaintext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { plaintext })
     }
@@ -3442,14 +3191,7 @@ pub struct CipherUpdateResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for CipherUpdateResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -3514,14 +3256,7 @@ pub struct CipherFinalResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for CipherFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -3597,14 +3332,7 @@ pub struct CipherOneShotEncryptResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for CipherOneShotEncryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ciphertext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (ciphertext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { ciphertext })
     }
@@ -3680,14 +3408,7 @@ pub struct CipherOneShotDecryptResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for CipherOneShotDecryptResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (plaintext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (plaintext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { plaintext })
     }
@@ -3871,14 +3592,7 @@ pub struct MacGenerateFinalResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for MacGenerateFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (tag, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (tag, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { tag })
     }
@@ -3947,14 +3661,7 @@ pub struct MacValidateFinalResponse {
 
 impl<'data> Se05XResponse<'data> for MacValidateFinalResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -4021,14 +3728,7 @@ pub struct MacOneShotGenerateResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for MacOneShotGenerateResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (tag, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (tag, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { tag })
     }
@@ -4105,14 +3805,7 @@ pub struct MacOneShotValidateResponse {
 
 impl<'data> Se05XResponse<'data> for MacOneShotValidateResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -4197,14 +3890,7 @@ pub struct HkdfResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for HkdfResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -4286,14 +3972,7 @@ pub struct Pbkdf2Response<'data> {
 
 impl<'data> Se05XResponse<'data> for Pbkdf2Response<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -4434,14 +4113,7 @@ pub struct DigestFinalResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for DigestFinalResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (digest, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (digest, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { digest })
     }
@@ -4502,14 +4174,7 @@ pub struct DigestOneShotResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for DigestOneShotResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (digest, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (digest, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { digest })
     }
@@ -4554,14 +4219,7 @@ pub struct GetVersionResponse {
 
 impl<'data> Se05XResponse<'data> for GetVersionResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (version_info, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (version_info, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { version_info })
     }
@@ -4606,14 +4264,7 @@ pub struct GetTimestampResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for GetTimestampResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (timestamp, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (timestamp, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { timestamp })
     }
@@ -4665,14 +4316,7 @@ pub struct GetFreeMemoryResponse {
 
 impl<'data> Se05XResponse<'data> for GetFreeMemoryResponse {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (available, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (available, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { available })
     }
@@ -4731,14 +4375,7 @@ pub struct GetRandomResponse<'data> {
 
 impl<'data> Se05XResponse<'data> for GetRandomResponse<'data> {
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
