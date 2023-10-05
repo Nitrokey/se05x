@@ -12,7 +12,7 @@ use iso7816::{
         writer::IntoWriter,
         CommandBuilder, DataSource, DataStream, ExpectedLen, Writer,
     },
-    tlv::{Tag, Tlv},
+    tlv::{take_data_object, Tag, Tlv},
     Instruction, Status,
 };
 
@@ -1631,6 +1631,63 @@ enum_data!(
         NotSet = NOT_SET,
     }
 );
+
+fn take_do_until<'data, E, T: TryFrom<&'data [u8], Error = E>>(
+    tag: Tag,
+    data: &'data [u8],
+) -> Result<(T, &'data [u8]), Error>
+where
+    Error: From<E>,
+{
+    fn take_do_until_inner<'data>(
+        tag: Tag,
+        data: &'data [u8],
+    ) -> Result<(&'data [u8], &'data [u8]), Error> {
+        let mut rem_inner = data;
+        loop {
+            let (read_tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
+            if read_tag == tag {
+                return Ok((value, r));
+            }
+            rem_inner = r;
+        }
+    }
+
+    let (value, rem) = take_do_until_inner(tag, data)?;
+    Ok((value.try_into()?, rem))
+}
+
+/// `next` signals the tags that are expected after the read DO.
+///
+/// If the tag is  observed, then `take_opt_do_until` will return `None`
+fn take_opt_do_until<'data, E, T: TryFrom<&'data [u8], Error = E>>(
+    tag: Tag,
+    next: &[Tag],
+    data: &'data [u8],
+) -> Result<(Option<T>, &'data [u8]), Error>
+where
+    Error: From<E>,
+{
+    fn take_opt_do_until_inner<'data>(
+        tag: Tag,
+        next: &[Tag],
+        data: &'data [u8],
+    ) -> Result<(Option<&'data [u8]>, &'data [u8]), Error> {
+        let mut rem_inner = data;
+        loop {
+            let (read_tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
+            if read_tag == tag {
+                return Ok((Some(value), r));
+            } else if next.contains(&read_tag) {
+                return Ok((None, rem_inner));
+            }
+            rem_inner = r;
+        }
+    }
+
+    let (value, rem) = take_opt_do_until_inner(tag, next, data)?;
+    Ok((value.map(TryInto::try_into).transpose()?, rem))
+}
 
 #[cfg(test)]
 mod tests {
