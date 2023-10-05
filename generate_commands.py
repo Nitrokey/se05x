@@ -188,45 +188,35 @@ for command, v in data.items():
         outfile.write(f'    pub {arg["name"]}: {struct_ty_for_arg(arg,arg_name)},\n')
     outfile.write("}\n\n")
 
-    tup_ty = ", ".join([ty_for_arg(arg,name) for name, arg in flatten(v["payload"].items())])
-    tup_val = ", ".join([data_for_arg(arg,name) for name, arg in flatten(v["payload"].items())])
-    if arg_count != 1:
-        tup_ty = f'({tup_ty})'
-        tup_val = f'({tup_val})'
+    slice_val_pre = " ".join([f'        let {arg["name"]} = &{data_for_arg(arg, name)};' for name, arg in flatten(v["payload"].items()) ])
+    slice_val_inner = ", ".join([arg["name"] for name, arg in flatten(v["payload"].items())])
+    slice_val = "&[" + slice_val_inner + "]"
 
-    data_name = f'{name}Data'
     if payload_has_lifetime:
-        data_name = f'{name}Data<\'data>'
-        outfile.write(f'type {data_name} = {tup_ty};\n\n')
         outfile.write(f'impl<\'data> {name}<\'data> {{\n')
     else:
-        outfile.write(f'type {data_name} = {tup_ty};\n\n')
         outfile.write(f'impl {name} {{\n')
 
 
-    
-    if arg_count != 0:
-        outfile.write(f'    fn data(&self) -> {data_name} {{\n')
-        outfile.write(f'        {tup_val}\n')
-        outfile.write("    }\n\n")
-    outfile.write(f'    fn command(&self) -> CommandBuilder<{data_name}> {{\n')
-    if pre_ins != "": 
-        outfile.write(f'{pre_ins}\n')
-    if arg_count == 0:
-        outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, (), {le})\n')
-    else:
-        outfile.write(f'        CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, self.data(), {le})\n')
-    outfile.write("    }\n")
+
+    command_builder = f'CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, __data, {le})'
+   
 
     outfile.write("}\n")
     outfile.write("\n")
 
     outfile.write(f'impl{payload_lifetime} DataSource for {name}{payload_lifetime} {{\n')
     outfile.write('    fn len(&self) -> usize {\n')
-    outfile.write('        self.command().len()\n')
+    outfile.write(f'        {slice_val_pre}')
+    outfile.write(f'        let __data: &[&dyn DataSource] = {slice_val};\n')
+    if pre_ins != "": 
+        outfile.write(f'{pre_ins}\n')
+    outfile.write(f'       let command = {command_builder};\n')
+    outfile.write('        command.len()\n')
     outfile.write('    }\n')
     outfile.write('    fn is_empty(&self) -> bool {\n')
-    outfile.write('        self.command().is_empty()\n')
+    outfile.write('        // Command always has a header\n')
+    outfile.write('        false\n')
     outfile.write('    }\n')
     outfile.write("}\n")
 
@@ -237,7 +227,12 @@ for command, v in data.items():
 
     outfile.write(f'impl{bound} DataStream<W> for {name}{payload_lifetime} {{\n')
     outfile.write('    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {\n')
-    outfile.write('        self.command().to_writer(writer)\n')
+    outfile.write(f'        {slice_val_pre}')
+    outfile.write(f'        let __data: &[&dyn DataStream<W>] = {slice_val};\n')
+    if pre_ins != "": 
+        outfile.write(f'{pre_ins}\n')
+    outfile.write(f'       let command = {command_builder};\n')
+    outfile.write('        command.to_writer(writer)\n')
     outfile.write('    }\n')
     outfile.write("}\n")
    
@@ -257,6 +252,7 @@ for command, v in data.items():
         outfile.write("}\n")
 
         outfile.write(f'\nimpl<\'data> Se05XResponse<\'data> for {name}Response{response_lifetime} {{\n')
+        outfile.write("    #[inline(never)]\n")
         outfile.write("    fn from_response(rem: &'data [u8]) -> Result<Self, Error> {\n")
         for arg_name, arg in v["response"].items():
             parse_for_resp(arg, arg_name, outfile, v["response"])

@@ -6,7 +6,6 @@
 use super::policies::*;
 use super::*;
 use iso7816::command::{CommandBuilder, ExpectedLen};
-use iso7816::tlv::{take_data_object, Tlv};
 
 // ************* CreateSession ************* //
 
@@ -17,36 +16,40 @@ pub struct CreateSession {
     pub object_id: ObjectId,
 }
 
-type CreateSessionData = Tlv<ObjectId>;
+impl CreateSession {}
 
-impl CreateSession {
-    fn data(&self) -> CreateSessionData {
-        Tlv::new(TAG_1, self.object_id)
-    }
-
-    fn command(&self) -> CommandBuilder<CreateSessionData> {
-        CommandBuilder::new(
+impl DataSource for CreateSession {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataSource] = &[object_id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_SESSION_CREATE,
-            self.data(),
+            __data,
             12,
-        )
-    }
-}
-
-impl DataSource for CreateSession {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CreateSession {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataStream<W>] = &[object_id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_CREATE,
+            __data,
+            12,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -56,15 +59,9 @@ pub struct CreateSessionResponse {
 }
 
 impl<'data> Se05XResponse<'data> for CreateSessionResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (session_id, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (session_id, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { session_id })
     }
@@ -85,36 +82,42 @@ pub struct ExchangeSessionData<'data> {
     pub c_mac: &'data [u8],
 }
 
-type ExchangeSessionDataData<'data> = (Tlv<SessionPolicy>, &'data [u8]);
+impl<'data> ExchangeSessionData<'data> {}
 
-impl<'data> ExchangeSessionData<'data> {
-    fn data(&self) -> ExchangeSessionDataData<'data> {
-        (Tlv::new(TAG_1, self.session_policy), self.c_mac)
-    }
-
-    fn command(&self) -> CommandBuilder<ExchangeSessionDataData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for ExchangeSessionData<'data> {
+    fn len(&self) -> usize {
+        let session_policy = &Tlv::new(TAG_1, self.session_policy);
+        let c_mac = &self.c_mac;
+        let __data: &[&dyn DataSource] = &[session_policy, c_mac];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_SESSION_POLICY,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl<'data> DataSource for ExchangeSessionData<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for ExchangeSessionData<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let session_policy = &Tlv::new(TAG_1, self.session_policy);
+        let c_mac = &self.c_mac;
+        let __data: &[&dyn DataStream<W>] = &[session_policy, c_mac];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_POLICY,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -124,6 +127,7 @@ pub struct ExchangeSessionDataResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ExchangeSessionDataResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let r_mac = rem;
         let _ = rem;
@@ -145,42 +149,47 @@ pub struct RefreshSession {
     pub policy: Option<SessionPolicy>,
 }
 
-type RefreshSessionData = Option<Tlv<SessionPolicy>>;
+impl RefreshSession {}
 
-impl RefreshSession {
-    fn data(&self) -> RefreshSessionData {
-        self.policy.map(|data| Tlv::new(TAG_POLICY, data))
-    }
-
-    fn command(&self) -> CommandBuilder<RefreshSessionData> {
-        CommandBuilder::new(
+impl DataSource for RefreshSession {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let __data: &[&dyn DataSource] = &[policy];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_SESSION_REFRESH,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl DataSource for RefreshSession {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for RefreshSession {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let __data: &[&dyn DataStream<W>] = &[policy];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_REFRESH,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
 pub struct RefreshSessionResponse {}
 
 impl<'data> Se05XResponse<'data> for RefreshSessionResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
@@ -197,31 +206,33 @@ impl<W: Writer> Se05XCommand<W> for RefreshSession {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CloseSession {}
 
-type CloseSessionData = ();
-
-impl CloseSession {
-    fn command(&self) -> CommandBuilder<CloseSessionData> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CLOSE, (), 0)
-    }
-}
+impl CloseSession {}
 
 impl DataSource for CloseSession {
     fn len(&self) -> usize {
-        self.command().len()
+        let __data: &[&dyn DataSource] = &[];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CLOSE, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CloseSession {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let __data: &[&dyn DataStream<W>] = &[];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_SESSION_CLOSE, __data, 0);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
 pub struct CloseSessionResponse {}
 
 impl<'data> Se05XResponse<'data> for CloseSessionResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
@@ -241,42 +252,47 @@ pub struct VerifySessionUserId<'data> {
     pub user_id: &'data [u8],
 }
 
-type VerifySessionUserIdData<'data> = Tlv<&'data [u8]>;
+impl<'data> VerifySessionUserId<'data> {}
 
-impl<'data> VerifySessionUserId<'data> {
-    fn data(&self) -> VerifySessionUserIdData<'data> {
-        Tlv::new(TAG_1, self.user_id)
-    }
-
-    fn command(&self) -> CommandBuilder<VerifySessionUserIdData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for VerifySessionUserId<'data> {
+    fn len(&self) -> usize {
+        let user_id = &Tlv::new(TAG_1, self.user_id);
+        let __data: &[&dyn DataSource] = &[user_id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_SESSION_USERID,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl<'data> DataSource for VerifySessionUserId<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for VerifySessionUserId<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let user_id = &Tlv::new(TAG_1, self.user_id);
+        let __data: &[&dyn DataStream<W>] = &[user_id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_SESSION_USERID,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
 pub struct VerifySessionUserIdResponse {}
 
 impl<'data> Se05XResponse<'data> for VerifySessionUserIdResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
@@ -296,36 +312,40 @@ pub struct ScpInitializeUpdate {
     pub host_challenge: [u8; 8],
 }
 
-type ScpInitializeUpdateData = [u8; 8];
+impl ScpInitializeUpdate {}
 
-impl ScpInitializeUpdate {
-    fn data(&self) -> ScpInitializeUpdateData {
-        self.host_challenge
-    }
-
-    fn command(&self) -> CommandBuilder<ScpInitializeUpdateData> {
-        CommandBuilder::new(
+impl DataSource for ScpInitializeUpdate {
+    fn len(&self) -> usize {
+        let host_challenge = &self.host_challenge;
+        let __data: &[&dyn DataSource] = &[host_challenge];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_INITIALIZE_UPDATE,
             P1_DEFAULT,
             P2_DEFAULT,
-            self.data(),
+            __data,
             256,
-        )
-    }
-}
-
-impl DataSource for ScpInitializeUpdate {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ScpInitializeUpdate {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let host_challenge = &self.host_challenge;
+        let __data: &[&dyn DataStream<W>] = &[host_challenge];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_INITIALIZE_UPDATE,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            __data,
+            256,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -335,6 +355,7 @@ pub struct ScpInitializeUpdateResponse {
 }
 
 impl<'data> Se05XResponse<'data> for ScpInitializeUpdateResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let se05x_challenge = rem.try_into()?;
         let _ = rem;
@@ -357,42 +378,49 @@ pub struct ScpExternalAuthenticate {
     pub mac: [u8; 8],
 }
 
-type ScpExternalAuthenticateData = ([u8; 8], [u8; 8]);
+impl ScpExternalAuthenticate {}
 
-impl ScpExternalAuthenticate {
-    fn data(&self) -> ScpExternalAuthenticateData {
-        (self.host_cryptogram, self.mac)
-    }
-
-    fn command(&self) -> CommandBuilder<ScpExternalAuthenticateData> {
-        CommandBuilder::new(
+impl DataSource for ScpExternalAuthenticate {
+    fn len(&self) -> usize {
+        let host_cryptogram = &self.host_cryptogram;
+        let mac = &self.mac;
+        let __data: &[&dyn DataSource] = &[host_cryptogram, mac];
+        let command = CommandBuilder::new(
             SM_CLA,
             INS_EXTERNAL_AUTHENTICATE,
             P1_DEFAULT,
             P2_DEFAULT,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl DataSource for ScpExternalAuthenticate {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ScpExternalAuthenticate {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let host_cryptogram = &self.host_cryptogram;
+        let mac = &self.mac;
+        let __data: &[&dyn DataStream<W>] = &[host_cryptogram, mac];
+        let command = CommandBuilder::new(
+            SM_CLA,
+            INS_EXTERNAL_AUTHENTICATE,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
 pub struct ScpExternalAuthenticateResponse {}
 
 impl<'data> Se05XResponse<'data> for ScpExternalAuthenticateResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
         let _ = rem;
         Ok(Self {})
@@ -414,39 +442,28 @@ pub struct SetLockState {
     pub lock_state: LockState,
 }
 
-type SetLockStateData = (Tlv<TransientIndicator>, Tlv<LockState>);
-
-impl SetLockState {
-    fn data(&self) -> SetLockStateData {
-        (
-            Tlv::new(TAG_1, self.lock_indicator),
-            Tlv::new(TAG_2, self.lock_state),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<SetLockStateData> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_MGMT,
-            P1_DEFAULT,
-            P2_TRANSPORT,
-            self.data(),
-            0,
-        )
-    }
-}
+impl SetLockState {}
 
 impl DataSource for SetLockState {
     fn len(&self) -> usize {
-        self.command().len()
+        let lock_indicator = &Tlv::new(TAG_1, self.lock_indicator);
+        let lock_state = &Tlv::new(TAG_2, self.lock_state);
+        let __data: &[&dyn DataSource] = &[lock_indicator, lock_state];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TRANSPORT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for SetLockState {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let lock_indicator = &Tlv::new(TAG_1, self.lock_indicator);
+        let lock_state = &Tlv::new(TAG_2, self.lock_state);
+        let __data: &[&dyn DataStream<W>] = &[lock_indicator, lock_state];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TRANSPORT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -484,29 +501,26 @@ pub struct WriteEcKey<'data> {
     pub public_key: Option<&'data [u8]>,
 }
 
-type WriteEcKeyData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Option<Tlv<Be<u16>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<EcCurve>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-);
+impl<'data> WriteEcKey<'data> {}
 
-impl<'data> WriteEcKey<'data> {
-    fn data(&self) -> WriteEcKeyData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            self.max_attempts
-                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.curve.map(|data| Tlv::new(TAG_2, data)),
-            self.private_key.map(|data| Tlv::new(TAG_3, data)),
-            self.public_key.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WriteEcKeyData<'data>> {
+impl<'data> DataSource for WriteEcKey<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let curve = &self.curve.map(|data| Tlv::new(TAG_2, data));
+        let private_key = &self.private_key.map(|data| Tlv::new(TAG_3, data));
+        let public_key = &self.public_key.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[
+            policy,
+            max_attempts,
+            object_id,
+            curve,
+            private_key,
+            public_key,
+        ];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -519,21 +533,46 @@ impl<'data> WriteEcKey<'data> {
         };
         let p1: u8 = self.key_type.map(|v| v | P1_EC).unwrap_or(P1_EC);
 
-        CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for WriteEcKey<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WriteEcKey<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let curve = &self.curve.map(|data| Tlv::new(TAG_2, data));
+        let private_key = &self.private_key.map(|data| Tlv::new(TAG_3, data));
+        let public_key = &self.public_key.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[
+            policy,
+            max_attempts,
+            object_id,
+            curve,
+            private_key,
+            public_key,
+        ];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
+        let p1: u8 = self.key_type.map(|v| v | P1_EC).unwrap_or(P1_EC);
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -589,41 +628,38 @@ pub struct WriteRsaKey<'data> {
     pub n: Option<&'data [u8]>,
 }
 
-type WriteRsaKeyData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Option<Tlv<Be<u16>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-);
+impl<'data> WriteRsaKey<'data> {}
 
-impl<'data> WriteRsaKey<'data> {
-    fn data(&self) -> WriteRsaKeyData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            self.max_attempts
-                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.key_size.map(|data| Tlv::new(TAG_2, data)),
-            self.p.map(|data| Tlv::new(TAG_3, data)),
-            self.q.map(|data| Tlv::new(TAG_4, data)),
-            self.dp.map(|data| Tlv::new(TAG_5, data)),
-            self.dq.map(|data| Tlv::new(TAG_6, data)),
-            self.inv_q.map(|data| Tlv::new(TAG_7, data)),
-            self.e.map(|data| Tlv::new(TAG_8, data)),
-            self.d.map(|data| Tlv::new(TAG_9, data)),
-            self.n.map(|data| Tlv::new(TAG_10, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WriteRsaKeyData<'data>> {
+impl<'data> DataSource for WriteRsaKey<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let key_size = &self.key_size.map(|data| Tlv::new(TAG_2, data));
+        let p = &self.p.map(|data| Tlv::new(TAG_3, data));
+        let q = &self.q.map(|data| Tlv::new(TAG_4, data));
+        let dp = &self.dp.map(|data| Tlv::new(TAG_5, data));
+        let dq = &self.dq.map(|data| Tlv::new(TAG_6, data));
+        let inv_q = &self.inv_q.map(|data| Tlv::new(TAG_7, data));
+        let e = &self.e.map(|data| Tlv::new(TAG_8, data));
+        let d = &self.d.map(|data| Tlv::new(TAG_9, data));
+        let n = &self.n.map(|data| Tlv::new(TAG_10, data));
+        let __data: &[&dyn DataSource] = &[
+            policy,
+            max_attempts,
+            object_id,
+            key_size,
+            p,
+            q,
+            dp,
+            dq,
+            inv_q,
+            e,
+            d,
+            n,
+        ];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -636,21 +672,58 @@ impl<'data> WriteRsaKey<'data> {
         };
         let p1: u8 = self.key_type.map(|v| v | P1_RSA).unwrap_or(P1_RSA);
 
-        CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for WriteRsaKey<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WriteRsaKey<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let key_size = &self.key_size.map(|data| Tlv::new(TAG_2, data));
+        let p = &self.p.map(|data| Tlv::new(TAG_3, data));
+        let q = &self.q.map(|data| Tlv::new(TAG_4, data));
+        let dp = &self.dp.map(|data| Tlv::new(TAG_5, data));
+        let dq = &self.dq.map(|data| Tlv::new(TAG_6, data));
+        let inv_q = &self.inv_q.map(|data| Tlv::new(TAG_7, data));
+        let e = &self.e.map(|data| Tlv::new(TAG_8, data));
+        let d = &self.d.map(|data| Tlv::new(TAG_9, data));
+        let n = &self.n.map(|data| Tlv::new(TAG_10, data));
+        let __data: &[&dyn DataStream<W>] = &[
+            policy,
+            max_attempts,
+            object_id,
+            key_size,
+            p,
+            q,
+            dp,
+            dq,
+            inv_q,
+            e,
+            d,
+            n,
+        ];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
+        let p1: u8 = self.key_type.map(|v| v | P1_RSA).unwrap_or(P1_RSA);
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -680,25 +753,17 @@ pub struct GenRsaKey<'data> {
     pub key_size: Option<Be<u16>>,
 }
 
-type GenRsaKeyData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Option<Tlv<Be<u16>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-);
+impl<'data> GenRsaKey<'data> {}
 
-impl<'data> GenRsaKey<'data> {
-    fn data(&self) -> GenRsaKeyData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            self.max_attempts
-                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.key_size.map(|data| Tlv::new(TAG_2, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<GenRsaKeyData<'data>> {
+impl<'data> DataSource for GenRsaKey<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let key_size = &self.key_size.map(|data| Tlv::new(TAG_2, data));
+        let __data: &[&dyn DataSource] = &[policy, max_attempts, object_id, key_size];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -710,21 +775,36 @@ impl<'data> GenRsaKey<'data> {
             ins
         };
 
-        CommandBuilder::new(NO_SM_CLA, ins, P1_RSA | P1_KEY_PAIR, P2_RAW, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for GenRsaKey<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_RSA | P1_KEY_PAIR, P2_RAW, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for GenRsaKey<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let key_size = &self.key_size.map(|data| Tlv::new(TAG_2, data));
+        let __data: &[&dyn DataStream<W>] = &[policy, max_attempts, object_id, key_size];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_RSA | P1_KEY_PAIR, P2_RAW, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -757,27 +837,18 @@ pub struct WriteSymmKey<'data> {
     pub value: &'data [u8],
 }
 
-type WriteSymmKeyData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Option<Tlv<Be<u16>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<ObjectId>>,
-    Tlv<&'data [u8]>,
-);
+impl<'data> WriteSymmKey<'data> {}
 
-impl<'data> WriteSymmKey<'data> {
-    fn data(&self) -> WriteSymmKeyData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            self.max_attempts
-                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.kek_id.map(|data| Tlv::new(TAG_2, data)),
-            Tlv::new(TAG_3, self.value),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WriteSymmKeyData<'data>> {
+impl<'data> DataSource for WriteSymmKey<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let kek_id = &self.kek_id.map(|data| Tlv::new(TAG_2, data));
+        let value = &Tlv::new(TAG_3, self.value);
+        let __data: &[&dyn DataSource] = &[policy, max_attempts, object_id, kek_id, value];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
@@ -790,21 +861,38 @@ impl<'data> WriteSymmKey<'data> {
         };
         let p1: u8 = self.key_type.into();
 
-        CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for WriteSymmKey<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WriteSymmKey<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let kek_id = &self.kek_id.map(|data| Tlv::new(TAG_2, data));
+        let value = &Tlv::new(TAG_3, self.value);
+        let __data: &[&dyn DataStream<W>] = &[policy, max_attempts, object_id, kek_id, value];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+        let ins = if self.is_auth {
+            ins | INS_AUTH_OBJECT
+        } else {
+            ins
+        };
+        let p1: u8 = self.key_type.into();
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -837,47 +925,46 @@ pub struct WriteBinary<'data> {
     pub data: Option<&'data [u8]>,
 }
 
-type WriteBinaryData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<&'data [u8]>>,
-);
+impl<'data> WriteBinary<'data> {}
 
-impl<'data> WriteBinary<'data> {
-    fn data(&self) -> WriteBinaryData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.offset.map(|data| Tlv::new(TAG_2, data)),
-            self.file_length.map(|data| Tlv::new(TAG_3, data)),
-            self.data.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WriteBinaryData<'data>> {
+impl<'data> DataSource for WriteBinary<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let file_length = &self.file_length.map(|data| Tlv::new(TAG_3, data));
+        let data = &self.data.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[policy, object_id, offset, file_length, data];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
             INS_WRITE
         };
 
-        CommandBuilder::new(NO_SM_CLA, ins, P1_BINARY, P2_DEFAULT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for WriteBinary<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_BINARY, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WriteBinary<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let file_length = &self.file_length.map(|data| Tlv::new(TAG_3, data));
+        let data = &self.data.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[policy, object_id, offset, file_length, data];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_BINARY, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -902,47 +989,50 @@ pub struct WriteUserId<'data> {
     pub data: &'data [u8],
 }
 
-type WriteUserIdData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Option<Tlv<Be<u8>>>,
-    Tlv<ObjectId>,
-    Tlv<&'data [u8]>,
-);
+impl<'data> WriteUserId<'data> {}
 
-impl<'data> WriteUserId<'data> {
-    fn data(&self) -> WriteUserIdData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            self.max_attempts
-                .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data)),
-            Tlv::new(TAG_1, self.object_id),
-            Tlv::new(TAG_2, self.data),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WriteUserIdData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for WriteUserId<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let data = &Tlv::new(TAG_2, self.data);
+        let __data: &[&dyn DataSource] = &[policy, max_attempts, object_id, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_WRITE | INS_AUTH_OBJECT,
             P1_USERID,
             P2_DEFAULT,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl<'data> DataSource for WriteUserId<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WriteUserId<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let max_attempts = &self
+            .max_attempts
+            .map(|data| Tlv::new(TAG_MAX_ATTEMPTS, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let data = &Tlv::new(TAG_2, self.data);
+        let __data: &[&dyn DataStream<W>] = &[policy, max_attempts, object_id, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_WRITE | INS_AUTH_OBJECT,
+            P1_USERID,
+            P2_DEFAULT,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 
@@ -970,45 +1060,44 @@ pub struct WriteCounter<'data> {
     pub value: Option<Be<u64>>,
 }
 
-type WriteCounterData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<CounterSize>>,
-    Option<Tlv<Be<u64>>>,
-);
+impl<'data> WriteCounter<'data> {}
 
-impl<'data> WriteCounter<'data> {
-    fn data(&self) -> WriteCounterData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.data.map(|data| Tlv::new(TAG_2, data)),
-            self.value.map(|data| Tlv::new(TAG_3, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WriteCounterData<'data>> {
+impl<'data> DataSource for WriteCounter<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let data = &self.data.map(|data| Tlv::new(TAG_2, data));
+        let value = &self.value.map(|data| Tlv::new(TAG_3, data));
+        let __data: &[&dyn DataSource] = &[policy, object_id, data, value];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
             INS_WRITE
         };
 
-        CommandBuilder::new(NO_SM_CLA, ins, P1_COUNTER, P2_DEFAULT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for WriteCounter<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_COUNTER, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WriteCounter<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let data = &self.data.map(|data| Tlv::new(TAG_2, data));
+        let value = &self.value.map(|data| Tlv::new(TAG_3, data));
+        let __data: &[&dyn DataStream<W>] = &[policy, object_id, data, value];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_COUNTER, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -1036,45 +1125,44 @@ pub struct WritePcr<'data> {
     pub extend: Option<&'data [u8]>,
 }
 
-type WritePcrData<'data> = (
-    Option<Tlv<PolicySet<'data>>>,
-    Tlv<ObjectId>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-);
+impl<'data> WritePcr<'data> {}
 
-impl<'data> WritePcr<'data> {
-    fn data(&self) -> WritePcrData<'data> {
-        (
-            self.policy.map(|data| Tlv::new(TAG_POLICY, data)),
-            Tlv::new(TAG_1, self.object_id),
-            self.initial_value.map(|data| Tlv::new(TAG_2, data)),
-            self.extend.map(|data| Tlv::new(TAG_3, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<WritePcrData<'data>> {
+impl<'data> DataSource for WritePcr<'data> {
+    fn len(&self) -> usize {
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let initial_value = &self.initial_value.map(|data| Tlv::new(TAG_2, data));
+        let extend = &self.extend.map(|data| Tlv::new(TAG_3, data));
+        let __data: &[&dyn DataSource] = &[policy, object_id, initial_value, extend];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
             INS_WRITE
         };
 
-        CommandBuilder::new(NO_SM_CLA, ins, P1_PCR, P2_DEFAULT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for WritePcr<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_PCR, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for WritePcr<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let initial_value = &self.initial_value.map(|data| Tlv::new(TAG_2, data));
+        let extend = &self.extend.map(|data| Tlv::new(TAG_3, data));
+        let __data: &[&dyn DataStream<W>] = &[policy, object_id, initial_value, extend];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_PCR, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -1100,43 +1188,42 @@ pub struct ImportObject<'data> {
     pub serialized_object: &'data [u8],
 }
 
-type ImportObjectData<'data> = (
-    Tlv<ObjectId>,
-    Option<Tlv<RsaKeyComponent>>,
-    Tlv<&'data [u8]>,
-);
+impl<'data> ImportObject<'data> {}
 
-impl<'data> ImportObject<'data> {
-    fn data(&self) -> ImportObjectData<'data> {
-        (
-            Tlv::new(TAG_1, self.object_id),
-            self.rsa_key_component.map(|data| Tlv::new(TAG_2, data)),
-            Tlv::new(TAG_3, self.serialized_object),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<ImportObjectData<'data>> {
+impl<'data> DataSource for ImportObject<'data> {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_2, data));
+        let serialized_object = &Tlv::new(TAG_3, self.serialized_object);
+        let __data: &[&dyn DataSource] = &[object_id, rsa_key_component, serialized_object];
         let ins = if self.transient {
             INS_WRITE | INS_TRANSIENT
         } else {
             INS_WRITE
         };
 
-        CommandBuilder::new(NO_SM_CLA, ins, P1_DEFAULT, P2_IMPORT, self.data(), 0)
-    }
-}
-
-impl<'data> DataSource for ImportObject<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_DEFAULT, P2_IMPORT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for ImportObject<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_2, data));
+        let serialized_object = &Tlv::new(TAG_3, self.serialized_object);
+        let __data: &[&dyn DataStream<W>] = &[object_id, rsa_key_component, serialized_object];
+        let ins = if self.transient {
+            INS_WRITE | INS_TRANSIENT
+        } else {
+            INS_WRITE
+        };
+
+        let command = CommandBuilder::new(NO_SM_CLA, ins, P1_DEFAULT, P2_IMPORT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -1162,46 +1249,46 @@ pub struct ReadObject {
     pub rsa_key_component: Option<RsaKeyComponent>,
 }
 
-type ReadObjectData = (
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<RsaKeyComponent>>,
-);
+impl ReadObject {}
 
-impl ReadObject {
-    fn data(&self) -> ReadObjectData {
-        (
-            Tlv::new(TAG_1, self.object_id),
-            self.offset.map(|data| Tlv::new(TAG_2, data)),
-            self.length.map(|data| Tlv::new(TAG_3, data)),
-            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<ReadObjectData> {
-        CommandBuilder::new(
+impl DataSource for ReadObject {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[object_id, offset, length, rsa_key_component];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
             P1_DEFAULT,
             P2_DEFAULT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for ReadObject {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ReadObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[object_id, offset, length, rsa_key_component];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1211,15 +1298,9 @@ pub struct ReadObjectResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ReadObjectResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -1255,52 +1336,68 @@ pub struct ReadAttestObject<'data> {
     pub freshness_random: &'data [u8; 16],
 }
 
-type ReadAttestObjectData<'data> = (
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<RsaKeyComponent>>,
-    Tlv<ObjectId>,
-    Tlv<AttestationAlgo>,
-    Tlv<&'data [u8; 16]>,
-);
+impl<'data> ReadAttestObject<'data> {}
 
-impl<'data> ReadAttestObject<'data> {
-    fn data(&self) -> ReadAttestObjectData<'data> {
-        (
-            Tlv::new(TAG_1, self.object_id),
-            self.offset.map(|data| Tlv::new(TAG_2, data)),
-            self.length.map(|data| Tlv::new(TAG_3, data)),
-            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
-            Tlv::new(TAG_5, self.attestation_object),
-            Tlv::new(TAG_6, self.attestation_algo),
-            Tlv::new(TAG_7, self.freshness_random),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<ReadAttestObjectData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for ReadAttestObject<'data> {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let attestation_object = &Tlv::new(TAG_5, self.attestation_object);
+        let attestation_algo = &Tlv::new(TAG_6, self.attestation_algo);
+        let freshness_random = &Tlv::new(TAG_7, self.freshness_random);
+        let __data: &[&dyn DataSource] = &[
+            object_id,
+            offset,
+            length,
+            rsa_key_component,
+            attestation_object,
+            attestation_algo,
+            freshness_random,
+        ];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_READ | INS_ATTEST,
             P1_DEFAULT,
             P2_DEFAULT,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl<'data> DataSource for ReadAttestObject<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for ReadAttestObject<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let attestation_object = &Tlv::new(TAG_5, self.attestation_object);
+        let attestation_algo = &Tlv::new(TAG_6, self.attestation_algo);
+        let freshness_random = &Tlv::new(TAG_7, self.freshness_random);
+        let __data: &[&dyn DataStream<W>] = &[
+            object_id,
+            offset,
+            length,
+            rsa_key_component,
+            attestation_object,
+            attestation_algo,
+            freshness_random,
+        ];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ | INS_ATTEST,
+            P1_DEFAULT,
+            P2_DEFAULT,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1322,62 +1419,15 @@ pub struct ReadAttestObjectResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (Some(value), r);
-            } else if [TAG_1, TAG_2, TAG_3, TAG_4, TAG_5, TAG_6].contains(&tag) {
-                break (None, rem_inner);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (attributes, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (timestamp, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_3 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (freshness_random, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_4 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (chip_unique_id, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_5 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_6 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) =
+            take_opt_do_until(TAG_1, &[TAG_1, TAG_2, TAG_3, TAG_4, TAG_5, TAG_6], rem)?;
+        let (attributes, rem) = take_do_until(TAG_2, rem)?;
+        let (timestamp, rem) = take_do_until(TAG_3, rem)?;
+        let (freshness_random, rem) = take_do_until(TAG_4, rem)?;
+        let (chip_unique_id, rem) = take_do_until(TAG_5, rem)?;
+        let (signature, rem) = take_do_until(TAG_6, rem)?;
         let _ = rem;
         Ok(Self {
             data,
@@ -1412,46 +1462,34 @@ pub struct ReadAttributes<'data> {
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
-type ReadAttributesData<'data> = (
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<&'data [u8]>>,
-);
-
-impl<'data> ReadAttributes<'data> {
-    fn data(&self) -> ReadAttributesData<'data> {
-        (
-            Tlv::new(TAG_1, self.object_id),
-            self.offset.map(|data| Tlv::new(TAG_2, data)),
-            self.length.map(|data| Tlv::new(TAG_3, data)),
-            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<ReadAttributesData<'data>> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_READ,
-            P1_DEFAULT,
-            P2_ATTRIBUTES,
-            self.data(),
-            0,
-        )
-    }
-}
+impl<'data> ReadAttributes<'data> {}
 
 impl<'data> DataSource for ReadAttributes<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[object_id, offset, length, rsa_key_component];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_ATTRIBUTES, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for ReadAttributes<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[object_id, offset, length, rsa_key_component];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_ATTRIBUTES, __data, 0);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1461,15 +1499,9 @@ pub struct ReadAttributesResponse {
 }
 
 impl<'data> Se05XResponse<'data> for ReadAttributesResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (attributes, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (attributes, rem) = take_do_until(TAG_2, rem)?;
         let _ = rem;
         Ok(Self { attributes })
     }
@@ -1504,52 +1536,68 @@ pub struct ReadAttributesAttest<'data> {
     pub freshness_random: Option<&'data [u8; 16]>,
 }
 
-type ReadAttributesAttestData<'data> = (
-    Tlv<ObjectId>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<Be<u16>>>,
-    Option<Tlv<&'data [u8]>>,
-    Tlv<ObjectId>,
-    Tlv<AttestationAlgo>,
-    Option<Tlv<&'data [u8; 16]>>,
-);
+impl<'data> ReadAttributesAttest<'data> {}
 
-impl<'data> ReadAttributesAttest<'data> {
-    fn data(&self) -> ReadAttributesAttestData<'data> {
-        (
-            Tlv::new(TAG_1, self.object_id),
-            self.offset.map(|data| Tlv::new(TAG_2, data)),
-            self.length.map(|data| Tlv::new(TAG_3, data)),
-            self.rsa_key_component.map(|data| Tlv::new(TAG_4, data)),
-            Tlv::new(TAG_5, self.attestation_object),
-            Tlv::new(TAG_6, self.attestation_algo),
-            self.freshness_random.map(|data| Tlv::new(TAG_7, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<ReadAttributesAttestData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for ReadAttributesAttest<'data> {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let attestation_object = &Tlv::new(TAG_5, self.attestation_object);
+        let attestation_algo = &Tlv::new(TAG_6, self.attestation_algo);
+        let freshness_random = &self.freshness_random.map(|data| Tlv::new(TAG_7, data));
+        let __data: &[&dyn DataSource] = &[
+            object_id,
+            offset,
+            length,
+            rsa_key_component,
+            attestation_object,
+            attestation_algo,
+            freshness_random,
+        ];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_READ | INS_ATTEST,
             P1_DEFAULT,
             P2_ATTRIBUTES,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl<'data> DataSource for ReadAttributesAttest<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for ReadAttributesAttest<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
+        let length = &self.length.map(|data| Tlv::new(TAG_3, data));
+        let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_4, data));
+        let attestation_object = &Tlv::new(TAG_5, self.attestation_object);
+        let attestation_algo = &Tlv::new(TAG_6, self.attestation_algo);
+        let freshness_random = &self.freshness_random.map(|data| Tlv::new(TAG_7, data));
+        let __data: &[&dyn DataStream<W>] = &[
+            object_id,
+            offset,
+            length,
+            rsa_key_component,
+            attestation_object,
+            attestation_algo,
+            freshness_random,
+        ];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ | INS_ATTEST,
+            P1_DEFAULT,
+            P2_ATTRIBUTES,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1567,51 +1615,13 @@ pub struct ReadAttributesAttestResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ReadAttributesAttestResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (attributes, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (timestamp, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_3 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (freshness_random, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_4 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (chip_unique_id, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_5 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_6 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (attributes, rem) = take_do_until(TAG_2, rem)?;
+        let (timestamp, rem) = take_do_until(TAG_3, rem)?;
+        let (freshness_random, rem) = take_do_until(TAG_4, rem)?;
+        let (chip_unique_id, rem) = take_do_until(TAG_5, rem)?;
+        let (signature, rem) = take_do_until(TAG_6, rem)?;
         let _ = rem;
         Ok(Self {
             attributes,
@@ -1641,32 +1651,28 @@ pub struct ExportObject {
     pub rsa_key_component: RsaKeyComponent,
 }
 
-type ExportObjectData = (Tlv<ObjectId>, Tlv<RsaKeyComponent>);
-
-impl ExportObject {
-    fn data(&self) -> ExportObjectData {
-        (
-            Tlv::new(TAG_1, self.object_id),
-            Tlv::new(TAG_2, self.rsa_key_component),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<ExportObjectData> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, self.data(), 256)
-    }
-}
+impl ExportObject {}
 
 impl DataSource for ExportObject {
     fn len(&self) -> usize {
-        self.command().len()
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let rsa_key_component = &Tlv::new(TAG_2, self.rsa_key_component);
+        let __data: &[&dyn DataSource] = &[object_id, rsa_key_component];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, __data, 256);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ExportObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let rsa_key_component = &Tlv::new(TAG_2, self.rsa_key_component);
+        let __data: &[&dyn DataStream<W>] = &[object_id, rsa_key_component];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, __data, 256);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1676,15 +1682,9 @@ pub struct ExportObjectResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ExportObjectResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -1703,36 +1703,40 @@ pub struct ReadType {
     pub object_id: ObjectId,
 }
 
-type ReadTypeData = Tlv<ObjectId>;
+impl ReadType {}
 
-impl ReadType {
-    fn data(&self) -> ReadTypeData {
-        Tlv::new(TAG_1, self.object_id)
-    }
-
-    fn command(&self) -> CommandBuilder<ReadTypeData> {
-        CommandBuilder::new(
+impl DataSource for ReadType {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataSource] = &[object_id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
             P1_DEFAULT,
             P2_TYPE,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for ReadType {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ReadType {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataStream<W>] = &[object_id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_TYPE,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1744,24 +1748,10 @@ pub struct ReadTypeResponse {
 }
 
 impl<'data> Se05XResponse<'data> for ReadTypeResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ty, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (transient_indicator, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (ty, rem) = take_do_until(TAG_1, rem)?;
+        let (transient_indicator, rem) = take_do_until(TAG_2, rem)?;
         let _ = rem;
         Ok(Self {
             ty,
@@ -1783,36 +1773,40 @@ pub struct ReadSize {
     pub object_id: ObjectId,
 }
 
-type ReadSizeData = Tlv<ObjectId>;
+impl ReadSize {}
 
-impl ReadSize {
-    fn data(&self) -> ReadSizeData {
-        Tlv::new(TAG_1, self.object_id)
-    }
-
-    fn command(&self) -> CommandBuilder<ReadSizeData> {
-        CommandBuilder::new(
+impl DataSource for ReadSize {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataSource] = &[object_id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
             P1_DEFAULT,
             P2_SIZE,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for ReadSize {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ReadSize {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataStream<W>] = &[object_id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_SIZE,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1822,15 +1816,9 @@ pub struct ReadSizeResponse {
 }
 
 impl<'data> Se05XResponse<'data> for ReadSizeResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (size, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (size, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { size })
     }
@@ -1851,36 +1839,42 @@ pub struct ReadIdList {
     pub filter: SecureObjectFilter,
 }
 
-type ReadIdListData = (Tlv<Be<u16>>, Tlv<SecureObjectFilter>);
+impl ReadIdList {}
 
-impl ReadIdList {
-    fn data(&self) -> ReadIdListData {
-        (Tlv::new(TAG_1, self.offset), Tlv::new(TAG_2, self.filter))
-    }
-
-    fn command(&self) -> CommandBuilder<ReadIdListData> {
-        CommandBuilder::new(
+impl DataSource for ReadIdList {
+    fn len(&self) -> usize {
+        let offset = &Tlv::new(TAG_1, self.offset);
+        let filter = &Tlv::new(TAG_2, self.filter);
+        let __data: &[&dyn DataSource] = &[offset, filter];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_READ,
             P1_DEFAULT,
             P2_LIST,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for ReadIdList {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ReadIdList {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let offset = &Tlv::new(TAG_1, self.offset);
+        let filter = &Tlv::new(TAG_2, self.filter);
+        let __data: &[&dyn DataStream<W>] = &[offset, filter];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_READ,
+            P1_DEFAULT,
+            P2_LIST,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1892,24 +1886,10 @@ pub struct ReadIdListResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ReadIdListResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (more, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
-
-        let mut rem_inner = rem;
-        let (ids, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_2 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (more, rem) = take_do_until(TAG_1, rem)?;
+        let (ids, rem) = take_do_until(TAG_2, rem)?;
         let _ = rem;
         Ok(Self { more, ids })
     }
@@ -1928,36 +1908,40 @@ pub struct CheckObjectExists {
     pub object_id: ObjectId,
 }
 
-type CheckObjectExistsData = Tlv<ObjectId>;
+impl CheckObjectExists {}
 
-impl CheckObjectExists {
-    fn data(&self) -> CheckObjectExistsData {
-        Tlv::new(TAG_1, self.object_id)
-    }
-
-    fn command(&self) -> CommandBuilder<CheckObjectExistsData> {
-        CommandBuilder::new(
+impl DataSource for CheckObjectExists {
+    fn len(&self) -> usize {
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataSource] = &[object_id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_EXIST,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for CheckObjectExists {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CheckObjectExists {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataStream<W>] = &[object_id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_EXIST,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -1967,15 +1951,9 @@ pub struct CheckObjectExistsResponse {
 }
 
 impl<'data> Se05XResponse<'data> for CheckObjectExistsResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -1994,36 +1972,28 @@ pub struct DeleteSecureObject {
     pub object_id: ObjectId,
 }
 
-type DeleteSecureObjectData = Tlv<ObjectId>;
-
-impl DeleteSecureObject {
-    fn data(&self) -> DeleteSecureObjectData {
-        Tlv::new(TAG_1, self.object_id)
-    }
-
-    fn command(&self) -> CommandBuilder<DeleteSecureObjectData> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_MGMT,
-            P1_DEFAULT,
-            P2_DELETE_OBJECT,
-            self.data(),
-            0,
-        )
-    }
-}
+impl DeleteSecureObject {}
 
 impl DataSource for DeleteSecureObject {
     fn len(&self) -> usize {
-        self.command().len()
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataSource] = &[object_id];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_DELETE_OBJECT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for DeleteSecureObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataStream<W>] = &[object_id];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_DELETE_OBJECT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2040,29 +2010,26 @@ pub struct CreateEcCurve {
     pub curve: EcCurve,
 }
 
-type CreateEcCurveData = Tlv<EcCurve>;
-
-impl CreateEcCurve {
-    fn data(&self) -> CreateEcCurveData {
-        Tlv::new(TAG_1, self.curve)
-    }
-
-    fn command(&self) -> CommandBuilder<CreateEcCurveData> {
-        CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_CREATE, self.data(), 0)
-    }
-}
+impl CreateEcCurve {}
 
 impl DataSource for CreateEcCurve {
     fn len(&self) -> usize {
-        self.command().len()
+        let curve = &Tlv::new(TAG_1, self.curve);
+        let __data: &[&dyn DataSource] = &[curve];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_CREATE, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CreateEcCurve {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let curve = &Tlv::new(TAG_1, self.curve);
+        let __data: &[&dyn DataStream<W>] = &[curve];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_CREATE, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2083,33 +2050,30 @@ pub struct SetEcCurveParam<'data> {
     pub value: &'data [u8],
 }
 
-type SetEcCurveParamData<'data> = (Tlv<EcCurve>, Tlv<EcCurveParam>, Tlv<&'data [u8]>);
-
-impl<'data> SetEcCurveParam<'data> {
-    fn data(&self) -> SetEcCurveParamData<'data> {
-        (
-            Tlv::new(TAG_1, self.curve),
-            Tlv::new(TAG_2, self.param),
-            Tlv::new(TAG_3, self.value),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<SetEcCurveParamData<'data>> {
-        CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_PARAM, self.data(), 0)
-    }
-}
+impl<'data> SetEcCurveParam<'data> {}
 
 impl<'data> DataSource for SetEcCurveParam<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let curve = &Tlv::new(TAG_1, self.curve);
+        let param = &Tlv::new(TAG_2, self.param);
+        let value = &Tlv::new(TAG_3, self.value);
+        let __data: &[&dyn DataSource] = &[curve, param, value];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_PARAM, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for SetEcCurveParam<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let curve = &Tlv::new(TAG_1, self.curve);
+        let param = &Tlv::new(TAG_2, self.param);
+        let value = &Tlv::new(TAG_3, self.value);
+        let __data: &[&dyn DataStream<W>] = &[curve, param, value];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CURVE, P2_PARAM, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2126,29 +2090,26 @@ pub struct GetEcCurveId {
     pub object_id: ObjectId,
 }
 
-type GetEcCurveIdData = Tlv<ObjectId>;
-
-impl GetEcCurveId {
-    fn data(&self) -> GetEcCurveIdData {
-        Tlv::new(TAG_1, self.object_id)
-    }
-
-    fn command(&self) -> CommandBuilder<GetEcCurveIdData> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_ID, self.data(), 0)
-    }
-}
+impl GetEcCurveId {}
 
 impl DataSource for GetEcCurveId {
     fn len(&self) -> usize {
-        self.command().len()
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataSource] = &[object_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_ID, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for GetEcCurveId {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let object_id = &Tlv::new(TAG_1, self.object_id);
+        let __data: &[&dyn DataStream<W>] = &[object_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_ID, __data, 0);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2158,15 +2119,9 @@ pub struct GetEcCurveIdResponse {
 }
 
 impl<'data> Se05XResponse<'data> for GetEcCurveIdResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (curve, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (curve, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { curve })
     }
@@ -2182,25 +2137,24 @@ impl<W: Writer> Se05XCommand<W> for GetEcCurveId {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadEcCurveList {}
 
-type ReadEcCurveListData = ();
-
-impl ReadEcCurveList {
-    fn command(&self) -> CommandBuilder<ReadEcCurveListData> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_LIST, (), 0)
-    }
-}
+impl ReadEcCurveList {}
 
 impl DataSource for ReadEcCurveList {
     fn len(&self) -> usize {
-        self.command().len()
+        let __data: &[&dyn DataSource] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_LIST, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ReadEcCurveList {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let __data: &[&dyn DataStream<W>] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CURVE, P2_LIST, __data, 0);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2210,15 +2164,9 @@ pub struct ReadEcCurveListResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ReadEcCurveListResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ids, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (ids, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { ids })
     }
@@ -2237,36 +2185,28 @@ pub struct DeleteEcCurve {
     pub curve: EcCurve,
 }
 
-type DeleteEcCurveData = Tlv<EcCurve>;
-
-impl DeleteEcCurve {
-    fn data(&self) -> DeleteEcCurveData {
-        Tlv::new(TAG_1, self.curve)
-    }
-
-    fn command(&self) -> CommandBuilder<DeleteEcCurveData> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_MGMT,
-            P1_CURVE,
-            P2_DELETE_OBJECT,
-            self.data(),
-            0,
-        )
-    }
-}
+impl DeleteEcCurve {}
 
 impl DataSource for DeleteEcCurve {
     fn len(&self) -> usize {
-        self.command().len()
+        let curve = &Tlv::new(TAG_1, self.curve);
+        let __data: &[&dyn DataSource] = &[curve];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_CURVE, P2_DELETE_OBJECT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for DeleteEcCurve {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let curve = &Tlv::new(TAG_1, self.curve);
+        let __data: &[&dyn DataStream<W>] = &[curve];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_CURVE, P2_DELETE_OBJECT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2285,40 +2225,32 @@ pub struct CreateDigestObject {
     pub subtype: Digest,
 }
 
-type CreateDigestObjectData = (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<Digest>);
-
-impl CreateDigestObject {
-    fn data(&self) -> CreateDigestObjectData {
-        (
-            Tlv::new(TAG_1, self.id),
-            Tlv::new(TAG_2, CryptoContext::Digest),
-            Tlv::new(TAG_3, self.subtype),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CreateDigestObjectData> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_WRITE,
-            P1_CRYPTO_OBJ,
-            P2_DEFAULT,
-            self.data(),
-            0,
-        )
-    }
-}
+impl CreateDigestObject {}
 
 impl DataSource for CreateDigestObject {
     fn len(&self) -> usize {
-        self.command().len()
+        let id = &Tlv::new(TAG_1, self.id);
+        let context = &Tlv::new(TAG_2, CryptoContext::Digest);
+        let subtype = &Tlv::new(TAG_3, self.subtype);
+        let __data: &[&dyn DataSource] = &[id, context, subtype];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CRYPTO_OBJ, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CreateDigestObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let id = &Tlv::new(TAG_1, self.id);
+        let context = &Tlv::new(TAG_2, CryptoContext::Digest);
+        let subtype = &Tlv::new(TAG_3, self.subtype);
+        let __data: &[&dyn DataStream<W>] = &[id, context, subtype];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CRYPTO_OBJ, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2337,40 +2269,32 @@ pub struct CreateCipherObject {
     pub subtype: CipherMode,
 }
 
-type CreateCipherObjectData = (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<CipherMode>);
-
-impl CreateCipherObject {
-    fn data(&self) -> CreateCipherObjectData {
-        (
-            Tlv::new(TAG_1, self.id),
-            Tlv::new(TAG_2, CryptoContext::Cipher),
-            Tlv::new(TAG_3, self.subtype),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CreateCipherObjectData> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_WRITE,
-            P1_CRYPTO_OBJ,
-            P2_DEFAULT,
-            self.data(),
-            0,
-        )
-    }
-}
+impl CreateCipherObject {}
 
 impl DataSource for CreateCipherObject {
     fn len(&self) -> usize {
-        self.command().len()
+        let id = &Tlv::new(TAG_1, self.id);
+        let context = &Tlv::new(TAG_2, CryptoContext::Cipher);
+        let subtype = &Tlv::new(TAG_3, self.subtype);
+        let __data: &[&dyn DataSource] = &[id, context, subtype];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CRYPTO_OBJ, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CreateCipherObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let id = &Tlv::new(TAG_1, self.id);
+        let context = &Tlv::new(TAG_2, CryptoContext::Cipher);
+        let subtype = &Tlv::new(TAG_3, self.subtype);
+        let __data: &[&dyn DataStream<W>] = &[id, context, subtype];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CRYPTO_OBJ, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2389,40 +2313,32 @@ pub struct CreateSignatureObject {
     pub subtype: MacAlgo,
 }
 
-type CreateSignatureObjectData = (Tlv<CryptoObjectId>, Tlv<CryptoContext>, Tlv<MacAlgo>);
-
-impl CreateSignatureObject {
-    fn data(&self) -> CreateSignatureObjectData {
-        (
-            Tlv::new(TAG_1, self.id),
-            Tlv::new(TAG_2, CryptoContext::Signature),
-            Tlv::new(TAG_3, self.subtype),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CreateSignatureObjectData> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_WRITE,
-            P1_CRYPTO_OBJ,
-            P2_DEFAULT,
-            self.data(),
-            0,
-        )
-    }
-}
+impl CreateSignatureObject {}
 
 impl DataSource for CreateSignatureObject {
     fn len(&self) -> usize {
-        self.command().len()
+        let id = &Tlv::new(TAG_1, self.id);
+        let context = &Tlv::new(TAG_2, CryptoContext::Signature);
+        let subtype = &Tlv::new(TAG_3, self.subtype);
+        let __data: &[&dyn DataSource] = &[id, context, subtype];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CRYPTO_OBJ, P2_DEFAULT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for CreateSignatureObject {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let id = &Tlv::new(TAG_1, self.id);
+        let context = &Tlv::new(TAG_2, CryptoContext::Signature);
+        let subtype = &Tlv::new(TAG_3, self.subtype);
+        let __data: &[&dyn DataStream<W>] = &[id, context, subtype];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_WRITE, P1_CRYPTO_OBJ, P2_DEFAULT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -2436,25 +2352,24 @@ impl<W: Writer> Se05XCommand<W> for CreateSignatureObject {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadCryptoObjList {}
 
-type ReadCryptoObjListData = ();
-
-impl ReadCryptoObjList {
-    fn command(&self) -> CommandBuilder<ReadCryptoObjListData> {
-        CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CRYPTO_OBJ, P2_LIST, (), 0)
-    }
-}
+impl ReadCryptoObjList {}
 
 impl DataSource for ReadCryptoObjList {
     fn len(&self) -> usize {
-        self.command().len()
+        let __data: &[&dyn DataSource] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CRYPTO_OBJ, P2_LIST, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for ReadCryptoObjList {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let __data: &[&dyn DataStream<W>] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_CRYPTO_OBJ, P2_LIST, __data, 0);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2464,15 +2379,9 @@ pub struct ReadCryptoObjListResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for ReadCryptoObjListResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (list, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (list, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { list })
     }
@@ -2491,36 +2400,40 @@ pub struct DeleteCryptoObj {
     pub id: CryptoObjectId,
 }
 
-type DeleteCryptoObjData = Tlv<CryptoObjectId>;
+impl DeleteCryptoObj {}
 
-impl DeleteCryptoObj {
-    fn data(&self) -> DeleteCryptoObjData {
-        Tlv::new(TAG_1, self.id)
-    }
-
-    fn command(&self) -> CommandBuilder<DeleteCryptoObjData> {
-        CommandBuilder::new(
+impl DataSource for DeleteCryptoObj {
+    fn len(&self) -> usize {
+        let id = &Tlv::new(TAG_1, self.id);
+        let __data: &[&dyn DataSource] = &[id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_CRYPTO_OBJ,
             P2_DELETE_OBJECT,
-            self.data(),
+            __data,
             0,
-        )
-    }
-}
-
-impl DataSource for DeleteCryptoObj {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for DeleteCryptoObj {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let id = &Tlv::new(TAG_1, self.id);
+        let __data: &[&dyn DataStream<W>] = &[id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_CRYPTO_OBJ,
+            P2_DELETE_OBJECT,
+            __data,
+            0,
+        );
+        command.to_writer(writer)
     }
 }
 
@@ -2541,40 +2454,44 @@ pub struct EcdsaSign<'data> {
     pub data: &'data [u8],
 }
 
-type EcdsaSignData<'data> = (Tlv<ObjectId>, Tlv<EcDsaSignatureAlgo>, Tlv<&'data [u8]>);
+impl<'data> EcdsaSign<'data> {}
 
-impl<'data> EcdsaSign<'data> {
-    fn data(&self) -> EcdsaSignData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.data),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<EcdsaSignData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for EcdsaSign<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_SIGNATURE,
             P2_SIGN,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for EcdsaSign<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for EcdsaSign<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2584,15 +2501,9 @@ pub struct EcdsaSignResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for EcdsaSignResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -2613,40 +2524,44 @@ pub struct EddsaSign<'data> {
     pub data: &'data [u8],
 }
 
-type EddsaSignData<'data> = (Tlv<ObjectId>, Tlv<EdDsaSignatureAlgo>, Tlv<&'data [u8]>);
+impl<'data> EddsaSign<'data> {}
 
-impl<'data> EddsaSign<'data> {
-    fn data(&self) -> EddsaSignData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure),
-            Tlv::new(TAG_3, self.data),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<EddsaSignData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for EddsaSign<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_SIGNATURE,
             P2_SIGN,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for EddsaSign<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for EddsaSign<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2656,15 +2571,9 @@ pub struct EddsaSignResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for EddsaSignResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -2687,46 +2596,46 @@ pub struct EcdaaSign {
     pub random_data: [u8; 32],
 }
 
-type EcdaaSignData = (
-    Tlv<ObjectId>,
-    Tlv<EcDaaSignatureAlgo>,
-    Tlv<[u8; 32]>,
-    Tlv<[u8; 32]>,
-);
+impl EcdaaSign {}
 
-impl EcdaaSign {
-    fn data(&self) -> EcdaaSignData {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, EcDaaSignatureAlgo::EcDaa),
-            Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_4, self.random_data),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<EcdaaSignData> {
-        CommandBuilder::new(
+impl DataSource for EcdaaSign {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, EcDaaSignatureAlgo::EcDaa);
+        let data = &Tlv::new(TAG_3, self.data);
+        let random_data = &Tlv::new(TAG_4, self.random_data);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data, random_data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_SIGNATURE,
             P2_SIGN,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for EcdaaSign {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for EcdaaSign {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, EcDaaSignatureAlgo::EcDaa);
+        let data = &Tlv::new(TAG_3, self.data);
+        let random_data = &Tlv::new(TAG_4, self.random_data);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data, random_data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2736,15 +2645,9 @@ pub struct EcdaaSignResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for EcdaaSignResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -2769,46 +2672,34 @@ pub struct EcdsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-type EcdsaVerifyData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<EcDsaSignatureAlgo>,
-    Tlv<&'data [u8]>,
-    Tlv<&'data [u8]>,
-);
-
-impl<'data> EcdsaVerify<'data> {
-    fn data(&self) -> EcdsaVerifyData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_5, self.signature),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<EcdsaVerifyData<'data>> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_CRYPTO,
-            P1_SIGNATURE,
-            P2_VERIFY,
-            self.data(),
-            3,
-        )
-    }
-}
+impl<'data> EcdsaVerify<'data> {}
 
 impl<'data> DataSource for EcdsaVerify<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let signature = &Tlv::new(TAG_5, self.signature);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data, signature];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_SIGNATURE, P2_VERIFY, __data, 3);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for EcdsaVerify<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let signature = &Tlv::new(TAG_5, self.signature);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data, signature];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_SIGNATURE, P2_VERIFY, __data, 3);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2818,15 +2709,9 @@ pub struct EcdsaVerifyResponse {
 }
 
 impl<'data> Se05XResponse<'data> for EcdsaVerifyResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -2849,46 +2734,34 @@ pub struct EddsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-type EddsaVerifyData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<EdDsaSignatureAlgo>,
-    Tlv<&'data [u8]>,
-    Tlv<&'data [u8]>,
-);
-
-impl<'data> EddsaVerify<'data> {
-    fn data(&self) -> EddsaVerifyData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure),
-            Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_5, self.signature),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<EddsaVerifyData<'data>> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_CRYPTO,
-            P1_SIGNATURE,
-            P2_VERIFY,
-            self.data(),
-            3,
-        )
-    }
-}
+impl<'data> EddsaVerify<'data> {}
 
 impl<'data> DataSource for EddsaVerify<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
+        let data = &Tlv::new(TAG_3, self.data);
+        let signature = &Tlv::new(TAG_5, self.signature);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data, signature];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_SIGNATURE, P2_VERIFY, __data, 3);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for EddsaVerify<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
+        let data = &Tlv::new(TAG_3, self.data);
+        let signature = &Tlv::new(TAG_5, self.signature);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data, signature];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_SIGNATURE, P2_VERIFY, __data, 3);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2898,15 +2771,9 @@ pub struct EddsaVerifyResponse {
 }
 
 impl<'data> Se05XResponse<'data> for EddsaVerifyResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -2927,39 +2794,42 @@ pub struct EcdhGenerateSharedSecret<'data> {
     pub public_key: &'data [u8],
 }
 
-type EcdhGenerateSharedSecretData<'data> = (Tlv<ObjectId>, Tlv<&'data [u8]>);
+impl<'data> EcdhGenerateSharedSecret<'data> {}
 
-impl<'data> EcdhGenerateSharedSecret<'data> {
-    fn data(&self) -> EcdhGenerateSharedSecretData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.public_key),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<EcdhGenerateSharedSecretData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for EcdhGenerateSharedSecret<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let public_key = &Tlv::new(TAG_2, self.public_key);
+        let __data: &[&dyn DataSource] = &[key_id, public_key];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_EC,
             P2_DH,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for EcdhGenerateSharedSecret<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for EcdhGenerateSharedSecret<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let public_key = &Tlv::new(TAG_2, self.public_key);
+        let __data: &[&dyn DataStream<W>] = &[key_id, public_key];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_EC,
+            P2_DH,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -2969,15 +2839,9 @@ pub struct EcdhGenerateSharedSecretResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for EcdhGenerateSharedSecretResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (shared_secret, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (shared_secret, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { shared_secret })
     }
@@ -3000,40 +2864,44 @@ pub struct RsaSign<'data> {
     pub data: &'data [u8],
 }
 
-type RsaSignData<'data> = (Tlv<ObjectId>, Tlv<RsaSignatureAlgo>, Tlv<&'data [u8]>);
+impl<'data> RsaSign<'data> {}
 
-impl<'data> RsaSign<'data> {
-    fn data(&self) -> RsaSignData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.data),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<RsaSignData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for RsaSign<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_SIGNATURE,
             P2_SIGN,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for RsaSign<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for RsaSign<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_SIGNATURE,
+            P2_SIGN,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3043,15 +2911,9 @@ pub struct RsaSignResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for RsaSignResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (signature, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (signature, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { signature })
     }
@@ -3076,46 +2938,34 @@ pub struct RsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-type RsaVerifyData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<RsaSignatureAlgo>,
-    Tlv<&'data [u8]>,
-    Tlv<&'data [u8]>,
-);
-
-impl<'data> RsaVerify<'data> {
-    fn data(&self) -> RsaVerifyData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_5, self.signature),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<RsaVerifyData<'data>> {
-        CommandBuilder::new(
-            NO_SM_CLA,
-            INS_CRYPTO,
-            P1_SIGNATURE,
-            P2_VERIFY,
-            self.data(),
-            3,
-        )
-    }
-}
+impl<'data> RsaVerify<'data> {}
 
 impl<'data> DataSource for RsaVerify<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let signature = &Tlv::new(TAG_5, self.signature);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data, signature];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_SIGNATURE, P2_VERIFY, __data, 3);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for RsaVerify<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let signature = &Tlv::new(TAG_5, self.signature);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data, signature];
+        let command =
+            CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_SIGNATURE, P2_VERIFY, __data, 3);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3125,15 +2975,9 @@ pub struct RsaVerifyResponse {
 }
 
 impl<'data> Se05XResponse<'data> for RsaVerifyResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -3156,40 +3000,44 @@ pub struct RsaEncrypt<'data> {
     pub plaintext: &'data [u8],
 }
 
-type RsaEncryptData<'data> = (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>);
+impl<'data> RsaEncrypt<'data> {}
 
-impl<'data> RsaEncrypt<'data> {
-    fn data(&self) -> RsaEncryptData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.plaintext),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<RsaEncryptData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for RsaEncrypt<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let plaintext = &Tlv::new(TAG_3, self.plaintext);
+        let __data: &[&dyn DataSource] = &[key_id, algo, plaintext];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_RSA,
             P2_ENCRYPT_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for RsaEncrypt<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for RsaEncrypt<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let plaintext = &Tlv::new(TAG_3, self.plaintext);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, plaintext];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_RSA,
+            P2_ENCRYPT_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3199,15 +3047,9 @@ pub struct RsaEncryptResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for RsaEncryptResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ciphertext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (ciphertext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { ciphertext })
     }
@@ -3230,40 +3072,44 @@ pub struct RsaDecrypt<'data> {
     pub ciphertext: &'data [u8],
 }
 
-type RsaDecryptData<'data> = (Tlv<ObjectId>, Tlv<RsaEncryptionAlgo>, Tlv<&'data [u8]>);
+impl<'data> RsaDecrypt<'data> {}
 
-impl<'data> RsaDecrypt<'data> {
-    fn data(&self) -> RsaDecryptData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.ciphertext),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<RsaDecryptData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for RsaDecrypt<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let ciphertext = &Tlv::new(TAG_3, self.ciphertext);
+        let __data: &[&dyn DataSource] = &[key_id, algo, ciphertext];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_RSA,
             P2_DECRYPT_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for RsaDecrypt<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for RsaDecrypt<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let ciphertext = &Tlv::new(TAG_3, self.ciphertext);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, ciphertext];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_RSA,
+            P2_DECRYPT_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3273,15 +3119,9 @@ pub struct RsaDecryptResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for RsaDecryptResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (plaintext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (plaintext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { plaintext })
     }
@@ -3305,33 +3145,30 @@ pub struct CipherEncryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-type CipherEncryptInitData<'data> = (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>);
-
-impl<'data> CipherEncryptInit<'data> {
-    fn data(&self) -> CipherEncryptInitData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.cipher_id),
-            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CipherEncryptInitData<'data>> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_ENCRYPT, self.data(), 0)
-    }
-}
+impl<'data> CipherEncryptInit<'data> {}
 
 impl<'data> DataSource for CipherEncryptInit<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[key_id, cipher_id, initialization_vector];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_ENCRYPT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for CipherEncryptInit<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[key_id, cipher_id, initialization_vector];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_ENCRYPT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -3353,33 +3190,30 @@ pub struct CipherDecryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-type CipherDecryptInitData<'data> = (Tlv<ObjectId>, Tlv<CryptoObjectId>, Option<Tlv<&'data [u8]>>);
-
-impl<'data> CipherDecryptInit<'data> {
-    fn data(&self) -> CipherDecryptInitData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.cipher_id),
-            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CipherDecryptInitData<'data>> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_DECRYPT, self.data(), 0)
-    }
-}
+impl<'data> CipherDecryptInit<'data> {}
 
 impl<'data> DataSource for CipherDecryptInit<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[key_id, cipher_id, initialization_vector];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_DECRYPT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for CipherDecryptInit<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[key_id, cipher_id, initialization_vector];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_CIPHER, P2_DECRYPT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -3400,36 +3234,42 @@ pub struct CipherUpdate<'data> {
     pub data: &'data [u8],
 }
 
-type CipherUpdateData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+impl<'data> CipherUpdate<'data> {}
 
-impl<'data> CipherUpdate<'data> {
-    fn data(&self) -> CipherUpdateData<'data> {
-        (Tlv::new(TAG_2, self.cipher_id), Tlv::new(TAG_3, self.data))
-    }
-
-    fn command(&self) -> CommandBuilder<CipherUpdateData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for CipherUpdate<'data> {
+    fn len(&self) -> usize {
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[cipher_id, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_CIPHER,
             P2_UPDATE,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for CipherUpdate<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for CipherUpdate<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[cipher_id, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_UPDATE,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3441,15 +3281,9 @@ pub struct CipherUpdateResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for CipherUpdateResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -3472,36 +3306,42 @@ pub struct CipherFinal<'data> {
     pub data: &'data [u8],
 }
 
-type CipherFinalData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+impl<'data> CipherFinal<'data> {}
 
-impl<'data> CipherFinal<'data> {
-    fn data(&self) -> CipherFinalData<'data> {
-        (Tlv::new(TAG_2, self.cipher_id), Tlv::new(TAG_3, self.data))
-    }
-
-    fn command(&self) -> CommandBuilder<CipherFinalData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for CipherFinal<'data> {
+    fn len(&self) -> usize {
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[cipher_id, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_CIPHER,
             P2_FINAL,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for CipherFinal<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for CipherFinal<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[cipher_id, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_FINAL,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3513,15 +3353,9 @@ pub struct CipherFinalResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for CipherFinalResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -3547,46 +3381,46 @@ pub struct CipherOneShotEncrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-type CipherOneShotEncryptData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<CipherMode>,
-    Tlv<&'data [u8]>,
-    Option<Tlv<&'data [u8]>>,
-);
+impl<'data> CipherOneShotEncrypt<'data> {}
 
-impl<'data> CipherOneShotEncrypt<'data> {
-    fn data(&self) -> CipherOneShotEncryptData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.mode),
-            Tlv::new(TAG_3, self.plaintext),
-            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CipherOneShotEncryptData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for CipherOneShotEncrypt<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mode = &Tlv::new(TAG_2, self.mode);
+        let plaintext = &Tlv::new(TAG_3, self.plaintext);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[key_id, mode, plaintext, initialization_vector];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_CIPHER,
             P2_ENCRYPT_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for CipherOneShotEncrypt<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for CipherOneShotEncrypt<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mode = &Tlv::new(TAG_2, self.mode);
+        let plaintext = &Tlv::new(TAG_3, self.plaintext);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[key_id, mode, plaintext, initialization_vector];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_ENCRYPT_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3596,15 +3430,9 @@ pub struct CipherOneShotEncryptResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for CipherOneShotEncryptResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (ciphertext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (ciphertext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { ciphertext })
     }
@@ -3630,46 +3458,46 @@ pub struct CipherOneShotDecrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-type CipherOneShotDecryptData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<CipherMode>,
-    Tlv<&'data [u8]>,
-    Option<Tlv<&'data [u8]>>,
-);
+impl<'data> CipherOneShotDecrypt<'data> {}
 
-impl<'data> CipherOneShotDecrypt<'data> {
-    fn data(&self) -> CipherOneShotDecryptData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.mode),
-            Tlv::new(TAG_3, self.ciphertext),
-            self.initialization_vector.map(|data| Tlv::new(TAG_4, data)),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<CipherOneShotDecryptData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for CipherOneShotDecrypt<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mode = &Tlv::new(TAG_2, self.mode);
+        let ciphertext = &Tlv::new(TAG_3, self.ciphertext);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataSource] = &[key_id, mode, ciphertext, initialization_vector];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_CIPHER,
             P2_DECRYPT_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for CipherOneShotDecrypt<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for CipherOneShotDecrypt<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mode = &Tlv::new(TAG_2, self.mode);
+        let ciphertext = &Tlv::new(TAG_3, self.ciphertext);
+        let initialization_vector = &self.initialization_vector.map(|data| Tlv::new(TAG_4, data));
+        let __data: &[&dyn DataStream<W>] = &[key_id, mode, ciphertext, initialization_vector];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_CIPHER,
+            P2_DECRYPT_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3679,15 +3507,9 @@ pub struct CipherOneShotDecryptResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for CipherOneShotDecryptResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (plaintext, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (plaintext, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { plaintext })
     }
@@ -3708,29 +3530,28 @@ pub struct MacGenerateInit {
     pub mac_id: CryptoObjectId,
 }
 
-type MacGenerateInitData = (Tlv<ObjectId>, Tlv<CryptoObjectId>);
-
-impl MacGenerateInit {
-    fn data(&self) -> MacGenerateInitData {
-        (Tlv::new(TAG_1, self.key_id), Tlv::new(TAG_2, self.mac_id))
-    }
-
-    fn command(&self) -> CommandBuilder<MacGenerateInitData> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_GENERATE, self.data(), 0)
-    }
-}
+impl MacGenerateInit {}
 
 impl DataSource for MacGenerateInit {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataSource] = &[key_id, mac_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_GENERATE, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for MacGenerateInit {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataStream<W>] = &[key_id, mac_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_GENERATE, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -3749,29 +3570,28 @@ pub struct MacValidateInit {
     pub mac_id: CryptoObjectId,
 }
 
-type MacValidateInitData = (Tlv<ObjectId>, Tlv<CryptoObjectId>);
-
-impl MacValidateInit {
-    fn data(&self) -> MacValidateInitData {
-        (Tlv::new(TAG_1, self.key_id), Tlv::new(TAG_2, self.mac_id))
-    }
-
-    fn command(&self) -> CommandBuilder<MacValidateInitData> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_VALIDATE, self.data(), 0)
-    }
-}
+impl MacValidateInit {}
 
 impl DataSource for MacValidateInit {
     fn len(&self) -> usize {
-        self.command().len()
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataSource] = &[key_id, mac_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_VALIDATE, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for MacValidateInit {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataStream<W>] = &[key_id, mac_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_VALIDATE, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -3790,29 +3610,28 @@ pub struct MacUpdate<'data> {
     pub mac_id: CryptoObjectId,
 }
 
-type MacUpdateData<'data> = (Tlv<&'data [u8]>, Tlv<CryptoObjectId>);
-
-impl<'data> MacUpdate<'data> {
-    fn data(&self) -> MacUpdateData<'data> {
-        (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
-    }
-
-    fn command(&self) -> CommandBuilder<MacUpdateData<'data>> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_UPDATE, self.data(), 0)
-    }
-}
+impl<'data> MacUpdate<'data> {}
 
 impl<'data> DataSource for MacUpdate<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let data = &Tlv::new(TAG_1, self.data);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataSource] = &[data, mac_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_UPDATE, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for MacUpdate<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let data = &Tlv::new(TAG_1, self.data);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataStream<W>] = &[data, mac_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_MAC, P2_UPDATE, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -3831,36 +3650,42 @@ pub struct MacGenerateFinal<'data> {
     pub mac_id: CryptoObjectId,
 }
 
-type MacGenerateFinalData<'data> = (Tlv<&'data [u8]>, Tlv<CryptoObjectId>);
+impl<'data> MacGenerateFinal<'data> {}
 
-impl<'data> MacGenerateFinal<'data> {
-    fn data(&self) -> MacGenerateFinalData<'data> {
-        (Tlv::new(TAG_1, self.data), Tlv::new(TAG_2, self.mac_id))
-    }
-
-    fn command(&self) -> CommandBuilder<MacGenerateFinalData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for MacGenerateFinal<'data> {
+    fn len(&self) -> usize {
+        let data = &Tlv::new(TAG_1, self.data);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataSource] = &[data, mac_id];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_MAC,
             P2_FINAL,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for MacGenerateFinal<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for MacGenerateFinal<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let data = &Tlv::new(TAG_1, self.data);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let __data: &[&dyn DataStream<W>] = &[data, mac_id];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_FINAL,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3870,15 +3695,9 @@ pub struct MacGenerateFinalResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for MacGenerateFinalResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (tag, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (tag, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { tag })
     }
@@ -3903,40 +3722,44 @@ pub struct MacValidateFinal<'data> {
     pub tag: &'data [u8],
 }
 
-type MacValidateFinalData<'data> = (Tlv<&'data [u8]>, Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+impl<'data> MacValidateFinal<'data> {}
 
-impl<'data> MacValidateFinal<'data> {
-    fn data(&self) -> MacValidateFinalData<'data> {
-        (
-            Tlv::new(TAG_1, self.data),
-            Tlv::new(TAG_2, self.mac_id),
-            Tlv::new(TAG_3, self.tag),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<MacValidateFinalData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for MacValidateFinal<'data> {
+    fn len(&self) -> usize {
+        let data = &Tlv::new(TAG_1, self.data);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let tag = &Tlv::new(TAG_3, self.tag);
+        let __data: &[&dyn DataSource] = &[data, mac_id, tag];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_MAC,
             P2_FINAL,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for MacValidateFinal<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for MacValidateFinal<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let data = &Tlv::new(TAG_1, self.data);
+        let mac_id = &Tlv::new(TAG_2, self.mac_id);
+        let tag = &Tlv::new(TAG_3, self.tag);
+        let __data: &[&dyn DataStream<W>] = &[data, mac_id, tag];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_FINAL,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -3946,15 +3769,9 @@ pub struct MacValidateFinalResponse {
 }
 
 impl<'data> Se05XResponse<'data> for MacValidateFinalResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -3977,40 +3794,44 @@ pub struct MacOneShotGenerate<'data> {
     pub data: &'data [u8],
 }
 
-type MacOneShotGenerateData<'data> = (Tlv<ObjectId>, Tlv<MacAlgo>, Tlv<&'data [u8]>);
+impl<'data> MacOneShotGenerate<'data> {}
 
-impl<'data> MacOneShotGenerate<'data> {
-    fn data(&self) -> MacOneShotGenerateData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.data),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<MacOneShotGenerateData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for MacOneShotGenerate<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_MAC,
             P2_GENERATE_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for MacOneShotGenerate<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for MacOneShotGenerate<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_GENERATE_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4020,15 +3841,9 @@ pub struct MacOneShotGenerateResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for MacOneShotGenerateResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (tag, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (tag, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { tag })
     }
@@ -4055,46 +3870,46 @@ pub struct MacOneShotValidate<'data> {
     pub tag: &'data [u8],
 }
 
-type MacOneShotValidateData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<MacAlgo>,
-    Tlv<&'data [u8]>,
-    Tlv<&'data [u8]>,
-);
+impl<'data> MacOneShotValidate<'data> {}
 
-impl<'data> MacOneShotValidate<'data> {
-    fn data(&self) -> MacOneShotValidateData<'data> {
-        (
-            Tlv::new(TAG_1, self.key_id),
-            Tlv::new(TAG_2, self.algo),
-            Tlv::new(TAG_3, self.data),
-            Tlv::new(TAG_5, self.tag),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<MacOneShotValidateData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for MacOneShotValidate<'data> {
+    fn len(&self) -> usize {
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let tag = &Tlv::new(TAG_5, self.tag);
+        let __data: &[&dyn DataSource] = &[key_id, algo, data, tag];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_MAC,
             P2_VALIDATE_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for MacOneShotValidate<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for MacOneShotValidate<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let key_id = &Tlv::new(TAG_1, self.key_id);
+        let algo = &Tlv::new(TAG_2, self.algo);
+        let data = &Tlv::new(TAG_3, self.data);
+        let tag = &Tlv::new(TAG_5, self.tag);
+        let __data: &[&dyn DataStream<W>] = &[key_id, algo, data, tag];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_MAC,
+            P2_VALIDATE_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4104,15 +3919,9 @@ pub struct MacOneShotValidateResponse {
 }
 
 impl<'data> Se05XResponse<'data> for MacOneShotValidateResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (result, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (result, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { result })
     }
@@ -4145,48 +3954,48 @@ pub struct Hkdf<'data> {
     pub requested_len: Be<u16>,
 }
 
-type HkdfData<'data> = (
-    Tlv<ObjectId>,
-    Tlv<Digest>,
-    Option<Tlv<&'data [u8]>>,
-    Option<Tlv<&'data [u8]>>,
-    Tlv<Be<u16>>,
-);
+impl<'data> Hkdf<'data> {}
 
-impl<'data> Hkdf<'data> {
-    fn data(&self) -> HkdfData<'data> {
-        (
-            Tlv::new(TAG_1, self.ikm),
-            Tlv::new(TAG_2, self.digest),
-            self.salt.map(|data| Tlv::new(TAG_3, data)),
-            self.info.map(|data| Tlv::new(TAG_4, data)),
-            Tlv::new(TAG_5, self.requested_len),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<HkdfData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for Hkdf<'data> {
+    fn len(&self) -> usize {
+        let ikm = &Tlv::new(TAG_1, self.ikm);
+        let digest = &Tlv::new(TAG_2, self.digest);
+        let salt = &self.salt.map(|data| Tlv::new(TAG_3, data));
+        let info = &self.info.map(|data| Tlv::new(TAG_4, data));
+        let requested_len = &Tlv::new(TAG_5, self.requested_len);
+        let __data: &[&dyn DataSource] = &[ikm, digest, salt, info, requested_len];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_DEFAULT,
             P2_HKDF,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for Hkdf<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for Hkdf<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let ikm = &Tlv::new(TAG_1, self.ikm);
+        let digest = &Tlv::new(TAG_2, self.digest);
+        let salt = &self.salt.map(|data| Tlv::new(TAG_3, data));
+        let info = &self.info.map(|data| Tlv::new(TAG_4, data));
+        let requested_len = &Tlv::new(TAG_5, self.requested_len);
+        let __data: &[&dyn DataStream<W>] = &[ikm, digest, salt, info, requested_len];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_HKDF,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4196,15 +4005,9 @@ pub struct HkdfResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for HkdfResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -4236,46 +4039,46 @@ pub struct Pbkdf2<'data> {
     pub requested_len: Be<u16>,
 }
 
-type Pbkdf2Data<'data> = (
-    Tlv<ObjectId>,
-    Option<Tlv<&'data [u8]>>,
-    Tlv<Be<u16>>,
-    Tlv<Be<u16>>,
-);
+impl<'data> Pbkdf2<'data> {}
 
-impl<'data> Pbkdf2<'data> {
-    fn data(&self) -> Pbkdf2Data<'data> {
-        (
-            Tlv::new(TAG_1, self.password),
-            self.salt.map(|data| Tlv::new(TAG_2, data)),
-            Tlv::new(TAG_3, self.iterations),
-            Tlv::new(TAG_4, self.requested_len),
-        )
-    }
-
-    fn command(&self) -> CommandBuilder<Pbkdf2Data<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for Pbkdf2<'data> {
+    fn len(&self) -> usize {
+        let password = &Tlv::new(TAG_1, self.password);
+        let salt = &self.salt.map(|data| Tlv::new(TAG_2, data));
+        let iterations = &Tlv::new(TAG_3, self.iterations);
+        let requested_len = &Tlv::new(TAG_4, self.requested_len);
+        let __data: &[&dyn DataSource] = &[password, salt, iterations, requested_len];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_DEFAULT,
             P2_PBKDF,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for Pbkdf2<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for Pbkdf2<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let password = &Tlv::new(TAG_1, self.password);
+        let salt = &self.salt.map(|data| Tlv::new(TAG_2, data));
+        let iterations = &Tlv::new(TAG_3, self.iterations);
+        let requested_len = &Tlv::new(TAG_4, self.requested_len);
+        let __data: &[&dyn DataStream<W>] = &[password, salt, iterations, requested_len];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_PBKDF,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4285,15 +4088,9 @@ pub struct Pbkdf2Response<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for Pbkdf2Response<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -4312,29 +4109,26 @@ pub struct DigestInit {
     pub digest_id: CryptoObjectId,
 }
 
-type DigestInitData = Tlv<CryptoObjectId>;
-
-impl DigestInit {
-    fn data(&self) -> DigestInitData {
-        Tlv::new(TAG_2, self.digest_id)
-    }
-
-    fn command(&self) -> CommandBuilder<DigestInitData> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_INIT, self.data(), 0)
-    }
-}
+impl DigestInit {}
 
 impl DataSource for DigestInit {
     fn len(&self) -> usize {
-        self.command().len()
+        let digest_id = &Tlv::new(TAG_2, self.digest_id);
+        let __data: &[&dyn DataSource] = &[digest_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_INIT, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for DigestInit {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let digest_id = &Tlv::new(TAG_2, self.digest_id);
+        let __data: &[&dyn DataStream<W>] = &[digest_id];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_INIT, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -4353,29 +4147,28 @@ pub struct DigestUpdate<'data> {
     pub data: &'data [u8],
 }
 
-type DigestUpdateData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
-
-impl<'data> DigestUpdate<'data> {
-    fn data(&self) -> DigestUpdateData<'data> {
-        (Tlv::new(TAG_2, self.digest_id), Tlv::new(TAG_3, self.data))
-    }
-
-    fn command(&self) -> CommandBuilder<DigestUpdateData<'data>> {
-        CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_UPDATE, self.data(), 0)
-    }
-}
+impl<'data> DigestUpdate<'data> {}
 
 impl<'data> DataSource for DigestUpdate<'data> {
     fn len(&self) -> usize {
-        self.command().len()
+        let digest_id = &Tlv::new(TAG_2, self.digest_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[digest_id, data];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_UPDATE, __data, 0);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for DigestUpdate<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let digest_id = &Tlv::new(TAG_2, self.digest_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[digest_id, data];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_CRYPTO, P1_DEFAULT, P2_UPDATE, __data, 0);
+        command.to_writer(writer)
     }
 }
 
@@ -4394,36 +4187,42 @@ pub struct DigestFinal<'data> {
     pub data: &'data [u8],
 }
 
-type DigestFinalData<'data> = (Tlv<CryptoObjectId>, Tlv<&'data [u8]>);
+impl<'data> DigestFinal<'data> {}
 
-impl<'data> DigestFinal<'data> {
-    fn data(&self) -> DigestFinalData<'data> {
-        (Tlv::new(TAG_2, self.digest_id), Tlv::new(TAG_3, self.data))
-    }
-
-    fn command(&self) -> CommandBuilder<DigestFinalData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for DigestFinal<'data> {
+    fn len(&self) -> usize {
+        let digest_id = &Tlv::new(TAG_2, self.digest_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataSource] = &[digest_id, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_DEFAULT,
             P2_FINAL,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for DigestFinal<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for DigestFinal<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let digest_id = &Tlv::new(TAG_2, self.digest_id);
+        let data = &Tlv::new(TAG_3, self.data);
+        let __data: &[&dyn DataStream<W>] = &[digest_id, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_FINAL,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4433,15 +4232,9 @@ pub struct DigestFinalResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for DigestFinalResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (digest, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (digest, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { digest })
     }
@@ -4462,36 +4255,42 @@ pub struct DigestOneShot<'data> {
     pub data: &'data [u8],
 }
 
-type DigestOneShotData<'data> = (Tlv<Digest>, Tlv<&'data [u8]>);
+impl<'data> DigestOneShot<'data> {}
 
-impl<'data> DigestOneShot<'data> {
-    fn data(&self) -> DigestOneShotData<'data> {
-        (Tlv::new(TAG_1, self.algo), Tlv::new(TAG_2, self.data))
-    }
-
-    fn command(&self) -> CommandBuilder<DigestOneShotData<'data>> {
-        CommandBuilder::new(
+impl<'data> DataSource for DigestOneShot<'data> {
+    fn len(&self) -> usize {
+        let algo = &Tlv::new(TAG_1, self.algo);
+        let data = &Tlv::new(TAG_2, self.data);
+        let __data: &[&dyn DataSource] = &[algo, data];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_CRYPTO,
             P1_DEFAULT,
             P2_ONESHOT,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl<'data> DataSource for DigestOneShot<'data> {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<'data, W: Writer> DataStream<W> for DigestOneShot<'data> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let algo = &Tlv::new(TAG_1, self.algo);
+        let data = &Tlv::new(TAG_2, self.data);
+        let __data: &[&dyn DataStream<W>] = &[algo, data];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_CRYPTO,
+            P1_DEFAULT,
+            P2_ONESHOT,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4501,15 +4300,9 @@ pub struct DigestOneShotResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for DigestOneShotResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (digest, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (digest, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { digest })
     }
@@ -4525,25 +4318,24 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetVersion {}
 
-type GetVersionData = ();
-
-impl GetVersion {
-    fn command(&self) -> CommandBuilder<GetVersionData> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_VERSION, (), 11)
-    }
-}
+impl GetVersion {}
 
 impl DataSource for GetVersion {
     fn len(&self) -> usize {
-        self.command().len()
+        let __data: &[&dyn DataSource] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_VERSION, __data, 11);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for GetVersion {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let __data: &[&dyn DataStream<W>] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_VERSION, __data, 11);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4553,15 +4345,9 @@ pub struct GetVersionResponse {
 }
 
 impl<'data> Se05XResponse<'data> for GetVersionResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (version_info, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (version_info, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { version_info })
     }
@@ -4577,25 +4363,24 @@ impl<W: Writer> Se05XCommand<W> for GetVersion {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetTimestamp {}
 
-type GetTimestampData = ();
-
-impl GetTimestamp {
-    fn command(&self) -> CommandBuilder<GetTimestampData> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TIME, (), 20)
-    }
-}
+impl GetTimestamp {}
 
 impl DataSource for GetTimestamp {
     fn len(&self) -> usize {
-        self.command().len()
+        let __data: &[&dyn DataSource] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TIME, __data, 20);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for GetTimestamp {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let __data: &[&dyn DataStream<W>] = &[];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_TIME, __data, 20);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4605,15 +4390,9 @@ pub struct GetTimestampResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for GetTimestampResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (timestamp, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (timestamp, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { timestamp })
     }
@@ -4632,29 +4411,26 @@ pub struct GetFreeMemory {
     pub memory: Memory,
 }
 
-type GetFreeMemoryData = Tlv<Memory>;
-
-impl GetFreeMemory {
-    fn data(&self) -> GetFreeMemoryData {
-        Tlv::new(TAG_1, self.memory)
-    }
-
-    fn command(&self) -> CommandBuilder<GetFreeMemoryData> {
-        CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_MEMORY, self.data(), 6)
-    }
-}
+impl GetFreeMemory {}
 
 impl DataSource for GetFreeMemory {
     fn len(&self) -> usize {
-        self.command().len()
+        let memory = &Tlv::new(TAG_1, self.memory);
+        let __data: &[&dyn DataSource] = &[memory];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_MEMORY, __data, 6);
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for GetFreeMemory {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let memory = &Tlv::new(TAG_1, self.memory);
+        let __data: &[&dyn DataStream<W>] = &[memory];
+        let command = CommandBuilder::new(NO_SM_CLA, INS_MGMT, P1_DEFAULT, P2_MEMORY, __data, 6);
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4664,15 +4440,9 @@ pub struct GetFreeMemoryResponse {
 }
 
 impl<'data> Se05XResponse<'data> for GetFreeMemoryResponse {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (available, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value.try_into()?, r);
-            }
-            rem_inner = r;
-        };
+        let (available, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { available })
     }
@@ -4691,36 +4461,40 @@ pub struct GetRandom {
     pub length: Be<u16>,
 }
 
-type GetRandomData = Tlv<Be<u16>>;
+impl GetRandom {}
 
-impl GetRandom {
-    fn data(&self) -> GetRandomData {
-        Tlv::new(TAG_1, self.length)
-    }
-
-    fn command(&self) -> CommandBuilder<GetRandomData> {
-        CommandBuilder::new(
+impl DataSource for GetRandom {
+    fn len(&self) -> usize {
+        let length = &Tlv::new(TAG_1, self.length);
+        let __data: &[&dyn DataSource] = &[length];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_RANDOM,
-            self.data(),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for GetRandom {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for GetRandom {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let length = &Tlv::new(TAG_1, self.length);
+        let __data: &[&dyn DataStream<W>] = &[length];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_RANDOM,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 #[derive(Clone, Debug)]
@@ -4730,15 +4504,9 @@ pub struct GetRandomResponse<'data> {
 }
 
 impl<'data> Se05XResponse<'data> for GetRandomResponse<'data> {
+    #[inline(never)]
     fn from_response(rem: &'data [u8]) -> Result<Self, Error> {
-        let mut rem_inner = rem;
-        let (data, rem) = loop {
-            let (tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
-            if tag == TAG_1 {
-                break (value, r);
-            }
-            rem_inner = r;
-        };
+        let (data, rem) = take_do_until(TAG_1, rem)?;
         let _ = rem;
         Ok(Self { data })
     }
@@ -4754,32 +4522,38 @@ impl<W: Writer> Se05XCommand<W> for GetRandom {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteAll {}
 
-type DeleteAllData = ();
+impl DeleteAll {}
 
-impl DeleteAll {
-    fn command(&self) -> CommandBuilder<DeleteAllData> {
-        CommandBuilder::new(
+impl DataSource for DeleteAll {
+    fn len(&self) -> usize {
+        let __data: &[&dyn DataSource] = &[];
+        let command = CommandBuilder::new(
             NO_SM_CLA,
             INS_MGMT,
             P1_DEFAULT,
             P2_DELETE_ALL,
-            (),
+            __data,
             ExpectedLen::Max,
-        )
-    }
-}
-
-impl DataSource for DeleteAll {
-    fn len(&self) -> usize {
-        self.command().len()
+        );
+        command.len()
     }
     fn is_empty(&self) -> bool {
-        self.command().is_empty()
+        // Command always has a header
+        false
     }
 }
 impl<W: Writer> DataStream<W> for DeleteAll {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
-        self.command().to_writer(writer)
+        let __data: &[&dyn DataStream<W>] = &[];
+        let command = CommandBuilder::new(
+            NO_SM_CLA,
+            INS_MGMT,
+            P1_DEFAULT,
+            P2_DELETE_ALL,
+            __data,
+            ExpectedLen::Max,
+        );
+        command.to_writer(writer)
     }
 }
 
