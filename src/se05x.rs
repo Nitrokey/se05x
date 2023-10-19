@@ -1476,6 +1476,12 @@ enum_data!(
     }
 );
 
+impl MoreIndicator {
+    pub fn is_more(&self) -> bool {
+        matches!(self, Self::More)
+    }
+}
+
 enum_data!(
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
@@ -1484,6 +1490,12 @@ enum_data!(
         Failure = RESULT_FAILURE,
     }
 );
+
+impl Se05XResult {
+    pub fn is_success(&self) -> bool {
+        matches!(self, Self::Success)
+    }
+}
 
 enum_data!(
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
