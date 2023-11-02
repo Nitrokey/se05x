@@ -142,6 +142,7 @@ maybe_auth = true
 p1 = "P1_RSA"
 maybe_p1_mask = { name =  "key_type", type = "P1KeyType" }
 p2 = "P2_DEFAULT"
+maybe_p2_mask = { name =  "key_format", type = "RsaFormat" }
 
 [write_rsa_key.payload]
 TAG_POLICY = { name = "policy", type = "PolicySet<'data>", optional = true }

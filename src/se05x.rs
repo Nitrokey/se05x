@@ -1,9 +1,10 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
-use core::{array::TryFromSliceError, convert::Infallible};
+use core::{array::TryFromSliceError, convert::Infallible, fmt::Debug};
 
 use bitflags::bitflags;
+use delog::hexstr;
 use embedded_hal::blocking::delay::DelayUs;
 use hex_literal::hex;
 use iso7816::{
@@ -593,9 +594,15 @@ pub struct CryptoObjectId(
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SessionId(#[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 8]);
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ObjectId(#[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 4]);
+
+impl Debug for ObjectId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_tuple("ObjectId").field(&hexstr!(&self.0)).finish()
+    }
+}
 
 impl ObjectId {
     /// Invalid object ID.
@@ -1282,9 +1289,19 @@ enum_data!(
     #[derive(Debug, Clone, Copy)]
     #[repr(u8)]
     pub enum P1KeyType {
+        Na = P1_DEFAULT,
         KeyPair = P1_KEY_PAIR,
         Private = P1_PRIVATE,
         Public = P1_PUBLIC,
+    }
+);
+
+enum_data!(
+    #[derive(Debug, Clone, Copy)]
+    #[repr(u8)]
+    pub enum RsaFormat {
+        Crt = P2_DEFAULT,
+        Raw = P2_RAW,
     }
 );
 

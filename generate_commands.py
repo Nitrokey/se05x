@@ -109,6 +109,7 @@ for command, v in data.items():
     p1 = v["p1"]
     p1_val = p1
     p2 = v["p2"]
+    p2_val = p2
     le = v.get("le", 0)
 
     payload_has_lifetime = False
@@ -159,6 +160,10 @@ for command, v in data.items():
         outfile.write(f'    pub {p1["name"]}: {p1["type"]},\n')
         pre_ins += f'        let p1: u8 = self.{p1["name"]}.into();\n'
         p1_val = "p1"
+    if not isinstance(p2, str):
+        outfile.write(f'    pub {p2["name"]}: {p2["type"]},\n')
+        pre_ins += f'        let p2: u8 = self.{p2["name"]}.into();\n'
+        p2_val = "p2"
 
     if "maybe_p1_mask" in v:
         a = v["maybe_p1_mask"]
@@ -166,6 +171,12 @@ for command, v in data.items():
         outfile.write(f'    pub {a["name"]}: Option<{a["type"]}>,\n')
         pre_ins += f'        let p1: u8 = self.{a["name"]}.map(|v| v | {p1_val} ).unwrap_or({p1});\n'
         p1_val = "p1"
+    if "maybe_p2_mask" in v:
+        a = v["maybe_p2_mask"]
+        outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
+        outfile.write(f'    pub {a["name"]}: Option<{a["type"]}>,\n')
+        pre_ins += f'        let p2: u8 = self.{a["name"]}.map(|v| v | {p2_val} ).unwrap_or({p2});\n'
+        p2_val = "p2"
 
     arg_count = 0
     for arg_name, arg in flatten(v["payload"].items()):
@@ -199,7 +210,7 @@ for command, v in data.items():
 
 
 
-    command_builder = f'CommandBuilder::new({cla}, {ins}, {p1_val}, {p2}, __data, {le})'
+    command_builder = f'CommandBuilder::new({cla}, {ins}, {p1_val}, {p2_val}, __data, {le})'
    
 
     outfile.write("}\n")

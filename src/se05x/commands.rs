@@ -591,6 +591,8 @@ pub struct WriteRsaKey<'data> {
     pub is_auth: bool,
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub key_type: Option<P1KeyType>,
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    pub key_format: Option<RsaFormat>,
     /// Serialized to TLV tag [`TAG_POLICY`](TAG_POLICY)
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub policy: Option<PolicySet<'data>>,
@@ -671,8 +673,12 @@ impl<'data> DataSource for WriteRsaKey<'data> {
             ins
         };
         let p1: u8 = self.key_type.map(|v| v | P1_RSA).unwrap_or(P1_RSA);
+        let p2: u8 = self
+            .key_format
+            .map(|v| v | P2_DEFAULT)
+            .unwrap_or(P2_DEFAULT);
 
-        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, p2, __data, 0);
         command.len()
     }
     fn is_empty(&self) -> bool {
@@ -721,8 +727,12 @@ impl<'data, W: Writer> DataStream<W> for WriteRsaKey<'data> {
             ins
         };
         let p1: u8 = self.key_type.map(|v| v | P1_RSA).unwrap_or(P1_RSA);
+        let p2: u8 = self
+            .key_format
+            .map(|v| v | P2_DEFAULT)
+            .unwrap_or(P2_DEFAULT);
 
-        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, P2_DEFAULT, __data, 0);
+        let command = CommandBuilder::new(NO_SM_CLA, ins, p1, p2, __data, 0);
         command.to_writer(writer)
     }
 }
