@@ -45,3 +45,6 @@ nrf = ["nrf-hal-common"]
 lpc55 = ["lpc55-hal"]
 
 aes-session = ["aes", "cmac", "rand"]
+
+[package.metadata.docs.rs]
+features = ["aes-session", "builder", "serde"]
