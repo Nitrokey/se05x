@@ -139,11 +139,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         Ok(atr)
     }
 
-    pub fn run_command<'buf, C: for<'a> Se05XCommand<FrameSender<'a, Twi, D>>>(
+    fn run_command_buf_response<'buf>(
         &mut self,
-        command: &C,
+        command: &dyn for<'a> DataStream<FrameSender<'a, Twi, D>>,
         response_buf: &'buf mut [u8],
-    ) -> Result<<C as Se05XCommand<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
+    ) -> Result<&'buf [u8], Error> {
         let mut sender = self.t1.into_writer(command.len())?;
         command.to_writer(&mut sender)?;
         self.t1.wait_segt();
@@ -151,7 +151,25 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         if status != Status::Success {
             return Err(Error::Status(status));
         }
-        C::Response::from_response(response)
+        Ok(response)
+    }
+
+    fn run_command_internal<'buf, R: Se05XResponse<'buf>>(
+        &mut self,
+        command: &dyn for<'a> DataStream<FrameSender<'a, Twi, D>>,
+        response_buf: &'buf mut [u8],
+    ) -> Result<R, Error> {
+        let response = self.run_command_buf_response(command, response_buf)?;
+
+        R::from_response(response)
+    }
+
+    pub fn run_command<'buf, C: for<'a> Se05XCommand<FrameSender<'a, Twi, D>>>(
+        &mut self,
+        command: &C,
+        response_buf: &'buf mut [u8],
+    ) -> Result<<C as Se05XCommand<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
+        self.run_command_internal(command, response_buf)
     }
 
     /// Run a command within a session
@@ -161,8 +179,8 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         command: &C,
         response_buf: &'buf mut [u8],
     ) -> Result<<C as Se05XCommand<FrameSender<'_, Twi, D>>>::Response<'buf>, Error> {
-        self.run_command(
-            &ProcessSessionCmd {
+        self.run_command_internal(
+            &ProcessSessionCmd::<&dyn for<'a> DataStream<FrameSender<'a, Twi, D>>> {
                 session_id,
                 apdu: command,
             },
