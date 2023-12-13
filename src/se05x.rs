@@ -253,11 +253,9 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
 
         use crate::se05x::commands::{ScpExternalAuthenticate, ScpInitializeUpdate};
         let host_challenge: [u8; 8] = rng.gen();
-        let chal = self.run_command(
-            &ProcessSessionCmd {
-                session_id,
-                apdu: ScpInitializeUpdate { host_challenge },
-            },
+        let chal = self.run_session_command(
+            session_id,
+            &ScpInitializeUpdate { host_challenge },
             &mut buf,
         )?;
         debug_now!("InitializeUpdate successful");
@@ -337,13 +335,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         mac.update(&host_cryptogram);
 
         debug_now!("Running external authenticate");
-        self.run_command(
-            &ProcessSessionCmd {
-                session_id,
-                apdu: ScpExternalAuthenticate {
-                    host_cryptogram,
-                    mac: mac.finalize().into_bytes()[..8].try_into().unwrap(),
-                },
+        self.run_session_command(
+            session_id,
+            &ScpExternalAuthenticate {
+                host_cryptogram,
+                mac: mac.finalize().into_bytes()[..8].try_into().unwrap(),
             },
             &mut buf,
         )?;
