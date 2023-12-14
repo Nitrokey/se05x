@@ -1682,10 +1682,7 @@ fn take_do_until<'data, E, T: TryFrom<&'data [u8], Error = E>>(
 where
     Error: From<E>,
 {
-    fn take_do_until_inner<'data>(
-        tag: Tag,
-        data: &'data [u8],
-    ) -> Result<(&'data [u8], &'data [u8]), Error> {
+    fn take_do_until_inner(tag: Tag, data: &[u8]) -> Result<(&[u8], &[u8]), Error> {
         let mut rem_inner = data;
         loop {
             let (read_tag, value, r) = take_data_object(rem_inner).ok_or(Error::Tlv)?;
