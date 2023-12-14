@@ -12,6 +12,7 @@ verify-commands:
 
 check: src/se05x/commands.rs
 	cargo c
+	cargo c --features builder
 
 lint: src/se05x/commands.rs verify-commands
 	cargo c
