@@ -14,7 +14,6 @@ description = "Driver for the NXP SE05X"
 [dependencies]
 aes = { version = "0.8.3", optional = true }
 bitflags = "2.3.2"
-byteorder = { version = "1", default-features = false }
 cmac = { version = "0.7.2", optional = true }
 crc16 = "0.4"
 delog = "0.1"
@@ -26,12 +25,12 @@ lpc55-hal = { version = "0.3.0", optional = true }
 nrf-hal-common = { version = "0.15.0", optional = true }
 rand = { version = "0.8.5", optional = true, default-features = false }
 serde = { version = "1.0.185", default-features = false, features = ["derive"], optional = true }
-serde-byte-array = { version = "0.1.2", default-features = false, optional = true }
+serde_bytes = { version = "0.11.14", optional = true, default-features = false }
 typed-builder = { version = "0.18.0", optional = true }
 
 [features]
 default = ["aes-session"]
-serde = ["dep:serde", "serde-byte-array"]
+serde = ["dep:serde", "serde_bytes"]
 builder = ["typed-builder"]
 
 log-all = []
@@ -45,6 +44,7 @@ nrf = ["nrf-hal-common"]
 lpc55 = ["lpc55-hal"]
 
 aes-session = ["aes", "cmac", "rand"]
+serde_bytes = ["dep:serde_bytes"]
 
 [package.metadata.docs.rs]
 features = ["aes-session", "builder", "serde"]

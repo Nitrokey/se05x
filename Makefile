@@ -13,8 +13,13 @@ verify-commands:
 check: src/se05x/commands.rs
 	cargo c
 	cargo c --features builder
+	cargo c --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
+	cargo c --features lpc55 --target thumbv8m.main-none-eabi
+
 
 lint: src/se05x/commands.rs verify-commands
 	cargo c
 	cargo fmt --check
 	cargo clippy
+	cargo clippy --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
+	cargo clippy --features lpc55 --target thumbv8m.main-none-eabi

@@ -600,17 +600,15 @@ impl TryFrom<&[u8]> for Se05xChallenge {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CryptoObjectId(
-    #[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 2],
-);
+pub struct CryptoObjectId(#[cfg_attr(feature = "serde", serde(with = "serde_bytes"))] pub [u8; 2]);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SessionId(#[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 8]);
+pub struct SessionId(#[cfg_attr(feature = "serde", serde(with = "serde_bytes"))] pub [u8; 8]);
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ObjectId(#[cfg_attr(feature = "serde", serde(with = "serde_byte_array"))] pub [u8; 4]);
+pub struct ObjectId(#[cfg_attr(feature = "serde", serde(with = "serde_bytes"))] pub [u8; 4]);
 
 impl Debug for ObjectId {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -1125,7 +1123,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u8> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        u8::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
+        Ok(u8::from_be_bytes(*arr).into())
     }
 }
 
@@ -1133,7 +1131,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u16> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        u16::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
+        Ok(u16::from_be_bytes(*arr).into())
     }
 }
 
@@ -1141,7 +1139,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u32> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        u32::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
+        Ok(u32::from_be_bytes(*arr).into())
     }
 }
 
@@ -1149,7 +1147,7 @@ impl<'a> TryFrom<&'a [u8]> for Be<u64> {
     type Error = Error;
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
         let arr: &'a _ = value.try_into().map_err(|_| Error::Tlv)?;
-        u64::from_be_bytes(*arr).try_into().map_err(|_| Error::Tlv)
+        Ok(u64::from_be_bytes(*arr).into())
     }
 }
 
