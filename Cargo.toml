@@ -14,7 +14,6 @@ description = "Driver for the NXP SE05X"
 [dependencies]
 aes = { version = "0.8.3", optional = true }
 bitflags = "2.3.2"
-byteorder = { version = "1", default-features = false }
 cmac = { version = "0.7.2", optional = true }
 crc16 = "0.4"
 delog = "0.1"
