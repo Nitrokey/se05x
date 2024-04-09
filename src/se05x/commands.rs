@@ -16,8 +16,6 @@ pub struct CreateSession {
     pub object_id: ObjectId,
 }
 
-impl CreateSession {}
-
 impl DataSource for CreateSession {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -81,8 +79,6 @@ pub struct ExchangeSessionData<'data> {
     /// Serialized to remaining data
     pub c_mac: &'data [u8],
 }
-
-impl<'data> ExchangeSessionData<'data> {}
 
 impl<'data> DataSource for ExchangeSessionData<'data> {
     fn len(&self) -> usize {
@@ -149,8 +145,6 @@ pub struct RefreshSession {
     pub policy: Option<SessionPolicy>,
 }
 
-impl RefreshSession {}
-
 impl DataSource for RefreshSession {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
@@ -206,8 +200,6 @@ impl<W: Writer> Se05XCommand<W> for RefreshSession {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CloseSession {}
 
-impl CloseSession {}
-
 impl DataSource for CloseSession {
     fn len(&self) -> usize {
         let __data: &[&dyn DataSource] = &[];
@@ -251,8 +243,6 @@ pub struct VerifySessionUserId<'data> {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub user_id: &'data [u8],
 }
-
-impl<'data> VerifySessionUserId<'data> {}
 
 impl<'data> DataSource for VerifySessionUserId<'data> {
     fn len(&self) -> usize {
@@ -311,8 +301,6 @@ pub struct ScpInitializeUpdate {
     /// Serialized to remaining data
     pub host_challenge: [u8; 8],
 }
-
-impl ScpInitializeUpdate {}
 
 impl DataSource for ScpInitializeUpdate {
     fn len(&self) -> usize {
@@ -378,8 +366,6 @@ pub struct ScpExternalAuthenticate {
     pub mac: [u8; 8],
 }
 
-impl ScpExternalAuthenticate {}
-
 impl DataSource for ScpExternalAuthenticate {
     fn len(&self) -> usize {
         let host_cryptogram = &self.host_cryptogram;
@@ -442,8 +428,6 @@ pub struct SetLockState {
     pub lock_state: LockState,
 }
 
-impl SetLockState {}
-
 impl DataSource for SetLockState {
     fn len(&self) -> usize {
         let lock_indicator = &Tlv::new(TAG_1, self.lock_indicator);
@@ -500,8 +484,6 @@ pub struct WriteEcKey<'data> {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub public_key: Option<&'data [u8]>,
 }
-
-impl<'data> WriteEcKey<'data> {}
 
 impl<'data> DataSource for WriteEcKey<'data> {
     fn len(&self) -> usize {
@@ -629,8 +611,6 @@ pub struct WriteRsaKey<'data> {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub n: Option<&'data [u8]>,
 }
-
-impl<'data> WriteRsaKey<'data> {}
 
 impl<'data> DataSource for WriteRsaKey<'data> {
     fn len(&self) -> usize {
@@ -763,8 +743,6 @@ pub struct GenRsaKey<'data> {
     pub key_size: Option<Be<u16>>,
 }
 
-impl<'data> GenRsaKey<'data> {}
-
 impl<'data> DataSource for GenRsaKey<'data> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
@@ -846,8 +824,6 @@ pub struct WriteSymmKey<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub value: &'data [u8],
 }
-
-impl<'data> WriteSymmKey<'data> {}
 
 impl<'data> DataSource for WriteSymmKey<'data> {
     fn len(&self) -> usize {
@@ -935,8 +911,6 @@ pub struct WriteBinary<'data> {
     pub data: Option<&'data [u8]>,
 }
 
-impl<'data> WriteBinary<'data> {}
-
 impl<'data> DataSource for WriteBinary<'data> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
@@ -998,8 +972,6 @@ pub struct WriteUserId<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub data: &'data [u8],
 }
-
-impl<'data> WriteUserId<'data> {}
 
 impl<'data> DataSource for WriteUserId<'data> {
     fn len(&self) -> usize {
@@ -1070,8 +1042,6 @@ pub struct WriteCounter<'data> {
     pub value: Option<Be<u64>>,
 }
 
-impl<'data> WriteCounter<'data> {}
-
 impl<'data> DataSource for WriteCounter<'data> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
@@ -1135,8 +1105,6 @@ pub struct WritePcr<'data> {
     pub extend: Option<&'data [u8]>,
 }
 
-impl<'data> WritePcr<'data> {}
-
 impl<'data> DataSource for WritePcr<'data> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
@@ -1198,8 +1166,6 @@ pub struct ImportObject<'data> {
     pub serialized_object: &'data [u8],
 }
 
-impl<'data> ImportObject<'data> {}
-
 impl<'data> DataSource for ImportObject<'data> {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1258,8 +1224,6 @@ pub struct ReadObject {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub rsa_key_component: Option<RsaKeyComponent>,
 }
-
-impl ReadObject {}
 
 impl DataSource for ReadObject {
     fn len(&self) -> usize {
@@ -1345,8 +1309,6 @@ pub struct ReadAttestObject<'data> {
     /// Serialized to TLV tag [`TAG_7`](TAG_7)
     pub freshness_random: &'data [u8; 16],
 }
-
-impl<'data> ReadAttestObject<'data> {}
 
 impl<'data> DataSource for ReadAttestObject<'data> {
     fn len(&self) -> usize {
@@ -1472,8 +1434,6 @@ pub struct ReadAttributes<'data> {
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
-impl<'data> ReadAttributes<'data> {}
-
 impl<'data> DataSource for ReadAttributes<'data> {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1545,8 +1505,6 @@ pub struct ReadAttributesAttest<'data> {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub freshness_random: Option<&'data [u8; 16]>,
 }
-
-impl<'data> ReadAttributesAttest<'data> {}
 
 impl<'data> DataSource for ReadAttributesAttest<'data> {
     fn len(&self) -> usize {
@@ -1661,8 +1619,6 @@ pub struct ExportObject {
     pub rsa_key_component: RsaKeyComponent,
 }
 
-impl ExportObject {}
-
 impl DataSource for ExportObject {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1712,8 +1668,6 @@ pub struct ReadType {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
 }
-
-impl ReadType {}
 
 impl DataSource for ReadType {
     fn len(&self) -> usize {
@@ -1783,8 +1737,6 @@ pub struct ReadSize {
     pub object_id: ObjectId,
 }
 
-impl ReadSize {}
-
 impl DataSource for ReadSize {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1848,8 +1800,6 @@ pub struct ReadIdList {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub filter: SecureObjectFilter,
 }
-
-impl ReadIdList {}
 
 impl DataSource for ReadIdList {
     fn len(&self) -> usize {
@@ -1918,8 +1868,6 @@ pub struct CheckObjectExists {
     pub object_id: ObjectId,
 }
 
-impl CheckObjectExists {}
-
 impl DataSource for CheckObjectExists {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1982,8 +1930,6 @@ pub struct DeleteSecureObject {
     pub object_id: ObjectId,
 }
 
-impl DeleteSecureObject {}
-
 impl DataSource for DeleteSecureObject {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -2019,8 +1965,6 @@ pub struct CreateEcCurve {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub curve: EcCurve,
 }
-
-impl CreateEcCurve {}
 
 impl DataSource for CreateEcCurve {
     fn len(&self) -> usize {
@@ -2060,8 +2004,6 @@ pub struct SetEcCurveParam<'data> {
     pub value: &'data [u8],
 }
 
-impl<'data> SetEcCurveParam<'data> {}
-
 impl<'data> DataSource for SetEcCurveParam<'data> {
     fn len(&self) -> usize {
         let curve = &Tlv::new(TAG_1, self.curve);
@@ -2099,8 +2041,6 @@ pub struct GetEcCurveId {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub object_id: ObjectId,
 }
-
-impl GetEcCurveId {}
 
 impl DataSource for GetEcCurveId {
     fn len(&self) -> usize {
@@ -2146,8 +2086,6 @@ impl<W: Writer> Se05XCommand<W> for GetEcCurveId {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadEcCurveList {}
-
-impl ReadEcCurveList {}
 
 impl DataSource for ReadEcCurveList {
     fn len(&self) -> usize {
@@ -2195,8 +2133,6 @@ pub struct DeleteEcCurve {
     pub curve: EcCurve,
 }
 
-impl DeleteEcCurve {}
-
 impl DataSource for DeleteEcCurve {
     fn len(&self) -> usize {
         let curve = &Tlv::new(TAG_1, self.curve);
@@ -2234,8 +2170,6 @@ pub struct CreateDigestObject {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub subtype: Digest,
 }
-
-impl CreateDigestObject {}
 
 impl DataSource for CreateDigestObject {
     fn len(&self) -> usize {
@@ -2279,8 +2213,6 @@ pub struct CreateCipherObject {
     pub subtype: CipherMode,
 }
 
-impl CreateCipherObject {}
-
 impl DataSource for CreateCipherObject {
     fn len(&self) -> usize {
         let id = &Tlv::new(TAG_1, self.id);
@@ -2323,8 +2255,6 @@ pub struct CreateSignatureObject {
     pub subtype: MacAlgo,
 }
 
-impl CreateSignatureObject {}
-
 impl DataSource for CreateSignatureObject {
     fn len(&self) -> usize {
         let id = &Tlv::new(TAG_1, self.id);
@@ -2361,8 +2291,6 @@ impl<W: Writer> Se05XCommand<W> for CreateSignatureObject {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadCryptoObjList {}
-
-impl ReadCryptoObjList {}
 
 impl DataSource for ReadCryptoObjList {
     fn len(&self) -> usize {
@@ -2409,8 +2337,6 @@ pub struct DeleteCryptoObj {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub id: CryptoObjectId,
 }
-
-impl DeleteCryptoObj {}
 
 impl DataSource for DeleteCryptoObj {
     fn len(&self) -> usize {
@@ -2463,8 +2389,6 @@ pub struct EcdsaSign<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> EcdsaSign<'data> {}
 
 impl<'data> DataSource for EcdsaSign<'data> {
     fn len(&self) -> usize {
@@ -2533,8 +2457,6 @@ pub struct EddsaSign<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> EddsaSign<'data> {}
 
 impl<'data> DataSource for EddsaSign<'data> {
     fn len(&self) -> usize {
@@ -2605,8 +2527,6 @@ pub struct EcdaaSign {
     /// Serialized to TLV tag [`TAG_4`](TAG_4)
     pub random_data: [u8; 32],
 }
-
-impl EcdaaSign {}
 
 impl DataSource for EcdaaSign {
     fn len(&self) -> usize {
@@ -2682,8 +2602,6 @@ pub struct EcdsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> EcdsaVerify<'data> {}
-
 impl<'data> DataSource for EcdsaVerify<'data> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -2744,8 +2662,6 @@ pub struct EddsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> EddsaVerify<'data> {}
-
 impl<'data> DataSource for EddsaVerify<'data> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -2803,8 +2719,6 @@ pub struct EcdhGenerateSharedSecret<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub public_key: &'data [u8],
 }
-
-impl<'data> EcdhGenerateSharedSecret<'data> {}
 
 impl<'data> DataSource for EcdhGenerateSharedSecret<'data> {
     fn len(&self) -> usize {
@@ -2873,8 +2787,6 @@ pub struct RsaSign<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> RsaSign<'data> {}
 
 impl<'data> DataSource for RsaSign<'data> {
     fn len(&self) -> usize {
@@ -2948,8 +2860,6 @@ pub struct RsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> RsaVerify<'data> {}
-
 impl<'data> DataSource for RsaVerify<'data> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -3009,8 +2919,6 @@ pub struct RsaEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub plaintext: &'data [u8],
 }
-
-impl<'data> RsaEncrypt<'data> {}
 
 impl<'data> DataSource for RsaEncrypt<'data> {
     fn len(&self) -> usize {
@@ -3081,8 +2989,6 @@ pub struct RsaDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub ciphertext: &'data [u8],
 }
-
-impl<'data> RsaDecrypt<'data> {}
 
 impl<'data> DataSource for RsaDecrypt<'data> {
     fn len(&self) -> usize {
@@ -3155,8 +3061,6 @@ pub struct CipherEncryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> CipherEncryptInit<'data> {}
-
 impl<'data> DataSource for CipherEncryptInit<'data> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -3200,8 +3104,6 @@ pub struct CipherDecryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> CipherDecryptInit<'data> {}
-
 impl<'data> DataSource for CipherDecryptInit<'data> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -3243,8 +3145,6 @@ pub struct CipherUpdate<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> CipherUpdate<'data> {}
 
 impl<'data> DataSource for CipherUpdate<'data> {
     fn len(&self) -> usize {
@@ -3315,8 +3215,6 @@ pub struct CipherFinal<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> CipherFinal<'data> {}
 
 impl<'data> DataSource for CipherFinal<'data> {
     fn len(&self) -> usize {
@@ -3390,8 +3288,6 @@ pub struct CipherOneShotEncrypt<'data> {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
     pub initialization_vector: Option<&'data [u8]>,
 }
-
-impl<'data> CipherOneShotEncrypt<'data> {}
 
 impl<'data> DataSource for CipherOneShotEncrypt<'data> {
     fn len(&self) -> usize {
@@ -3468,8 +3364,6 @@ pub struct CipherOneShotDecrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> CipherOneShotDecrypt<'data> {}
-
 impl<'data> DataSource for CipherOneShotDecrypt<'data> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -3540,8 +3434,6 @@ pub struct MacGenerateInit {
     pub mac_id: CryptoObjectId,
 }
 
-impl MacGenerateInit {}
-
 impl DataSource for MacGenerateInit {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
@@ -3579,8 +3471,6 @@ pub struct MacValidateInit {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub mac_id: CryptoObjectId,
 }
-
-impl MacValidateInit {}
 
 impl DataSource for MacValidateInit {
     fn len(&self) -> usize {
@@ -3620,8 +3510,6 @@ pub struct MacUpdate<'data> {
     pub mac_id: CryptoObjectId,
 }
 
-impl<'data> MacUpdate<'data> {}
-
 impl<'data> DataSource for MacUpdate<'data> {
     fn len(&self) -> usize {
         let data = &Tlv::new(TAG_1, self.data);
@@ -3659,8 +3547,6 @@ pub struct MacGenerateFinal<'data> {
     /// Serialized to TLV tag [`TAG_2`](TAG_2)
     pub mac_id: CryptoObjectId,
 }
-
-impl<'data> MacGenerateFinal<'data> {}
 
 impl<'data> DataSource for MacGenerateFinal<'data> {
     fn len(&self) -> usize {
@@ -3732,8 +3618,6 @@ pub struct MacValidateFinal<'data> {
     pub tag: &'data [u8],
 }
 
-impl<'data> MacValidateFinal<'data> {}
-
 impl<'data> DataSource for MacValidateFinal<'data> {
     fn len(&self) -> usize {
         let data = &Tlv::new(TAG_1, self.data);
@@ -3803,8 +3687,6 @@ pub struct MacOneShotGenerate<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> MacOneShotGenerate<'data> {}
 
 impl<'data> DataSource for MacOneShotGenerate<'data> {
     fn len(&self) -> usize {
@@ -3879,8 +3761,6 @@ pub struct MacOneShotValidate<'data> {
     /// Serialized to TLV tag [`TAG_5`](TAG_5)
     pub tag: &'data [u8],
 }
-
-impl<'data> MacOneShotValidate<'data> {}
 
 impl<'data> DataSource for MacOneShotValidate<'data> {
     fn len(&self) -> usize {
@@ -3963,8 +3843,6 @@ pub struct Hkdf<'data> {
     /// Serialized to TLV tag [`TAG_5`](TAG_5)
     pub requested_len: Be<u16>,
 }
-
-impl<'data> Hkdf<'data> {}
 
 impl<'data> DataSource for Hkdf<'data> {
     fn len(&self) -> usize {
@@ -4049,8 +3927,6 @@ pub struct Pbkdf2<'data> {
     pub requested_len: Be<u16>,
 }
 
-impl<'data> Pbkdf2<'data> {}
-
 impl<'data> DataSource for Pbkdf2<'data> {
     fn len(&self) -> usize {
         let password = &Tlv::new(TAG_1, self.password);
@@ -4119,8 +3995,6 @@ pub struct DigestInit {
     pub digest_id: CryptoObjectId,
 }
 
-impl DigestInit {}
-
 impl DataSource for DigestInit {
     fn len(&self) -> usize {
         let digest_id = &Tlv::new(TAG_2, self.digest_id);
@@ -4156,8 +4030,6 @@ pub struct DigestUpdate<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> DigestUpdate<'data> {}
 
 impl<'data> DataSource for DigestUpdate<'data> {
     fn len(&self) -> usize {
@@ -4196,8 +4068,6 @@ pub struct DigestFinal<'data> {
     /// Serialized to TLV tag [`TAG_3`](TAG_3)
     pub data: &'data [u8],
 }
-
-impl<'data> DigestFinal<'data> {}
 
 impl<'data> DataSource for DigestFinal<'data> {
     fn len(&self) -> usize {
@@ -4265,8 +4135,6 @@ pub struct DigestOneShot<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DigestOneShot<'data> {}
-
 impl<'data> DataSource for DigestOneShot<'data> {
     fn len(&self) -> usize {
         let algo = &Tlv::new(TAG_1, self.algo);
@@ -4328,8 +4196,6 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetVersion {}
 
-impl GetVersion {}
-
 impl DataSource for GetVersion {
     fn len(&self) -> usize {
         let __data: &[&dyn DataSource] = &[];
@@ -4372,8 +4238,6 @@ impl<W: Writer> Se05XCommand<W> for GetVersion {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetTimestamp {}
-
-impl GetTimestamp {}
 
 impl DataSource for GetTimestamp {
     fn len(&self) -> usize {
@@ -4420,8 +4284,6 @@ pub struct GetFreeMemory {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub memory: Memory,
 }
-
-impl GetFreeMemory {}
 
 impl DataSource for GetFreeMemory {
     fn len(&self) -> usize {
@@ -4470,8 +4332,6 @@ pub struct GetRandom {
     /// Serialized to TLV tag [`TAG_1`](TAG_1)
     pub length: Be<u16>,
 }
-
-impl GetRandom {}
 
 impl DataSource for GetRandom {
     fn len(&self) -> usize {
@@ -4531,8 +4391,6 @@ impl<W: Writer> Se05XCommand<W> for GetRandom {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteAll {}
-
-impl DeleteAll {}
 
 impl DataSource for DeleteAll {
     fn len(&self) -> usize {
