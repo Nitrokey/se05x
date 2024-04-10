@@ -203,18 +203,7 @@ for command, v in data.items():
     slice_val_inner = ", ".join([arg["name"] for name, arg in flatten(v["payload"].items())])
     slice_val = "&[" + slice_val_inner + "]"
 
-    if payload_has_lifetime:
-        outfile.write(f'impl<\'data> {name}<\'data> {{\n')
-    else:
-        outfile.write(f'impl {name} {{\n')
-
-
-
     command_builder = f'CommandBuilder::new({cla}, {ins}, {p1_val}, {p2_val}, __data, {le})'
-   
-
-    outfile.write("}\n")
-    outfile.write("\n")
 
     outfile.write(f'impl{payload_lifetime} DataSource for {name}{payload_lifetime} {{\n')
     outfile.write('    fn len(&self) -> usize {\n')
