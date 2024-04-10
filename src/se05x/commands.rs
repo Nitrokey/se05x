@@ -5,7 +5,6 @@
 
 use super::policies::*;
 use super::*;
-use iso7816::command::{CommandBuilder, ExpectedLen};
 
 // ************* CreateSession ************* //
 
