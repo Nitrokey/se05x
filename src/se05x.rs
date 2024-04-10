@@ -188,54 +188,72 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         )
     }
 
-    pub fn create_and_set_curve(&mut self, curve: EcCurve) -> Result<(), Error> {
+    /// Prior to being used with the se05x, the curve constants need to be configured for the secure element
+    ///
+    /// This method configures the secure element to be able to use the given curve.
+    ///
+    /// The values for the `data` parameter can be found in the [`constants`]() module
+    pub fn create_and_set_curve_params(
+        &mut self,
+        data: &constants::CurveInitializer,
+    ) -> Result<(), Error> {
         let response_buf = &mut [0; 2];
-        let Some(params) = curve.params() else {
-            // Curve doesn't need configuring params
-            return Ok(());
-        };
-        self.run_command(&CreateEcCurve { curve }, response_buf)?;
+        self.run_command(&CreateEcCurve { curve: data.curve }, response_buf)?;
         self.run_command(
             &SetEcCurveParam {
-                curve,
+                curve: data.curve,
                 param: EcCurveParam::ParamA,
-                value: params.a,
+                value: data.constants.a,
             },
             response_buf,
         )?;
         self.run_command(
             &SetEcCurveParam {
-                curve,
+                curve: data.curve,
                 param: EcCurveParam::ParamB,
-                value: params.b,
+                value: data.constants.b,
             },
             response_buf,
         )?;
         self.run_command(
             &SetEcCurveParam {
-                curve,
+                curve: data.curve,
                 param: EcCurveParam::ParamG,
-                value: params.g,
+                value: data.constants.g,
             },
             response_buf,
         )?;
         self.run_command(
             &SetEcCurveParam {
-                curve,
+                curve: data.curve,
                 param: EcCurveParam::ParamN,
-                value: params.order,
+                value: data.constants.order,
             },
             response_buf,
         )?;
         self.run_command(
             &SetEcCurveParam {
-                curve,
+                curve: data.curve,
                 param: EcCurveParam::ParamPrime,
-                value: params.prime,
+                value: data.constants.prime,
             },
             response_buf,
         )?;
         Ok(())
+    }
+
+    /// Prior to being used with the se05x, the curve constants need to be configured for the secure element
+    ///
+    /// This method configures the secure element to be able to use the given curve.
+    ///
+    /// Since the commands are hard-coded, the constants can be quite large. If only a subset of the curves are used,
+    /// it is recommended to instead use [`create_and_set_curve_params`]()
+    pub fn create_and_set_curve(&mut self, curve: EcCurve) -> Result<(), Error> {
+        let Some(constants) = curve.params() else {
+            // Curve doesn't need configuring params
+            return Ok(());
+        };
+        self.create_and_set_curve_params(&constants::CurveInitializer { constants, curve })
     }
 
     #[cfg(feature = "aes-session")]

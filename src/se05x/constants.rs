@@ -5,6 +5,8 @@
 
 use hex_literal::hex;
 
+use super::EcCurve;
+
 /// Curve constants as sent to `SetCurveParameter`
 pub struct CurveConstants {
     pub prime: &'static [u8],
@@ -16,6 +18,80 @@ pub struct CurveConstants {
     pub g: &'static [u8],
     pub order: &'static [u8],
 }
+
+pub struct CurveInitializer {
+    pub constants: CurveConstants,
+    pub curve: EcCurve,
+}
+
+pub const PRIME192V1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::NistP192,
+    constants: PRIME192V1,
+};
+pub const SECP224R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::NistP224,
+    constants: SECP224R1,
+};
+pub const PRIME256V1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::NistP256,
+    constants: PRIME256V1,
+};
+pub const SECP384R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::NistP384,
+    constants: SECP384R1,
+};
+pub const SECP521R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::NistP521,
+    constants: SECP521R1,
+};
+pub const BRAINPOOL_P160R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool160,
+    constants: BRAINPOOL_P160R1,
+};
+pub const BRAINPOOL_P192R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool192,
+    constants: BRAINPOOL_P192R1,
+};
+pub const BRAINPOOL_P224R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool224,
+    constants: BRAINPOOL_P224R1,
+};
+pub const BRAINPOOL_P256R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool256,
+    constants: BRAINPOOL_P256R1,
+};
+pub const BRAINPOOL_P320R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool320,
+    constants: BRAINPOOL_P320R1,
+};
+pub const BRAINPOOL_P384R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool384,
+    constants: BRAINPOOL_P384R1,
+};
+pub const BRAINPOOL_P512R1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Brainpool512,
+    constants: BRAINPOOL_P512R1,
+};
+pub const SECP160K1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Secp160k1,
+    constants: SECP160K1,
+};
+pub const SECP192K1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Secp192k1,
+    constants: SECP192K1,
+};
+pub const SECP224K1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Secp224k1,
+    constants: SECP224K1,
+};
+pub const SECP256K1_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::Secp256k1,
+    constants: SECP256K1,
+};
+pub const TPM_BN_P256_INITIALIZER: CurveInitializer = CurveInitializer {
+    curve: EcCurve::TpmEccBnP256,
+    constants: TPM_BN_P256,
+};
 
 /// secp112r1 : SECG/WTLS curve over a 112 bit prime field
 pub const SECP112R1: CurveConstants = CurveConstants {
