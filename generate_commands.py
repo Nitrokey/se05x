@@ -187,7 +187,7 @@ for command, v in data.items():
             outfile.write(f'    /// {arg["comment"]}\n')
             outfile.write(f'    ///\n')
         if arg_name != "then":
-            outfile.write(f'    /// Serialized to TLV tag [`{arg_name}`]({arg_name})\n')
+            outfile.write(f'    /// Serialized to TLV tag [`{arg_name}`]()\n')
         else:
             outfile.write(f'    /// Serialized to remaining data\n')
 
@@ -256,7 +256,7 @@ for command, v in data.items():
                 outfile.write(f'    /// {arg["comment"]}\n')
                 outfile.write(f'    ///\n')
             if arg_name != "then":
-                outfile.write(f'    /// Parsed from TLV tag [`{arg_name}`]({arg_name})\n')
+                outfile.write(f'    /// Parsed from TLV tag [`{arg_name}`]()\n')
             else:
                 outfile.write(f'    /// Parsed from remaining data\n')
             outfile.write(f'    pub {arg["name"]}: {ty_for_resp(arg)},\n')
