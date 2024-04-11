@@ -23,3 +23,6 @@ lint: src/se05x/commands.rs verify-commands
 	cargo clippy
 	cargo clippy --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
 	cargo clippy --features lpc55 --target thumbv8m.main-none-eabi
+
+README.md: src/lib.rs Makefile
+	grep '//!' src/lib.rs |grep -v '//! # ' | sed 's/^...//g' | sed 's/^ //g' > README.md

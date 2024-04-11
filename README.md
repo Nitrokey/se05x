@@ -1,7 +1,3 @@
-<!--
-Copyright (C) 2023 Nitrokey GmbH
-SPDX-License-Identifier: CC0-1.0
--->
 
 SE05X driver
 ===========
@@ -9,69 +5,67 @@ SE05X driver
 This crate contains a Rust driver for the SE05x series of secure elements from NXP.
 It contains an implementation of the T=1 protocol and the ISO7816-4 APDUs that are used to communicate with the se05x.
 
-This crate is under heavy development.
-
-```rust,ignore
-let i2c: impl I2CForT1 = todo!();
-let delay: impl DelayUs<u32> = todo!();
-let mut se05x = se05x::new(i2c, address, delay);
-let user_id = ObjectId(hex!("01020304"));
+```rust,no_run
+use se05x::se05x::commands::*;
+use se05x::se05x::policies::*;
+use se05x::se05x::*;
+let i2c = get_i2c();
+let delay = get_delay();
+let address = 0x48;
+let mut se05x = Se05X::new(i2c, address, delay);
+let user_id = ObjectId([0x01, 0x00, 0x00, 0x00]);
+let object_id = ObjectId([0x01, 0x02, 0x03, 0x04]);
+let buf = &mut [0; 128];
 
 let atr = se05x.enable();
 
 // Running a WriteUserId command:
-se05x.run_command(&WriteUserId {
-    policy: None,
-    max_attempts: None,
-    object_id: user_id,
-    value: b"Some value"
-})?;
+se05x.run_command(
+    &WriteUserId::builder()
+        .object_id(user_id)
+        .data(b"Some value")
+        .build(),
+    buf,
+)?;
 
 // Creating a file with a policy
 let policy = &[Policy {
     object_id: user_id,
-    access_rule: ObjectAccessRule::from_flags(
-        ObjectPolicyFlags::ALLOW_READ,
-    ),
+    access_rule: ObjectAccessRule::from_flags(ObjectPolicyFlags::ALLOW_READ),
 }];
 
 se05x.run_command(
-    &WriteBinary {
-        transient: false,
-        policy: Some(PolicySet(policy)),
-        object_id,
-        offset: None,
-        file_length: Some(9.into()),
-        data: Some(&b"Some data"),
-    },
-    &mut buf,
+    &WriteBinary::builder()
+        .policy(PolicySet(policy))
+        .object_id(object_id)
+        .file_length(9.into())
+        .data(b"Some data")
+        .build(),
+    buf,
 )?;
 
 // Opening a session with teh UserID
-let session = se05x.run_command(&CreateSession { object_id: user_id }, &mut buf)?;
+let session_id = se05x
+    .run_command(&CreateSession { object_id: user_id }, buf)?
+    .session_id;
 
 // Verifying the UserId
-se05x.run_command(
-    &ProcessSessionCmd {
-        session_id: session.session_id,
-        apdu: VerifySessionUserId {
-            user_id: b"Some value",
-        },
+se05x.run_session_command(
+    session_id,
+    &VerifySessionUserId {
+        user_id: b"Some value",
     },
-    &mut buf,
+    buf,
 )?;
 // Reading the data with the verified session
-let data = se05x.run_command(
-    &ProcessSessionCmd {
-        session_id: session.session_id,
-        apdu: ReadObject {
-            object_id,
-            offset: Some(0.into()),
-            length: Some(9.into()),
-            rsa_key_component: None,
-        },
-    },
-    &mut buf,
+let data = se05x.run_session_command(
+    session_id,
+    &ReadObject::builder()
+        .object_id(object_id)
+        .offset(0.into())
+        .length(9.into())
+        .build(),
+    buf,
 )?;
 ```
 
