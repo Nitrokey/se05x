@@ -1,0 +1,23 @@
+# Copyright (C) Nitrokey GmbH
+# SPDX-License-Identifier: CC0-1.0
+
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Install Python dependencies
+      run: |
+        python -m pip install toml
+    - name: Install rust
+      run: |
+        rustup show
+        rustup target add thumbv7em-none-eabihf
+        rustup target add thumbv8m.main-none-eabi
+    - name: Execute checks
+      run: make ci

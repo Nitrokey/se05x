@@ -48,3 +48,6 @@ serde_bytes = ["dep:serde_bytes"]
 
 [package.metadata.docs.rs]
 features = ["aes-session", "builder", "serde"]
+
+[patch.crates-io]
+lpc55-hal = { git = "https://github.com/Nitrokey/lpc55-hal", tag = "v0.3.0-nitrokey.2" }
