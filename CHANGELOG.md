@@ -5,7 +5,29 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
-## [v0.1.2][] (2023-12-14 )
+## [v0.1.3][] (2023-04-11)
+
+### Added
+
+- Added `create_and_set_curve_params` to aid the compiler optimize-out curve constants ([#5][])
+- Fix rustdoc warnings ([#6][])
+- Fix README example ([#7][])
+
+### Fixed
+
+- Removed unneeded `impl` block in codegen ([#4][])
+- Fix lints ([#3][])
+- Removed unused byteorder dependency ([#3][])
+- Use latest serde-bytes rather than serde-byte-array ([#3][])
+
+[#7]: https://github.com/Nitrokey/se07x/pull/7
+[#6]: https://github.com/Nitrokey/se06x/pull/6
+[#5]: https://github.com/Nitrokey/se05x/pull/5
+[#4]: https://github.com/Nitrokey/se04x/pull/4
+[#3]: https://github.com/Nitrokey/se03x/pull/3
+[v0.1.3]: https://github.com/Nitrokey/se05x/releases/tag/v0.1.3
+
+## [v0.1.2][] (2023-12-14)
 
 ### Changed
 
