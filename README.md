@@ -14,7 +14,7 @@ This crate is under heavy development.
 ```rust,ignore
 let i2c: impl I2CForT1 = todo!();
 let delay: impl DelayUs<u32> = todo!();
-let mut se05x = se05x::new(i2c, address, delay);
+let mut se05x = Se05x::new(i2c, address, delay);
 let user_id = ObjectId(hex!("01020304"));
 
 let atr = se05x.enable();
@@ -51,25 +51,19 @@ se05x.run_command(
 let session = se05x.run_command(&CreateSession { object_id: user_id }, &mut buf)?;
 
 // Verifying the UserId
-se05x.run_command(
-    &ProcessSessionCmd {
-        session_id: session.session_id,
-        apdu: VerifySessionUserId {
-            user_id: b"Some value",
-        },
+se05x.run_session_command(
+    &VerifySessionUserId {
+        user_id: b"Some value",
     },
     &mut buf,
 )?;
 // Reading the data with the verified session
-let data = se05x.run_command(
-    &ProcessSessionCmd {
-        session_id: session.session_id,
-        apdu: ReadObject {
-            object_id,
-            offset: Some(0.into()),
-            length: Some(9.into()),
-            rsa_key_component: None,
-        },
+let data = se05x.run_session_command(
+    &ReadObject {
+        object_id,
+        offset: Some(0.into()),
+        length: Some(9.into()),
+        rsa_key_component: None,
     },
     &mut buf,
 )?;
