@@ -89,7 +89,7 @@ p2 = "P2_DEFAULT"
 
 [scp_external_authenticate.payload]
 then = [
-  { name = "host_cryptogram", type = "[u8; 8]" }
+  { name = "host_cryptogram", type = "[u8; 8]" },
   { name = "mac", type = "[u8; 8]" }
 ]
 
