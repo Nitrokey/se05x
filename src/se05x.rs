@@ -197,8 +197,10 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         &mut self,
         data: &constants::CurveInitializer,
     ) -> Result<(), Error> {
+        info!("Creating curve {:?}", data.curve);
         let response_buf = &mut [0; 2];
         self.run_command(&CreateEcCurve { curve: data.curve }, response_buf)?;
+        info!("Setting param A");
         self.run_command(
             &SetEcCurveParam {
                 curve: data.curve,
@@ -207,6 +209,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             },
             response_buf,
         )?;
+        info!("Setting param B");
         self.run_command(
             &SetEcCurveParam {
                 curve: data.curve,
@@ -215,6 +218,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             },
             response_buf,
         )?;
+        info!("Setting param G");
         self.run_command(
             &SetEcCurveParam {
                 curve: data.curve,
@@ -223,6 +227,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             },
             response_buf,
         )?;
+        info!("Setting param N");
         self.run_command(
             &SetEcCurveParam {
                 curve: data.curve,
@@ -231,6 +236,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             },
             response_buf,
         )?;
+        info!("Setting param Prime");
         self.run_command(
             &SetEcCurveParam {
                 curve: data.curve,
@@ -239,6 +245,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
             },
             response_buf,
         )?;
+        info!("Setting all params");
         Ok(())
     }
 
@@ -1377,28 +1384,29 @@ impl EcCurve {
     /// None means that the constant doesn't need configuring its parameters (curve 25519)
     pub fn params(&self) -> Option<constants::CurveConstants> {
         match self {
-            Self::NistP192 => Some(constants::PRIME192V1),
-            Self::NistP224 => Some(constants::SECP224R1),
+            // Self::NistP192 => Some(constants::PRIME192V1),
+            // Self::NistP224 => Some(constants::SECP224R1),
             Self::NistP256 => Some(constants::PRIME256V1),
-            Self::NistP384 => Some(constants::SECP384R1),
+            // Self::NistP384 => Some(constants::SECP384R1),
             Self::NistP521 => Some(constants::SECP521R1),
 
-            Self::Brainpool160 => Some(constants::BRAINPOOL_P160R1),
-            Self::Brainpool192 => Some(constants::BRAINPOOL_P192R1),
-            Self::Brainpool224 => Some(constants::BRAINPOOL_P224R1),
-            Self::Brainpool256 => Some(constants::BRAINPOOL_P256R1),
-            Self::Brainpool320 => Some(constants::BRAINPOOL_P320R1),
-            Self::Brainpool384 => Some(constants::BRAINPOOL_P384R1),
-            Self::Brainpool512 => Some(constants::BRAINPOOL_P512R1),
+            // Self::Brainpool160 => Some(constants::BRAINPOOL_P160R1),
+            // Self::Brainpool192 => Some(constants::BRAINPOOL_P192R1),
+            // Self::Brainpool224 => Some(constants::BRAINPOOL_P224R1),
+            // Self::Brainpool256 => Some(constants::BRAINPOOL_P256R1),
+            // Self::Brainpool320 => Some(constants::BRAINPOOL_P320R1),
+            // Self::Brainpool384 => Some(constants::BRAINPOOL_P384R1),
+            // Self::Brainpool512 => Some(constants::BRAINPOOL_P512R1),
 
-            Self::Secp160k1 => Some(constants::SECP160K1),
-            Self::Secp192k1 => Some(constants::SECP192K1),
-            Self::Secp224k1 => Some(constants::SECP224K1),
-            Self::Secp256k1 => Some(constants::SECP256K1),
+            // Self::Secp160k1 => Some(constants::SECP160K1),
+            // Self::Secp192k1 => Some(constants::SECP192K1),
+            // Self::Secp224k1 => Some(constants::SECP224K1),
+            // Self::Secp256k1 => Some(constants::SECP256K1),
 
-            Self::TpmEccBnP256 => Some(constants::TPM_BN_P256),
+            // Self::TpmEccBnP256 => Some(constants::TPM_BN_P256),
             Self::IdEccEd25519 => None,
             Self::IdEccMontDh25519 => None,
+            _ => None,
         }
     }
 }
