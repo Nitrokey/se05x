@@ -475,6 +475,11 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
                 return Err(Error::ReceptionBuffer);
             }
 
+            if len as usize > MAX_FRAME_DATA_LEN {
+                error!("Frame too large");
+                return Err(Error::ReceptionBuffer);
+            }
+
             let mut data_buf = [0; MAX_FRAME_DATA_LEN];
             let current_buf = &mut buffer[written..][..len as usize];
             let data_buf = &mut data_buf[..len as _];
