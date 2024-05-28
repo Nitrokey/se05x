@@ -242,6 +242,10 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
         Ok(())
     }
 
+    #[deprecated(
+        since = "0.1.3",
+        note = "please use `create_and_set_curve_params` instead"
+    )]
     /// Prior to being used with the se05x, the curve constants need to be configured for the secure element
     ///
     /// This method configures the secure element to be able to use the given curve.
@@ -1743,6 +1747,17 @@ where
 
     let (value, rem) = take_opt_do_until_inner(tag, next, data)?;
     Ok((value.map(TryInto::try_into).transpose()?, rem))
+}
+
+impl<'a> commands::ReadEcCurveListResponse<'a> {
+    pub fn is_set(&self, curve: EcCurve) -> bool {
+        let id: u8 = curve.into();
+        if id >= 0x40 {
+            return true;
+        }
+
+        self.ids.get(id as usize - 1) == Some(&SetIndicator::Set.into())
+    }
 }
 
 #[cfg(test)]
