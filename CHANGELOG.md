@@ -5,6 +5,19 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.1.4][] (2024-05-27)
+
+### Added
+
+- `ReadEcCurveListResponse`: `is_set` to get wether a curve is set or not ([#13][])
+
+### Changed
+
+- Added deprecation warning to `create_and_set_curve`  ([#13][])
+
+[#13]: https://github.com/Nitrokey/se03x/pull/13
+[v0.1.4]: https://github.com/Nitrokey/se05x/releases/tag/v0.1.4
+
 ## [v0.1.3][] (2023-04-11)
 
 ### Added
