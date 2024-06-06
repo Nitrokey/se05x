@@ -8,7 +8,7 @@ use super::*;
 
 // ************* CreateSession ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateSession {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -49,7 +49,7 @@ impl<W: Writer> DataStream<W> for CreateSession {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateSessionResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub session_id: SessionId,
@@ -70,7 +70,7 @@ impl<W: Writer> Se05XCommand<W> for CreateSession {
 
 // ************* ExchangeSessionData ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ExchangeSessionData<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -115,7 +115,7 @@ impl<'data, W: Writer> DataStream<W> for ExchangeSessionData<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExchangeSessionDataResponse<'data> {
     /// Parsed from remaining data
     pub r_mac: &'data [u8],
@@ -136,7 +136,7 @@ impl<'data, W: Writer> Se05XCommand<W> for ExchangeSessionData<'data> {
 
 // ************* RefreshSession ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RefreshSession {
     /// Serialized to TLV tag [`TAG_POLICY`]()
@@ -178,7 +178,7 @@ impl<W: Writer> DataStream<W> for RefreshSession {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RefreshSessionResponse {}
 
 impl<'data> Se05XResponse<'data> for RefreshSessionResponse {
@@ -195,7 +195,7 @@ impl<W: Writer> Se05XCommand<W> for RefreshSession {
 
 // ************* CloseSession ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CloseSession {}
 
@@ -219,7 +219,7 @@ impl<W: Writer> DataStream<W> for CloseSession {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CloseSessionResponse {}
 
 impl<'data> Se05XResponse<'data> for CloseSessionResponse {
@@ -236,7 +236,7 @@ impl<W: Writer> Se05XCommand<W> for CloseSession {
 
 // ************* VerifySessionUserId ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct VerifySessionUserId<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -277,7 +277,7 @@ impl<'data, W: Writer> DataStream<W> for VerifySessionUserId<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerifySessionUserIdResponse {}
 
 impl<'data> Se05XResponse<'data> for VerifySessionUserIdResponse {
@@ -294,7 +294,7 @@ impl<'data, W: Writer> Se05XCommand<W> for VerifySessionUserId<'data> {
 
 // ************* ScpInitializeUpdate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ScpInitializeUpdate {
     /// Serialized to remaining data
@@ -335,7 +335,7 @@ impl<W: Writer> DataStream<W> for ScpInitializeUpdate {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScpInitializeUpdateResponse {
     /// Parsed from remaining data
     pub se05x_challenge: Se05xChallenge,
@@ -356,7 +356,7 @@ impl<W: Writer> Se05XCommand<W> for ScpInitializeUpdate {
 
 // ************* ScpExternalAuthenticate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ScpExternalAuthenticate {
     /// Serialized to remaining data
@@ -401,7 +401,7 @@ impl<W: Writer> DataStream<W> for ScpExternalAuthenticate {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScpExternalAuthenticateResponse {}
 
 impl<'data> Se05XResponse<'data> for ScpExternalAuthenticateResponse {
@@ -418,7 +418,7 @@ impl<W: Writer> Se05XCommand<W> for ScpExternalAuthenticate {
 
 // ************* SetLockState ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct SetLockState {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -456,7 +456,7 @@ impl<W: Writer> Se05XCommand<W> for SetLockState {
 
 // ************* WriteEcKey ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteEcKey<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -563,7 +563,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteEcKey<'data> {
 
 // ************* WriteRsaKey ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteRsaKey<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -722,7 +722,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteRsaKey<'data> {
 
 // ************* GenRsaKey ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GenRsaKey<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -801,7 +801,7 @@ impl<'data, W: Writer> Se05XCommand<W> for GenRsaKey<'data> {
 
 // ************* WriteSymmKey ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteSymmKey<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -887,7 +887,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteSymmKey<'data> {
 
 // ************* WriteBinary ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteBinary<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -957,7 +957,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteBinary<'data> {
 
 // ************* WriteUserId ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteUserId<'data> {
     /// Serialized to TLV tag [`TAG_POLICY`]()
@@ -1023,7 +1023,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteUserId<'data> {
 
 // ************* WriteCounter ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteCounter<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -1086,7 +1086,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WriteCounter<'data> {
 
 // ************* WritePcr ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WritePcr<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -1149,7 +1149,7 @@ impl<'data, W: Writer> Se05XCommand<W> for WritePcr<'data> {
 
 // ************* ImportObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ImportObject<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
@@ -1208,7 +1208,7 @@ impl<'data, W: Writer> Se05XCommand<W> for ImportObject<'data> {
 
 // ************* ReadObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadObject {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1264,7 +1264,7 @@ impl<W: Writer> DataStream<W> for ReadObject {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadObjectResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub data: &'data [u8],
@@ -1285,7 +1285,7 @@ impl<W: Writer> Se05XCommand<W> for ReadObject {
 
 // ************* ReadAttestObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadAttestObject<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1371,7 +1371,7 @@ impl<'data, W: Writer> DataStream<W> for ReadAttestObject<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadAttestObjectResponse<'data> {
     /// Is None when the object is a private key
     ///
@@ -1417,7 +1417,7 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttestObject<'data> {
 
 // ************* ReadAttributes ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadAttributes<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1461,7 +1461,7 @@ impl<'data, W: Writer> DataStream<W> for ReadAttributes<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadAttributesResponse {
     /// Parsed from TLV tag [`TAG_2`]()
     pub attributes: ObjectAttributes,
@@ -1482,7 +1482,7 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttributes<'data> {
 
 // ************* ReadAttributesAttest ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadAttributesAttest<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1567,7 +1567,7 @@ impl<'data, W: Writer> DataStream<W> for ReadAttributesAttest<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadAttributesAttestResponse<'data> {
     /// Parsed from TLV tag [`TAG_2`]()
     pub attributes: ObjectAttributes,
@@ -1606,7 +1606,7 @@ impl<'data, W: Writer> Se05XCommand<W> for ReadAttributesAttest<'data> {
 
 // ************* ExportObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ExportObject {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1640,7 +1640,7 @@ impl<W: Writer> DataStream<W> for ExportObject {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExportObjectResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub data: &'data [u8],
@@ -1661,7 +1661,7 @@ impl<W: Writer> Se05XCommand<W> for ExportObject {
 
 // ************* ReadType ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadType {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1702,7 +1702,7 @@ impl<W: Writer> DataStream<W> for ReadType {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadTypeResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub ty: SecureObjectType,
@@ -1729,7 +1729,7 @@ impl<W: Writer> Se05XCommand<W> for ReadType {
 
 // ************* ReadSize ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadSize {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1770,7 +1770,7 @@ impl<W: Writer> DataStream<W> for ReadSize {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadSizeResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub size: Be<u64>,
@@ -1791,7 +1791,7 @@ impl<W: Writer> Se05XCommand<W> for ReadSize {
 
 // ************* ReadIdList ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadIdList {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1836,7 +1836,7 @@ impl<W: Writer> DataStream<W> for ReadIdList {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadIdListResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub more: MoreIndicator,
@@ -1860,7 +1860,7 @@ impl<W: Writer> Se05XCommand<W> for ReadIdList {
 
 // ************* CheckObjectExists ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CheckObjectExists {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1901,7 +1901,7 @@ impl<W: Writer> DataStream<W> for CheckObjectExists {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CheckObjectExistsResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub result: Se05XResult,
@@ -1922,7 +1922,7 @@ impl<W: Writer> Se05XCommand<W> for CheckObjectExists {
 
 // ************* DeleteSecureObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteSecureObject {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1958,7 +1958,7 @@ impl<W: Writer> Se05XCommand<W> for DeleteSecureObject {
 
 // ************* CreateEcCurve ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateEcCurve {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -1992,7 +1992,7 @@ impl<W: Writer> Se05XCommand<W> for CreateEcCurve {
 
 // ************* SetEcCurveParam ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct SetEcCurveParam<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2034,7 +2034,7 @@ impl<'data, W: Writer> Se05XCommand<W> for SetEcCurveParam<'data> {
 
 // ************* GetEcCurveId ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetEcCurveId {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2061,7 +2061,7 @@ impl<W: Writer> DataStream<W> for GetEcCurveId {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetEcCurveIdResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub curve: EcCurve,
@@ -2082,7 +2082,7 @@ impl<W: Writer> Se05XCommand<W> for GetEcCurveId {
 
 // ************* ReadEcCurveList ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadEcCurveList {}
 
@@ -2104,7 +2104,7 @@ impl<W: Writer> DataStream<W> for ReadEcCurveList {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadEcCurveListResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub ids: &'data [u8],
@@ -2125,7 +2125,7 @@ impl<W: Writer> Se05XCommand<W> for ReadEcCurveList {
 
 // ************* DeleteEcCurve ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteEcCurve {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2161,7 +2161,7 @@ impl<W: Writer> Se05XCommand<W> for DeleteEcCurve {
 
 // ************* CreateDigestObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateDigestObject {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2203,7 +2203,7 @@ impl<W: Writer> Se05XCommand<W> for CreateDigestObject {
 
 // ************* CreateCipherObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateCipherObject {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2245,7 +2245,7 @@ impl<W: Writer> Se05XCommand<W> for CreateCipherObject {
 
 // ************* CreateSignatureObject ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CreateSignatureObject {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2287,7 +2287,7 @@ impl<W: Writer> Se05XCommand<W> for CreateSignatureObject {
 
 // ************* ReadCryptoObjList ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct ReadCryptoObjList {}
 
@@ -2309,7 +2309,7 @@ impl<W: Writer> DataStream<W> for ReadCryptoObjList {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadCryptoObjListResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub list: &'data [u8],
@@ -2330,7 +2330,7 @@ impl<W: Writer> Se05XCommand<W> for ReadCryptoObjList {
 
 // ************* DeleteCryptoObj ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteCryptoObj {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2378,7 +2378,7 @@ impl<W: Writer> Se05XCommand<W> for DeleteCryptoObj {
 
 // ************* EcdsaSign ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdsaSign<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2427,7 +2427,7 @@ impl<'data, W: Writer> DataStream<W> for EcdsaSign<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EcdsaSignResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub signature: &'data [u8],
@@ -2448,7 +2448,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EcdsaSign<'data> {
 
 // ************* EddsaSign ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EddsaSign<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2495,7 +2495,7 @@ impl<'data, W: Writer> DataStream<W> for EddsaSign<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EddsaSignResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub signature: &'data [u8],
@@ -2516,7 +2516,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EddsaSign<'data> {
 
 // ************* EcdaaSign ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdaaSign {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2567,7 +2567,7 @@ impl<W: Writer> DataStream<W> for EcdaaSign {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EcdaaSignResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub signature: &'data [u8],
@@ -2588,7 +2588,7 @@ impl<W: Writer> Se05XCommand<W> for EcdaaSign {
 
 // ************* EcdsaVerify ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdsaVerify<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2629,7 +2629,7 @@ impl<'data, W: Writer> DataStream<W> for EcdsaVerify<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EcdsaVerifyResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub result: Se05XResult,
@@ -2650,7 +2650,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EcdsaVerify<'data> {
 
 // ************* EddsaVerify ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EddsaVerify<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2689,7 +2689,7 @@ impl<'data, W: Writer> DataStream<W> for EddsaVerify<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EddsaVerifyResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub result: Se05XResult,
@@ -2710,7 +2710,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EddsaVerify<'data> {
 
 // ************* EcdhGenerateSharedSecret ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct EcdhGenerateSharedSecret<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2755,7 +2755,7 @@ impl<'data, W: Writer> DataStream<W> for EcdhGenerateSharedSecret<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EcdhGenerateSharedSecretResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub shared_secret: &'data [u8],
@@ -2776,7 +2776,7 @@ impl<'data, W: Writer> Se05XCommand<W> for EcdhGenerateSharedSecret<'data> {
 
 // ************* RsaSign ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaSign<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2825,7 +2825,7 @@ impl<'data, W: Writer> DataStream<W> for RsaSign<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RsaSignResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub signature: &'data [u8],
@@ -2846,7 +2846,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaSign<'data> {
 
 // ************* RsaVerify ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaVerify<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2887,7 +2887,7 @@ impl<'data, W: Writer> DataStream<W> for RsaVerify<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RsaVerifyResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub result: Se05XResult,
@@ -2908,7 +2908,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaVerify<'data> {
 
 // ************* RsaEncrypt ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -2957,7 +2957,7 @@ impl<'data, W: Writer> DataStream<W> for RsaEncrypt<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RsaEncryptResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub ciphertext: &'data [u8],
@@ -2978,7 +2978,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaEncrypt<'data> {
 
 // ************* RsaDecrypt ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RsaDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3027,7 +3027,7 @@ impl<'data, W: Writer> DataStream<W> for RsaDecrypt<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RsaDecryptResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub plaintext: &'data [u8],
@@ -3048,7 +3048,7 @@ impl<'data, W: Writer> Se05XCommand<W> for RsaDecrypt<'data> {
 
 // ************* CipherEncryptInit ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherEncryptInit<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3091,7 +3091,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherEncryptInit<'data> {
 
 // ************* CipherDecryptInit ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherDecryptInit<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3134,7 +3134,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherDecryptInit<'data> {
 
 // ************* CipherUpdate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherUpdate<'data> {
     /// Serialized to TLV tag [`TAG_2`]()
@@ -3181,7 +3181,7 @@ impl<'data, W: Writer> DataStream<W> for CipherUpdate<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CipherUpdateResponse<'data> {
     /// output data
     ///
@@ -3204,7 +3204,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherUpdate<'data> {
 
 // ************* CipherFinal ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherFinal<'data> {
     /// Serialized to TLV tag [`TAG_2`]()
@@ -3251,7 +3251,7 @@ impl<'data, W: Writer> DataStream<W> for CipherFinal<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CipherFinalResponse<'data> {
     /// output data
     ///
@@ -3274,7 +3274,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherFinal<'data> {
 
 // ************* CipherOneShotEncrypt ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherOneShotEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3328,7 +3328,7 @@ impl<'data, W: Writer> DataStream<W> for CipherOneShotEncrypt<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CipherOneShotEncryptResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub ciphertext: &'data [u8],
@@ -3349,7 +3349,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotEncrypt<'data> {
 
 // ************* CipherOneShotDecrypt ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct CipherOneShotDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3403,7 +3403,7 @@ impl<'data, W: Writer> DataStream<W> for CipherOneShotDecrypt<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CipherOneShotDecryptResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub plaintext: &'data [u8],
@@ -3424,7 +3424,7 @@ impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotDecrypt<'data> {
 
 // ************* MacGenerateInit ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacGenerateInit {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3462,7 +3462,7 @@ impl<W: Writer> Se05XCommand<W> for MacGenerateInit {
 
 // ************* MacValidateInit ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacValidateInit {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3500,7 +3500,7 @@ impl<W: Writer> Se05XCommand<W> for MacValidateInit {
 
 // ************* MacUpdate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacUpdate<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3538,7 +3538,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacUpdate<'data> {
 
 // ************* MacGenerateFinal ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacGenerateFinal<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3583,7 +3583,7 @@ impl<'data, W: Writer> DataStream<W> for MacGenerateFinal<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MacGenerateFinalResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub tag: &'data [u8],
@@ -3604,7 +3604,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacGenerateFinal<'data> {
 
 // ************* MacValidateFinal ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacValidateFinal<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3655,7 +3655,7 @@ impl<'data, W: Writer> DataStream<W> for MacValidateFinal<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MacValidateFinalResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub result: Se05XResult,
@@ -3676,7 +3676,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacValidateFinal<'data> {
 
 // ************* MacOneShotGenerate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacOneShotGenerate<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3725,7 +3725,7 @@ impl<'data, W: Writer> DataStream<W> for MacOneShotGenerate<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MacOneShotGenerateResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub tag: &'data [u8],
@@ -3746,7 +3746,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacOneShotGenerate<'data> {
 
 // ************* MacOneShotValidate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct MacOneShotValidate<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3801,7 +3801,7 @@ impl<'data, W: Writer> DataStream<W> for MacOneShotValidate<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MacOneShotValidateResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub result: Se05XResult,
@@ -3822,7 +3822,7 @@ impl<'data, W: Writer> Se05XCommand<W> for MacOneShotValidate<'data> {
 
 // ************* Hkdf ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct Hkdf<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3885,7 +3885,7 @@ impl<'data, W: Writer> DataStream<W> for Hkdf<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HkdfResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub data: &'data [u8],
@@ -3906,7 +3906,7 @@ impl<'data, W: Writer> Se05XCommand<W> for Hkdf<'data> {
 
 // ************* Pbkdf2 ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct Pbkdf2<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -3966,7 +3966,7 @@ impl<'data, W: Writer> DataStream<W> for Pbkdf2<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Pbkdf2Response<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub data: &'data [u8],
@@ -3987,7 +3987,7 @@ impl<'data, W: Writer> Se05XCommand<W> for Pbkdf2<'data> {
 
 // ************* DigestInit ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestInit {
     /// Serialized to TLV tag [`TAG_2`]()
@@ -4021,7 +4021,7 @@ impl<W: Writer> Se05XCommand<W> for DigestInit {
 
 // ************* DigestUpdate ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestUpdate<'data> {
     /// Serialized to TLV tag [`TAG_2`]()
@@ -4059,7 +4059,7 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestUpdate<'data> {
 
 // ************* DigestFinal ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestFinal<'data> {
     /// Serialized to TLV tag [`TAG_2`]()
@@ -4104,7 +4104,7 @@ impl<'data, W: Writer> DataStream<W> for DigestFinal<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DigestFinalResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub digest: &'data [u8],
@@ -4125,7 +4125,7 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestFinal<'data> {
 
 // ************* DigestOneShot ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DigestOneShot<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -4170,7 +4170,7 @@ impl<'data, W: Writer> DataStream<W> for DigestOneShot<'data> {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DigestOneShotResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub digest: &'data [u8],
@@ -4191,7 +4191,7 @@ impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
 
 // ************* GetVersion ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetVersion {}
 
@@ -4213,7 +4213,7 @@ impl<W: Writer> DataStream<W> for GetVersion {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetVersionResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub version_info: VersionInfo,
@@ -4234,7 +4234,7 @@ impl<W: Writer> Se05XCommand<W> for GetVersion {
 
 // ************* GetTimestamp ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetTimestamp {}
 
@@ -4256,7 +4256,7 @@ impl<W: Writer> DataStream<W> for GetTimestamp {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetTimestampResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub timestamp: &'data [u8; 12],
@@ -4277,7 +4277,7 @@ impl<W: Writer> Se05XCommand<W> for GetTimestamp {
 
 // ************* GetFreeMemory ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetFreeMemory {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -4304,7 +4304,7 @@ impl<W: Writer> DataStream<W> for GetFreeMemory {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetFreeMemoryResponse {
     /// Parsed from TLV tag [`TAG_1`]()
     pub available: Be<u16>,
@@ -4325,7 +4325,7 @@ impl<W: Writer> Se05XCommand<W> for GetFreeMemory {
 
 // ************* GetRandom ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct GetRandom {
     /// Serialized to TLV tag [`TAG_1`]()
@@ -4366,7 +4366,7 @@ impl<W: Writer> DataStream<W> for GetRandom {
         command.to_writer(writer)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetRandomResponse<'data> {
     /// Parsed from TLV tag [`TAG_1`]()
     pub data: &'data [u8],
@@ -4387,7 +4387,7 @@ impl<W: Writer> Se05XCommand<W> for GetRandom {
 
 // ************* DeleteAll ************* //
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct DeleteAll {}
 

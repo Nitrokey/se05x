@@ -7,7 +7,7 @@ use iso7816::command::{DataSource, DataStream, Writer};
 use crate::se05x::ObjectId;
 
 bitflags! {
-    #[derive(Clone, Copy,PartialEq,Eq, Debug)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct ObjectPolicyFlags: u32 {
         /// Reserved for future use
         const RFU1                            = 0b10000000_00000000_00000000_00000000;
@@ -154,7 +154,7 @@ impl<'a, W: Writer> DataStream<W> for PolicySet<'a> {
 }
 
 bitflags! {
-    #[derive(Clone, Copy,PartialEq,Eq, Debug)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct SessionPolicyFlags: u16 {
         ///  Defines the maximum number of APDUs allowed within the session. Note that the ExchangeSessionData command itself is also counted as APDU within the session.
         #[doc(hidden)]

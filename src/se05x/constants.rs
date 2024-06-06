@@ -7,6 +7,7 @@ use hex_literal::hex;
 
 use super::EcCurve;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// Curve constants as sent to `SetCurveParameter`
 pub struct CurveConstants {
     pub prime: &'static [u8],
@@ -19,6 +20,7 @@ pub struct CurveConstants {
     pub order: &'static [u8],
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CurveInitializer {
     pub constants: CurveConstants,
     pub curve: EcCurve,
