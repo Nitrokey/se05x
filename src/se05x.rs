@@ -32,7 +32,7 @@ pub struct Se05X<Twi, D> {
 
 pub const MAX_APDU_PAYLOAD_LENGTH: usize = 889;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,
     Line(u32),
@@ -371,7 +371,7 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
 }
 
 bitflags! {
-    #[derive(Debug,Clone,Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct AppletConfig: u16 {
         const ECDAA = 0x0001;
         const ECDSA_ECDH_ECDHE = 0x0002;
@@ -394,7 +394,7 @@ bitflags! {
 }
 
 pub struct Select;
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Atr {
     pub major: u8,
     pub minor: u8,
@@ -440,7 +440,7 @@ impl<'a> TryFrom<&'a [u8]> for Atr {
 
 pub type VersionInfo = Atr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ObjectAttributes {
     identifier: ObjectId,
     class: SecureObjectType,
@@ -583,7 +583,7 @@ impl<W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for ProcessSessionCmd<C> {
     type Response<'a> = C::Response<'a>;
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Se05xChallenge {
     pub key_diversification_data: [u8; 10],
     pub key_information: [u8; 3],
@@ -1090,7 +1090,7 @@ pub const SCP_REQUIRED: u8 = 0x01;
 pub const SCP_NOT_REQUIRED: u8 = 0x02;
 
 /// Big-endian encoded integer
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Be<I>(pub I);
 
 impl<I> From<I> for Be<I> {
@@ -1262,7 +1262,7 @@ macro_rules! enum_data {
 }
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum TransientIndicator {
         Transient = TRANSIENT_LOCK,
@@ -1270,7 +1270,7 @@ enum_data!(
     }
 );
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LockState {
     Locked,
     Unlocked,
@@ -1320,7 +1320,7 @@ impl<W: Writer> DataStream<W> for LockState {
 }
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum P1KeyType {
         Na = P1_DEFAULT,
@@ -1331,7 +1331,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum RsaFormat {
         Crt = P2_DEFAULT,
@@ -1340,7 +1340,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum EcCurve {
         NistP192 = NIST_P192,
@@ -1366,7 +1366,7 @@ enum_data!(
 );
 
 enum_data!(
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(u8)]
     pub enum EcCurveParam {
         ParamA = CURVE_PARAM_A,

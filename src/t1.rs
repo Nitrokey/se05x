@@ -16,7 +16,7 @@ use crate::macros::enum_u8;
 
 mod i2cimpl;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Atr<'a> {
     /// Protocol version only `01` is supported
     pub pver: u8,
@@ -297,7 +297,7 @@ where
     type Error = <T as Read<u8>>::Error;
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,
     AddressNack,
@@ -368,7 +368,7 @@ const NAD_HD_TO_SE: u8 = 0x5A;
 /// See table 4 of UM1225
 const NAD_SE_TO_HD: u8 = 0xA5;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DataReceived {
     /// Received one or more IBlocks
     ///

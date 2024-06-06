@@ -139,7 +139,7 @@ for command, v in data.items():
         response_lifetime = "<'data>"
 
 
-    outfile.write("#[derive(Clone, Debug)]\n")
+    outfile.write("#[derive(Clone, Debug, PartialEq, Eq)]\n")
     outfile.write("#[cfg_attr(feature = \"builder\", derive(typed_builder::TypedBuilder))]\n")
     outfile.write(f'pub struct {name}{payload_lifetime} {{\n')
 
@@ -236,7 +236,7 @@ for command, v in data.items():
     outfile.write("}\n")
    
     if "response" in v:
-        outfile.write("#[derive(Clone, Debug)]\n")
+        outfile.write("#[derive(Clone, Debug, PartialEq, Eq)]\n")
         outfile.write(f'pub struct {name}Response{response_lifetime} {{\n')
 
         for arg_name, arg in v["response"].items():

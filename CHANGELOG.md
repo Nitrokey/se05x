@@ -5,6 +5,13 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.1.5][] (2025-06-06)
+
+- Implement Debug, PartialEq, Eq, Clone and Copy on all relevant structs ([#15][])
+
+[#15]: https://github.com/Nitrokey/se03x/pull/15
+[v0.1.5]: https://github.com/Nitrokey/se05x/releases/tag/v0.1.5
+
 ## [v0.1.4][] (2024-05-27)
 
 ### Added
