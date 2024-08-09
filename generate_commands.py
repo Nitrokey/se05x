@@ -110,6 +110,7 @@ for command, v in data.items():
     p2 = v["p2"]
     p2_val = p2
     le = v.get("le", 0)
+    force_extended = v.get("force_extended", False)
 
     payload_has_lifetime = False
     for _, a in flatten(v["payload"].items()):
@@ -203,6 +204,8 @@ for command, v in data.items():
     slice_val = "&[" + slice_val_inner + "]"
 
     command_builder = f'CommandBuilder::new({cla}, {ins}, {p1_val}, {p2_val}, __data, {le})'
+    if force_extended:
+        command_builder = f'{command_builder}.force_extended()'
 
     outfile.write(f'impl{payload_lifetime} DataSource for {name}{payload_lifetime} {{\n')
     outfile.write('    fn len(&self) -> usize {\n')
