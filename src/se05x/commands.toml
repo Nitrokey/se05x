@@ -335,6 +335,7 @@ ins = "INS_READ"
 p1 = "P1_DEFAULT"
 p2 = "P2_EXPORT"
 le = "256"
+force_extended = true
 
 [export_object.payload]
 TAG_1 = { name = "object_id", type = "ObjectId" }

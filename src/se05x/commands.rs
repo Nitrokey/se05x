@@ -1623,7 +1623,8 @@ impl DataSource for ExportObject {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let rsa_key_component = &Tlv::new(TAG_2, self.rsa_key_component);
         let __data: &[&dyn DataSource] = &[object_id, rsa_key_component];
-        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, __data, 256);
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, __data, 256)
+            .force_extended();
         command.len()
     }
     fn is_empty(&self) -> bool {
@@ -1636,7 +1637,8 @@ impl<W: Writer> DataStream<W> for ExportObject {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let rsa_key_component = &Tlv::new(TAG_2, self.rsa_key_component);
         let __data: &[&dyn DataStream<W>] = &[object_id, rsa_key_component];
-        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, __data, 256);
+        let command = CommandBuilder::new(NO_SM_CLA, INS_READ, P1_DEFAULT, P2_EXPORT, __data, 256)
+            .force_extended();
         command.to_writer(writer)
     }
 }
