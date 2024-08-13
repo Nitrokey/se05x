@@ -5,6 +5,14 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.1.6][] (2025-08-13)
+
+- Fix `ExportObject` for large keys (NIST-P521 and brainpoolp512) ([#16][])
+
+[#16]: https://github.com/Nitrokey/se03x/pull/16
+[v0.1.6]: https://github.com/Nitrokey/se05x/releases/tag/v0.1.6
+
+
 ## [v0.1.5][] (2025-06-06)
 
 - Implement Debug, PartialEq, Eq, Clone and Copy on all relevant structs ([#15][])
