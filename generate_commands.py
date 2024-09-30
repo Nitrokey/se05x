@@ -167,13 +167,13 @@ for command, v in data.items():
 
     if "maybe_p1_mask" in v:
         a = v["maybe_p1_mask"]
-        outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
+        outfile.write(f'    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = {a["name"] + "_opt"}))))]\n')
         outfile.write(f'    pub {a["name"]}: Option<{a["type"]}>,\n')
         pre_ins += f'        let p1: u8 = self.{a["name"]}.map(|v| v | {p1_val} ).unwrap_or({p1});\n'
         p1_val = "p1"
     if "maybe_p2_mask" in v:
         a = v["maybe_p2_mask"]
-        outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
+        outfile.write(f'    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = {a["name"] + "_opt"}))))]\n')
         outfile.write(f'    pub {a["name"]}: Option<{a["type"]}>,\n')
         pre_ins += f'        let p2: u8 = self.{a["name"]}.map(|v| v | {p2_val} ).unwrap_or({p2});\n'
         p2_val = "p2"
