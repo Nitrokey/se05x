@@ -463,7 +463,7 @@ pub struct WriteEcKey<'data> {
     pub transient: bool,
     #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_type_opt))))]
     pub key_type: Option<P1KeyType>,
     /// Serialized to TLV tag [`TAG_POLICY`]()
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
@@ -570,9 +570,9 @@ pub struct WriteRsaKey<'data> {
     pub transient: bool,
     #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_type_opt))))]
     pub key_type: Option<P1KeyType>,
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_format_opt))))]
     pub key_format: Option<RsaFormat>,
     /// Serialized to TLV tag [`TAG_POLICY`]()
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
