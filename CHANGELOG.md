@@ -5,6 +5,10 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## Unreleased
+
+- Update `lpc55-hal` to v0.4
+
 ## [v0.1.6][] (2025-08-13)
 
 - Fix `ExportObject` for large keys (NIST-P521 and brainpoolp512) ([#16][])
