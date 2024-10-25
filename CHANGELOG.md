@@ -5,9 +5,11 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
-## Unreleased
+## [v0.1.7][] (2024-10-25)
 
 - Add support for `lpc55-hal` 0.4 behind a `lpc55-v0.4` feature
+
+[v0.1.7]: https://github.com/Nitrokey/se05x/releases/tag/v0.1.7
 
 ## [v0.1.6][] (2025-08-13)
 
