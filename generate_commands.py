@@ -1,8 +1,8 @@
 # Copyright (C) 2023 Nitrokey GmbH
 # SPDX-License-Identifier: LGPL-3.0-only
 
-import toml
 import sys
+import tomllib
 
 def capitilize_first(name):
     name
@@ -84,7 +84,8 @@ if len(sys.argv) != 3:
     exit(1)
 
 outfile = open(sys.argv[2], "w")
-data = toml.load(sys.argv[1])
+with open(sys.argv[1], "rb") as infile:
+    data = tomllib.load(infile)
 
 # REUSE-IgnoreStart
 outfile.write("// Copyright (C) 2023 Nitrokey GmbH\n")
