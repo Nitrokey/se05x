@@ -5,7 +5,7 @@ use core::{array::TryFromSliceError, convert::Infallible, fmt::Debug};
 
 use bitflags::bitflags;
 use delog::hexstr;
-use embedded_hal::blocking::delay::DelayUs;
+use embedded_hal::{delay::DelayNs, i2c::I2c};
 use hex_literal::hex;
 use iso7816::{
     command::{
@@ -17,7 +17,7 @@ use iso7816::{
     Instruction, Status,
 };
 
-use crate::t1::{self, DataReceived, FrameSender, I2CForT1, T1oI2C};
+use crate::t1::{self, DataReceived, FrameSender, T1oI2C};
 
 use self::commands::{CreateEcCurve, SetEcCurveParam};
 
@@ -98,7 +98,7 @@ impl<'b, W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &'b C {
 
 pub const APP_ID: [u8; 0x10] = hex!("A0000003965453000000010300000000");
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
+impl<Twi: I2c, D: DelayNs> Se05X<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         Self {
             t1: T1oI2C::new(twi, se_address, delay),

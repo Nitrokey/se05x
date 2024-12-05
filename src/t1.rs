@@ -1,8 +1,9 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
-use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+use embedded_hal::delay::DelayNs;
+use embedded_hal::i2c::NoAcknowledgeSource;
+use embedded_hal::i2c::{Error as _, ErrorKind, I2c};
 use hex_literal::hex;
 use iso7816::command::writer::IntoWriter;
 use iso7816::command::Writer;
@@ -275,28 +276,6 @@ impl Pcb {
     }
 }
 
-pub trait I2CErrorNack: Debug {
-    fn is_address_nack(&self) -> bool;
-    fn is_data_nack(&self) -> bool;
-}
-pub trait I2CForT1:
-    Read<u8, Error = <Self as I2CForT1>::Error>
-    + Write<u8, Error = <Self as I2CForT1>::Error>
-    + WriteRead<u8, Error = <Self as I2CForT1>::Error>
-{
-    type Error: I2CErrorNack;
-}
-
-impl<T> I2CForT1 for T
-where
-    T: Read<u8>
-        + Write<u8, Error = <T as Read<u8>>::Error>
-        + WriteRead<u8, Error = <T as Read<u8>>::Error>,
-    <T as Read<u8>>::Error: I2CErrorNack,
-{
-    type Error = <T as Read<u8>>::Error;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,
@@ -384,7 +363,7 @@ pub enum DataReceived {
 
 const DEFAULT_RETRY_COUNT: u32 = 1024;
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
+impl<Twi: I2c, D: DelayNs> T1oI2C<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         // Default MPOT value.
         // TODO: get from ATR
@@ -409,8 +388,12 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
         trace!("Writing");
         match self.twi.write(self.se_address, data) {
             Ok(_) => Ok(()),
-            Err(err) if err.is_address_nack() => Err(Error::AddressNack),
-            Err(err) if err.is_data_nack() => Err(Error::DataNack),
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address) => {
+                Err(Error::AddressNack)
+            }
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data) => {
+                Err(Error::DataNack)
+            }
             Err(_err) => {
                 warn!("Got error: {:?}", _err);
                 Err(Error::Line(line!()))
@@ -421,8 +404,12 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         match self.twi.read(self.se_address, buffer) {
             Ok(_) => Ok(()),
-            Err(err) if err.is_address_nack() => Err(Error::AddressNack),
-            Err(err) if err.is_data_nack() => Err(Error::DataNack),
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address) => {
+                Err(Error::AddressNack)
+            }
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data) => {
+                Err(Error::DataNack)
+            }
             Err(_err) => {
                 warn!("Got error: {:?}", _err);
                 Err(Error::Line(line!()))
@@ -434,8 +421,12 @@ impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
     pub fn write_read(&mut self, data: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
         match self.twi.write_read(self.se_address, data, buffer) {
             Ok(_) => Ok(()),
-            Err(err) if err.is_address_nack() => Err(Error::AddressNack),
-            Err(err) if err.is_data_nack() => Err(Error::DataNack),
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address) => {
+                Err(Error::AddressNack)
+            }
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data) => {
+                Err(Error::DataNack)
+            }
             Err(_err) => {
                 warn!("Unknown error when writing & reading: {:?}", _err);
                 Err(Error::Line(line!()))
@@ -653,7 +644,7 @@ pub struct FrameSender<'writer, Twi, D> {
     current_frame_buffer: [u8; MAX_FRAME_LEN],
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
+impl<'writer, Twi: I2c, D: DelayNs> FrameSender<'writer, Twi, D> {
     fn current_offset(&self) -> usize {
         debug_assert!(self.written - self.sent <= MAX_FRAME_LEN);
         self.written - self.sent
@@ -809,14 +800,14 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     }
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> Writer for FrameSender<'writer, Twi, D> {
+impl<'writer, Twi: I2c, D: DelayNs> Writer for FrameSender<'writer, Twi, D> {
     type Error = Error;
     fn write(&mut self, data: &[u8]) -> Result<usize, Self::Error> {
         self.write_data(data)
     }
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> IntoWriter for &'writer mut T1oI2C<Twi, D> {
+impl<'writer, Twi: I2c, D: DelayNs> IntoWriter for &'writer mut T1oI2C<Twi, D> {
     type Writer = FrameSender<'writer, Twi, D>;
     fn into_writer(self, to_write: usize) -> Result<Self::Writer, <Self::Writer as Writer>::Error> {
         Ok(FrameSender::new(self, to_write))
