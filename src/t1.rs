@@ -276,6 +276,7 @@ impl Pcb {
     }
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,

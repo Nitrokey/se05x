@@ -32,6 +32,7 @@ pub struct Se05X<Twi, D> {
 
 pub const MAX_APDU_PAYLOAD_LENGTH: usize = 889;
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,

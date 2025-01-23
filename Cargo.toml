@@ -20,20 +20,23 @@ delog = "0.1"
 embedded-hal = "1.0"
 heapless = "0.8"
 hex-literal = "0.4.1"
-iso7816 = "0.1.1"
+iso7816 = { path = "../iso7816", default-features = false }
 lpc55-hal = { version = "0.3.0", optional = true }
 lpc55-hal-04 = { package = "lpc55-hal", version = "0.4.0", optional = true }
 rand = { version = "0.8.5", optional = true, default-features = false }
 serde = { version = "1.0.185", default-features = false, features = ["derive"], optional = true }
 serde_bytes = { version = "0.11.14", optional = true, default-features = false }
 typed-builder = { version = "0.20.0", optional = true }
+defmt = { version = "0.3", optional = true }
 
 [features]
 default = ["aes-session"]
 serde = ["dep:serde", "serde_bytes"]
 builder = ["typed-builder"]
+defmt = ["dep:defmt", "iso7816/defmt"]
 
 log-all = []
+log-trace = []
 log-debug = []
 log-info = []
 log-warn = []
