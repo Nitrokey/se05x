@@ -133,15 +133,18 @@ for command, v in data.items():
 
     payload_lifetime = ""
     payload_lifetime_inferred = ""
+    payload_lifetime_inferred = ""
     if payload_has_lifetime:
         payload_lifetime = "<'data>"
         payload_lifetime_inferred = "<'_>"
 
     response_lifetime = ""
     response_lifetime_inferred = ""
+    response_lifetime_inferred = ""
     if response_has_lifetime:
         response_lifetime = "<'data>"
         response_lifetime_inferred = "<'_>"
+
 
     outfile.write("#[derive(Clone, Debug, PartialEq, Eq)]\n")
     outfile.write("#[cfg_attr(feature = \"builder\", derive(typed_builder::TypedBuilder))]\n")
@@ -224,6 +227,7 @@ for command, v in data.items():
     outfile.write('        false\n')
     outfile.write('    }\n')
     outfile.write("}\n")
+
 
     outfile.write(f'impl<W: Writer> DataStream<W> for {name}{payload_lifetime_inferred} {{\n')
     outfile.write('    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {\n')

@@ -93,7 +93,7 @@ pub trait Se05XCommand<W: Writer>: DataStream<W> {
     type Response<'a>: Se05XResponse<'a>;
 }
 
-impl<W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &C {
+impl<W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &'_ C {
     type Response<'a> = C::Response<'a>;
 }
 
