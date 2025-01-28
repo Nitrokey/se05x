@@ -1438,7 +1438,6 @@ pub const WAP_WSG_IDM_ECID_WTLS12: CurveConstants = CurveConstants {
 ///     IPSec/IKE/Oakley curve #3 over a 155 bit binary field.
 ///     Not suitable for ECDSA.
 ///     Questionable extension field!
-
 pub const OAKLEY_EC2N_3: CurveConstants = CurveConstants {
     prime: &hex!("0800000000000000000000004000000000000001"),
     a: &hex!("0000000000000000000000000000000000000000"),
