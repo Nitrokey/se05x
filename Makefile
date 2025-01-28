@@ -26,6 +26,7 @@ check: src/se05x/commands.rs
 
 .PHONY: lint
 lint: src/se05x/commands.rs verify-commands
+	reuse lint
 	cargo c
 	cargo fmt --check
 	cargo clippy
@@ -35,7 +36,11 @@ lint: src/se05x/commands.rs verify-commands
 	cargo doc --features aes-session,builder,serde --no-deps
 
 README.md: src/lib.rs Makefile
-	grep '//!' src/lib.rs |grep -v '//! # ' | sed 's/^...//g' | sed 's/^ //g' > README.md
+	# REUSE-IgnoreStart
+	echo '<!-- Copyright (C) 2023 Nitrokey GmbH -->' > README.md
+	echo '<!-- SPDX-License-Identifier: LGPL-3.0-only -->' >> README.md
+	# REUSE-IgnoreEnd
+	grep '//!' src/lib.rs |grep -v '//! # ' | sed 's/^...//g' | sed 's/^ //g' >> README.md
 
 .PHONY: ci
 ci: export RUSTFLAGS=-Dwarnings
