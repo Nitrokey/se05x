@@ -79,7 +79,7 @@ pub struct ExchangeSessionData<'data> {
     pub c_mac: &'data [u8],
 }
 
-impl<'data> DataSource for ExchangeSessionData<'data> {
+impl DataSource for ExchangeSessionData<'_> {
     fn len(&self) -> usize {
         let session_policy = &Tlv::new(TAG_1, self.session_policy);
         let c_mac = &self.c_mac;
@@ -99,7 +99,7 @@ impl<'data> DataSource for ExchangeSessionData<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for ExchangeSessionData<'data> {
+impl<W: Writer> DataStream<W> for ExchangeSessionData<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let session_policy = &Tlv::new(TAG_1, self.session_policy);
         let c_mac = &self.c_mac;
@@ -130,7 +130,7 @@ impl<'data> Se05XResponse<'data> for ExchangeSessionDataResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for ExchangeSessionData<'data> {
+impl<W: Writer> Se05XCommand<W> for ExchangeSessionData<'_> {
     type Response<'rdata> = ExchangeSessionDataResponse<'rdata>;
 }
 
@@ -243,7 +243,7 @@ pub struct VerifySessionUserId<'data> {
     pub user_id: &'data [u8],
 }
 
-impl<'data> DataSource for VerifySessionUserId<'data> {
+impl DataSource for VerifySessionUserId<'_> {
     fn len(&self) -> usize {
         let user_id = &Tlv::new(TAG_1, self.user_id);
         let __data: &[&dyn DataSource] = &[user_id];
@@ -262,7 +262,7 @@ impl<'data> DataSource for VerifySessionUserId<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for VerifySessionUserId<'data> {
+impl<W: Writer> DataStream<W> for VerifySessionUserId<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let user_id = &Tlv::new(TAG_1, self.user_id);
         let __data: &[&dyn DataStream<W>] = &[user_id];
@@ -288,7 +288,7 @@ impl<'data> Se05XResponse<'data> for VerifySessionUserIdResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for VerifySessionUserId<'data> {
+impl<W: Writer> Se05XCommand<W> for VerifySessionUserId<'_> {
     type Response<'rdata> = VerifySessionUserIdResponse;
 }
 
@@ -484,7 +484,7 @@ pub struct WriteEcKey<'data> {
     pub public_key: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for WriteEcKey<'data> {
+impl DataSource for WriteEcKey<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -522,7 +522,7 @@ impl<'data> DataSource for WriteEcKey<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WriteEcKey<'data> {
+impl<W: Writer> DataStream<W> for WriteEcKey<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -557,7 +557,7 @@ impl<'data, W: Writer> DataStream<W> for WriteEcKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WriteEcKey<'data> {
+impl<W: Writer> Se05XCommand<W> for WriteEcKey<'_> {
     type Response<'rdata> = ();
 }
 
@@ -611,7 +611,7 @@ pub struct WriteRsaKey<'data> {
     pub n: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for WriteRsaKey<'data> {
+impl DataSource for WriteRsaKey<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -665,7 +665,7 @@ impl<'data> DataSource for WriteRsaKey<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WriteRsaKey<'data> {
+impl<W: Writer> DataStream<W> for WriteRsaKey<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -716,7 +716,7 @@ impl<'data, W: Writer> DataStream<W> for WriteRsaKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WriteRsaKey<'data> {
+impl<W: Writer> Se05XCommand<W> for WriteRsaKey<'_> {
     type Response<'rdata> = ();
 }
 
@@ -742,7 +742,7 @@ pub struct GenRsaKey<'data> {
     pub key_size: Option<Be<u16>>,
 }
 
-impl<'data> DataSource for GenRsaKey<'data> {
+impl DataSource for GenRsaKey<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -770,7 +770,7 @@ impl<'data> DataSource for GenRsaKey<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for GenRsaKey<'data> {
+impl<W: Writer> DataStream<W> for GenRsaKey<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -795,7 +795,7 @@ impl<'data, W: Writer> DataStream<W> for GenRsaKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for GenRsaKey<'data> {
+impl<W: Writer> Se05XCommand<W> for GenRsaKey<'_> {
     type Response<'rdata> = ();
 }
 
@@ -824,7 +824,7 @@ pub struct WriteSymmKey<'data> {
     pub value: &'data [u8],
 }
 
-impl<'data> DataSource for WriteSymmKey<'data> {
+impl DataSource for WriteSymmKey<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -854,7 +854,7 @@ impl<'data> DataSource for WriteSymmKey<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WriteSymmKey<'data> {
+impl<W: Writer> DataStream<W> for WriteSymmKey<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -881,7 +881,7 @@ impl<'data, W: Writer> DataStream<W> for WriteSymmKey<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WriteSymmKey<'data> {
+impl<W: Writer> Se05XCommand<W> for WriteSymmKey<'_> {
     type Response<'rdata> = ();
 }
 
@@ -910,7 +910,7 @@ pub struct WriteBinary<'data> {
     pub data: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for WriteBinary<'data> {
+impl DataSource for WriteBinary<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -932,7 +932,7 @@ impl<'data> DataSource for WriteBinary<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WriteBinary<'data> {
+impl<W: Writer> DataStream<W> for WriteBinary<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -951,7 +951,7 @@ impl<'data, W: Writer> DataStream<W> for WriteBinary<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WriteBinary<'data> {
+impl<W: Writer> Se05XCommand<W> for WriteBinary<'_> {
     type Response<'rdata> = ();
 }
 
@@ -972,7 +972,7 @@ pub struct WriteUserId<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for WriteUserId<'data> {
+impl DataSource for WriteUserId<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -996,7 +996,7 @@ impl<'data> DataSource for WriteUserId<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WriteUserId<'data> {
+impl<W: Writer> DataStream<W> for WriteUserId<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let max_attempts = &self
@@ -1017,7 +1017,7 @@ impl<'data, W: Writer> DataStream<W> for WriteUserId<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WriteUserId<'data> {
+impl<W: Writer> Se05XCommand<W> for WriteUserId<'_> {
     type Response<'rdata> = ();
 }
 
@@ -1041,7 +1041,7 @@ pub struct WriteCounter<'data> {
     pub value: Option<Be<u64>>,
 }
 
-impl<'data> DataSource for WriteCounter<'data> {
+impl DataSource for WriteCounter<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1062,7 +1062,7 @@ impl<'data> DataSource for WriteCounter<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WriteCounter<'data> {
+impl<W: Writer> DataStream<W> for WriteCounter<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1080,7 +1080,7 @@ impl<'data, W: Writer> DataStream<W> for WriteCounter<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WriteCounter<'data> {
+impl<W: Writer> Se05XCommand<W> for WriteCounter<'_> {
     type Response<'rdata> = ();
 }
 
@@ -1104,7 +1104,7 @@ pub struct WritePcr<'data> {
     pub extend: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for WritePcr<'data> {
+impl DataSource for WritePcr<'_> {
     fn len(&self) -> usize {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1125,7 +1125,7 @@ impl<'data> DataSource for WritePcr<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for WritePcr<'data> {
+impl<W: Writer> DataStream<W> for WritePcr<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let policy = &self.policy.map(|data| Tlv::new(TAG_POLICY, data));
         let object_id = &Tlv::new(TAG_1, self.object_id);
@@ -1143,7 +1143,7 @@ impl<'data, W: Writer> DataStream<W> for WritePcr<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for WritePcr<'data> {
+impl<W: Writer> Se05XCommand<W> for WritePcr<'_> {
     type Response<'rdata> = ();
 }
 
@@ -1165,7 +1165,7 @@ pub struct ImportObject<'data> {
     pub serialized_object: &'data [u8],
 }
 
-impl<'data> DataSource for ImportObject<'data> {
+impl DataSource for ImportObject<'_> {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_2, data));
@@ -1185,7 +1185,7 @@ impl<'data> DataSource for ImportObject<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for ImportObject<'data> {
+impl<W: Writer> DataStream<W> for ImportObject<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let rsa_key_component = &self.rsa_key_component.map(|data| Tlv::new(TAG_2, data));
@@ -1202,7 +1202,7 @@ impl<'data, W: Writer> DataStream<W> for ImportObject<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for ImportObject<'data> {
+impl<W: Writer> Se05XCommand<W> for ImportObject<'_> {
     type Response<'rdata> = ();
 }
 
@@ -1309,7 +1309,7 @@ pub struct ReadAttestObject<'data> {
     pub freshness_random: &'data [u8; 16],
 }
 
-impl<'data> DataSource for ReadAttestObject<'data> {
+impl DataSource for ReadAttestObject<'_> {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
@@ -1342,7 +1342,7 @@ impl<'data> DataSource for ReadAttestObject<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for ReadAttestObject<'data> {
+impl<W: Writer> DataStream<W> for ReadAttestObject<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
@@ -1411,7 +1411,7 @@ impl<'data> Se05XResponse<'data> for ReadAttestObjectResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for ReadAttestObject<'data> {
+impl<W: Writer> Se05XCommand<W> for ReadAttestObject<'_> {
     type Response<'rdata> = ReadAttestObjectResponse<'rdata>;
 }
 
@@ -1433,7 +1433,7 @@ pub struct ReadAttributes<'data> {
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for ReadAttributes<'data> {
+impl DataSource for ReadAttributes<'_> {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
@@ -1449,7 +1449,7 @@ impl<'data> DataSource for ReadAttributes<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for ReadAttributes<'data> {
+impl<W: Writer> DataStream<W> for ReadAttributes<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
@@ -1476,7 +1476,7 @@ impl<'data> Se05XResponse<'data> for ReadAttributesResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for ReadAttributes<'data> {
+impl<W: Writer> Se05XCommand<W> for ReadAttributes<'_> {
     type Response<'rdata> = ReadAttributesResponse;
 }
 
@@ -1505,7 +1505,7 @@ pub struct ReadAttributesAttest<'data> {
     pub freshness_random: Option<&'data [u8; 16]>,
 }
 
-impl<'data> DataSource for ReadAttributesAttest<'data> {
+impl DataSource for ReadAttributesAttest<'_> {
     fn len(&self) -> usize {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
@@ -1538,7 +1538,7 @@ impl<'data> DataSource for ReadAttributesAttest<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for ReadAttributesAttest<'data> {
+impl<W: Writer> DataStream<W> for ReadAttributesAttest<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let object_id = &Tlv::new(TAG_1, self.object_id);
         let offset = &self.offset.map(|data| Tlv::new(TAG_2, data));
@@ -1600,7 +1600,7 @@ impl<'data> Se05XResponse<'data> for ReadAttributesAttestResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for ReadAttributesAttest<'data> {
+impl<W: Writer> Se05XCommand<W> for ReadAttributesAttest<'_> {
     type Response<'rdata> = ReadAttributesAttestResponse<'rdata>;
 }
 
@@ -2005,7 +2005,7 @@ pub struct SetEcCurveParam<'data> {
     pub value: &'data [u8],
 }
 
-impl<'data> DataSource for SetEcCurveParam<'data> {
+impl DataSource for SetEcCurveParam<'_> {
     fn len(&self) -> usize {
         let curve = &Tlv::new(TAG_1, self.curve);
         let param = &Tlv::new(TAG_2, self.param);
@@ -2019,7 +2019,7 @@ impl<'data> DataSource for SetEcCurveParam<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for SetEcCurveParam<'data> {
+impl<W: Writer> DataStream<W> for SetEcCurveParam<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let curve = &Tlv::new(TAG_1, self.curve);
         let param = &Tlv::new(TAG_2, self.param);
@@ -2030,7 +2030,7 @@ impl<'data, W: Writer> DataStream<W> for SetEcCurveParam<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for SetEcCurveParam<'data> {
+impl<W: Writer> Se05XCommand<W> for SetEcCurveParam<'_> {
     type Response<'rdata> = ();
 }
 
@@ -2391,7 +2391,7 @@ pub struct EcdsaSign<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for EcdsaSign<'data> {
+impl DataSource for EcdsaSign<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2412,7 +2412,7 @@ impl<'data> DataSource for EcdsaSign<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for EcdsaSign<'data> {
+impl<W: Writer> DataStream<W> for EcdsaSign<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2444,7 +2444,7 @@ impl<'data> Se05XResponse<'data> for EcdsaSignResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for EcdsaSign<'data> {
+impl<W: Writer> Se05XCommand<W> for EcdsaSign<'_> {
     type Response<'rdata> = EcdsaSignResponse<'rdata>;
 }
 
@@ -2459,7 +2459,7 @@ pub struct EddsaSign<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for EddsaSign<'data> {
+impl DataSource for EddsaSign<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
@@ -2480,7 +2480,7 @@ impl<'data> DataSource for EddsaSign<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for EddsaSign<'data> {
+impl<W: Writer> DataStream<W> for EddsaSign<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
@@ -2512,7 +2512,7 @@ impl<'data> Se05XResponse<'data> for EddsaSignResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for EddsaSign<'data> {
+impl<W: Writer> Se05XCommand<W> for EddsaSign<'_> {
     type Response<'rdata> = EddsaSignResponse<'rdata>;
 }
 
@@ -2603,7 +2603,7 @@ pub struct EcdsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> DataSource for EcdsaVerify<'data> {
+impl DataSource for EcdsaVerify<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2619,7 +2619,7 @@ impl<'data> DataSource for EcdsaVerify<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for EcdsaVerify<'data> {
+impl<W: Writer> DataStream<W> for EcdsaVerify<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2646,7 +2646,7 @@ impl<'data> Se05XResponse<'data> for EcdsaVerifyResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for EcdsaVerify<'data> {
+impl<W: Writer> Se05XCommand<W> for EcdsaVerify<'_> {
     type Response<'rdata> = EcdsaVerifyResponse;
 }
 
@@ -2663,7 +2663,7 @@ pub struct EddsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> DataSource for EddsaVerify<'data> {
+impl DataSource for EddsaVerify<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
@@ -2679,7 +2679,7 @@ impl<'data> DataSource for EddsaVerify<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for EddsaVerify<'data> {
+impl<W: Writer> DataStream<W> for EddsaVerify<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, EdDsaSignatureAlgo::Pure);
@@ -2706,7 +2706,7 @@ impl<'data> Se05XResponse<'data> for EddsaVerifyResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for EddsaVerify<'data> {
+impl<W: Writer> Se05XCommand<W> for EddsaVerify<'_> {
     type Response<'rdata> = EddsaVerifyResponse;
 }
 
@@ -2721,7 +2721,7 @@ pub struct EcdhGenerateSharedSecret<'data> {
     pub public_key: &'data [u8],
 }
 
-impl<'data> DataSource for EcdhGenerateSharedSecret<'data> {
+impl DataSource for EcdhGenerateSharedSecret<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let public_key = &Tlv::new(TAG_2, self.public_key);
@@ -2741,7 +2741,7 @@ impl<'data> DataSource for EcdhGenerateSharedSecret<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for EcdhGenerateSharedSecret<'data> {
+impl<W: Writer> DataStream<W> for EcdhGenerateSharedSecret<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let public_key = &Tlv::new(TAG_2, self.public_key);
@@ -2772,7 +2772,7 @@ impl<'data> Se05XResponse<'data> for EcdhGenerateSharedSecretResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for EcdhGenerateSharedSecret<'data> {
+impl<W: Writer> Se05XCommand<W> for EcdhGenerateSharedSecret<'_> {
     type Response<'rdata> = EcdhGenerateSharedSecretResponse<'rdata>;
 }
 
@@ -2789,7 +2789,7 @@ pub struct RsaSign<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for RsaSign<'data> {
+impl DataSource for RsaSign<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2810,7 +2810,7 @@ impl<'data> DataSource for RsaSign<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for RsaSign<'data> {
+impl<W: Writer> DataStream<W> for RsaSign<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2842,7 +2842,7 @@ impl<'data> Se05XResponse<'data> for RsaSignResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for RsaSign<'data> {
+impl<W: Writer> Se05XCommand<W> for RsaSign<'_> {
     type Response<'rdata> = RsaSignResponse<'rdata>;
 }
 
@@ -2861,7 +2861,7 @@ pub struct RsaVerify<'data> {
     pub signature: &'data [u8],
 }
 
-impl<'data> DataSource for RsaVerify<'data> {
+impl DataSource for RsaVerify<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2877,7 +2877,7 @@ impl<'data> DataSource for RsaVerify<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for RsaVerify<'data> {
+impl<W: Writer> DataStream<W> for RsaVerify<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2904,7 +2904,7 @@ impl<'data> Se05XResponse<'data> for RsaVerifyResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for RsaVerify<'data> {
+impl<W: Writer> Se05XCommand<W> for RsaVerify<'_> {
     type Response<'rdata> = RsaVerifyResponse;
 }
 
@@ -2921,7 +2921,7 @@ pub struct RsaEncrypt<'data> {
     pub plaintext: &'data [u8],
 }
 
-impl<'data> DataSource for RsaEncrypt<'data> {
+impl DataSource for RsaEncrypt<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2942,7 +2942,7 @@ impl<'data> DataSource for RsaEncrypt<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for RsaEncrypt<'data> {
+impl<W: Writer> DataStream<W> for RsaEncrypt<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -2974,7 +2974,7 @@ impl<'data> Se05XResponse<'data> for RsaEncryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for RsaEncrypt<'data> {
+impl<W: Writer> Se05XCommand<W> for RsaEncrypt<'_> {
     type Response<'rdata> = RsaEncryptResponse<'rdata>;
 }
 
@@ -2991,7 +2991,7 @@ pub struct RsaDecrypt<'data> {
     pub ciphertext: &'data [u8],
 }
 
-impl<'data> DataSource for RsaDecrypt<'data> {
+impl DataSource for RsaDecrypt<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -3012,7 +3012,7 @@ impl<'data> DataSource for RsaDecrypt<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for RsaDecrypt<'data> {
+impl<W: Writer> DataStream<W> for RsaDecrypt<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -3044,7 +3044,7 @@ impl<'data> Se05XResponse<'data> for RsaDecryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for RsaDecrypt<'data> {
+impl<W: Writer> Se05XCommand<W> for RsaDecrypt<'_> {
     type Response<'rdata> = RsaDecryptResponse<'rdata>;
 }
 
@@ -3062,7 +3062,7 @@ pub struct CipherEncryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for CipherEncryptInit<'data> {
+impl DataSource for CipherEncryptInit<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
@@ -3076,7 +3076,7 @@ impl<'data> DataSource for CipherEncryptInit<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for CipherEncryptInit<'data> {
+impl<W: Writer> DataStream<W> for CipherEncryptInit<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
@@ -3087,7 +3087,7 @@ impl<'data, W: Writer> DataStream<W> for CipherEncryptInit<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for CipherEncryptInit<'data> {
+impl<W: Writer> Se05XCommand<W> for CipherEncryptInit<'_> {
     type Response<'rdata> = ();
 }
 
@@ -3105,7 +3105,7 @@ pub struct CipherDecryptInit<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for CipherDecryptInit<'data> {
+impl DataSource for CipherDecryptInit<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
@@ -3119,7 +3119,7 @@ impl<'data> DataSource for CipherDecryptInit<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for CipherDecryptInit<'data> {
+impl<W: Writer> DataStream<W> for CipherDecryptInit<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
@@ -3130,7 +3130,7 @@ impl<'data, W: Writer> DataStream<W> for CipherDecryptInit<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for CipherDecryptInit<'data> {
+impl<W: Writer> Se05XCommand<W> for CipherDecryptInit<'_> {
     type Response<'rdata> = ();
 }
 
@@ -3147,7 +3147,7 @@ pub struct CipherUpdate<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for CipherUpdate<'data> {
+impl DataSource for CipherUpdate<'_> {
     fn len(&self) -> usize {
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -3167,7 +3167,7 @@ impl<'data> DataSource for CipherUpdate<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for CipherUpdate<'data> {
+impl<W: Writer> DataStream<W> for CipherUpdate<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -3200,7 +3200,7 @@ impl<'data> Se05XResponse<'data> for CipherUpdateResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for CipherUpdate<'data> {
+impl<W: Writer> Se05XCommand<W> for CipherUpdate<'_> {
     type Response<'rdata> = CipherUpdateResponse<'rdata>;
 }
 
@@ -3217,7 +3217,7 @@ pub struct CipherFinal<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for CipherFinal<'data> {
+impl DataSource for CipherFinal<'_> {
     fn len(&self) -> usize {
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -3237,7 +3237,7 @@ impl<'data> DataSource for CipherFinal<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for CipherFinal<'data> {
+impl<W: Writer> DataStream<W> for CipherFinal<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let cipher_id = &Tlv::new(TAG_2, self.cipher_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -3270,7 +3270,7 @@ impl<'data> Se05XResponse<'data> for CipherFinalResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for CipherFinal<'data> {
+impl<W: Writer> Se05XCommand<W> for CipherFinal<'_> {
     type Response<'rdata> = CipherFinalResponse<'rdata>;
 }
 
@@ -3290,7 +3290,7 @@ pub struct CipherOneShotEncrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for CipherOneShotEncrypt<'data> {
+impl DataSource for CipherOneShotEncrypt<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let mode = &Tlv::new(TAG_2, self.mode);
@@ -3312,7 +3312,7 @@ impl<'data> DataSource for CipherOneShotEncrypt<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for CipherOneShotEncrypt<'data> {
+impl<W: Writer> DataStream<W> for CipherOneShotEncrypt<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let mode = &Tlv::new(TAG_2, self.mode);
@@ -3345,7 +3345,7 @@ impl<'data> Se05XResponse<'data> for CipherOneShotEncryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotEncrypt<'data> {
+impl<W: Writer> Se05XCommand<W> for CipherOneShotEncrypt<'_> {
     type Response<'rdata> = CipherOneShotEncryptResponse<'rdata>;
 }
 
@@ -3365,7 +3365,7 @@ pub struct CipherOneShotDecrypt<'data> {
     pub initialization_vector: Option<&'data [u8]>,
 }
 
-impl<'data> DataSource for CipherOneShotDecrypt<'data> {
+impl DataSource for CipherOneShotDecrypt<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let mode = &Tlv::new(TAG_2, self.mode);
@@ -3387,7 +3387,7 @@ impl<'data> DataSource for CipherOneShotDecrypt<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for CipherOneShotDecrypt<'data> {
+impl<W: Writer> DataStream<W> for CipherOneShotDecrypt<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let mode = &Tlv::new(TAG_2, self.mode);
@@ -3420,7 +3420,7 @@ impl<'data> Se05XResponse<'data> for CipherOneShotDecryptResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for CipherOneShotDecrypt<'data> {
+impl<W: Writer> Se05XCommand<W> for CipherOneShotDecrypt<'_> {
     type Response<'rdata> = CipherOneShotDecryptResponse<'rdata>;
 }
 
@@ -3511,7 +3511,7 @@ pub struct MacUpdate<'data> {
     pub mac_id: CryptoObjectId,
 }
 
-impl<'data> DataSource for MacUpdate<'data> {
+impl DataSource for MacUpdate<'_> {
     fn len(&self) -> usize {
         let data = &Tlv::new(TAG_1, self.data);
         let mac_id = &Tlv::new(TAG_2, self.mac_id);
@@ -3524,7 +3524,7 @@ impl<'data> DataSource for MacUpdate<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for MacUpdate<'data> {
+impl<W: Writer> DataStream<W> for MacUpdate<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let data = &Tlv::new(TAG_1, self.data);
         let mac_id = &Tlv::new(TAG_2, self.mac_id);
@@ -3534,7 +3534,7 @@ impl<'data, W: Writer> DataStream<W> for MacUpdate<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for MacUpdate<'data> {
+impl<W: Writer> Se05XCommand<W> for MacUpdate<'_> {
     type Response<'rdata> = ();
 }
 
@@ -3549,7 +3549,7 @@ pub struct MacGenerateFinal<'data> {
     pub mac_id: CryptoObjectId,
 }
 
-impl<'data> DataSource for MacGenerateFinal<'data> {
+impl DataSource for MacGenerateFinal<'_> {
     fn len(&self) -> usize {
         let data = &Tlv::new(TAG_1, self.data);
         let mac_id = &Tlv::new(TAG_2, self.mac_id);
@@ -3569,7 +3569,7 @@ impl<'data> DataSource for MacGenerateFinal<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for MacGenerateFinal<'data> {
+impl<W: Writer> DataStream<W> for MacGenerateFinal<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let data = &Tlv::new(TAG_1, self.data);
         let mac_id = &Tlv::new(TAG_2, self.mac_id);
@@ -3600,7 +3600,7 @@ impl<'data> Se05XResponse<'data> for MacGenerateFinalResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for MacGenerateFinal<'data> {
+impl<W: Writer> Se05XCommand<W> for MacGenerateFinal<'_> {
     type Response<'rdata> = MacGenerateFinalResponse<'rdata>;
 }
 
@@ -3619,7 +3619,7 @@ pub struct MacValidateFinal<'data> {
     pub tag: &'data [u8],
 }
 
-impl<'data> DataSource for MacValidateFinal<'data> {
+impl DataSource for MacValidateFinal<'_> {
     fn len(&self) -> usize {
         let data = &Tlv::new(TAG_1, self.data);
         let mac_id = &Tlv::new(TAG_2, self.mac_id);
@@ -3640,7 +3640,7 @@ impl<'data> DataSource for MacValidateFinal<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for MacValidateFinal<'data> {
+impl<W: Writer> DataStream<W> for MacValidateFinal<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let data = &Tlv::new(TAG_1, self.data);
         let mac_id = &Tlv::new(TAG_2, self.mac_id);
@@ -3672,7 +3672,7 @@ impl<'data> Se05XResponse<'data> for MacValidateFinalResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for MacValidateFinal<'data> {
+impl<W: Writer> Se05XCommand<W> for MacValidateFinal<'_> {
     type Response<'rdata> = MacValidateFinalResponse;
 }
 
@@ -3689,7 +3689,7 @@ pub struct MacOneShotGenerate<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for MacOneShotGenerate<'data> {
+impl DataSource for MacOneShotGenerate<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -3710,7 +3710,7 @@ impl<'data> DataSource for MacOneShotGenerate<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for MacOneShotGenerate<'data> {
+impl<W: Writer> DataStream<W> for MacOneShotGenerate<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -3742,7 +3742,7 @@ impl<'data> Se05XResponse<'data> for MacOneShotGenerateResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for MacOneShotGenerate<'data> {
+impl<W: Writer> Se05XCommand<W> for MacOneShotGenerate<'_> {
     type Response<'rdata> = MacOneShotGenerateResponse<'rdata>;
 }
 
@@ -3763,7 +3763,7 @@ pub struct MacOneShotValidate<'data> {
     pub tag: &'data [u8],
 }
 
-impl<'data> DataSource for MacOneShotValidate<'data> {
+impl DataSource for MacOneShotValidate<'_> {
     fn len(&self) -> usize {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -3785,7 +3785,7 @@ impl<'data> DataSource for MacOneShotValidate<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for MacOneShotValidate<'data> {
+impl<W: Writer> DataStream<W> for MacOneShotValidate<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let key_id = &Tlv::new(TAG_1, self.key_id);
         let algo = &Tlv::new(TAG_2, self.algo);
@@ -3818,7 +3818,7 @@ impl<'data> Se05XResponse<'data> for MacOneShotValidateResponse {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for MacOneShotValidate<'data> {
+impl<W: Writer> Se05XCommand<W> for MacOneShotValidate<'_> {
     type Response<'rdata> = MacOneShotValidateResponse;
 }
 
@@ -3845,7 +3845,7 @@ pub struct Hkdf<'data> {
     pub requested_len: Be<u16>,
 }
 
-impl<'data> DataSource for Hkdf<'data> {
+impl DataSource for Hkdf<'_> {
     fn len(&self) -> usize {
         let ikm = &Tlv::new(TAG_1, self.ikm);
         let digest = &Tlv::new(TAG_2, self.digest);
@@ -3868,7 +3868,7 @@ impl<'data> DataSource for Hkdf<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for Hkdf<'data> {
+impl<W: Writer> DataStream<W> for Hkdf<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let ikm = &Tlv::new(TAG_1, self.ikm);
         let digest = &Tlv::new(TAG_2, self.digest);
@@ -3902,7 +3902,7 @@ impl<'data> Se05XResponse<'data> for HkdfResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for Hkdf<'data> {
+impl<W: Writer> Se05XCommand<W> for Hkdf<'_> {
     type Response<'rdata> = HkdfResponse<'rdata>;
 }
 
@@ -3928,7 +3928,7 @@ pub struct Pbkdf2<'data> {
     pub requested_len: Be<u16>,
 }
 
-impl<'data> DataSource for Pbkdf2<'data> {
+impl DataSource for Pbkdf2<'_> {
     fn len(&self) -> usize {
         let password = &Tlv::new(TAG_1, self.password);
         let salt = &self.salt.map(|data| Tlv::new(TAG_2, data));
@@ -3950,7 +3950,7 @@ impl<'data> DataSource for Pbkdf2<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for Pbkdf2<'data> {
+impl<W: Writer> DataStream<W> for Pbkdf2<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let password = &Tlv::new(TAG_1, self.password);
         let salt = &self.salt.map(|data| Tlv::new(TAG_2, data));
@@ -3983,7 +3983,7 @@ impl<'data> Se05XResponse<'data> for Pbkdf2Response<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for Pbkdf2<'data> {
+impl<W: Writer> Se05XCommand<W> for Pbkdf2<'_> {
     type Response<'rdata> = Pbkdf2Response<'rdata>;
 }
 
@@ -4032,7 +4032,7 @@ pub struct DigestUpdate<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for DigestUpdate<'data> {
+impl DataSource for DigestUpdate<'_> {
     fn len(&self) -> usize {
         let digest_id = &Tlv::new(TAG_2, self.digest_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -4045,7 +4045,7 @@ impl<'data> DataSource for DigestUpdate<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for DigestUpdate<'data> {
+impl<W: Writer> DataStream<W> for DigestUpdate<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let digest_id = &Tlv::new(TAG_2, self.digest_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -4055,7 +4055,7 @@ impl<'data, W: Writer> DataStream<W> for DigestUpdate<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for DigestUpdate<'data> {
+impl<W: Writer> Se05XCommand<W> for DigestUpdate<'_> {
     type Response<'rdata> = ();
 }
 
@@ -4070,7 +4070,7 @@ pub struct DigestFinal<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for DigestFinal<'data> {
+impl DataSource for DigestFinal<'_> {
     fn len(&self) -> usize {
         let digest_id = &Tlv::new(TAG_2, self.digest_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -4090,7 +4090,7 @@ impl<'data> DataSource for DigestFinal<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for DigestFinal<'data> {
+impl<W: Writer> DataStream<W> for DigestFinal<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let digest_id = &Tlv::new(TAG_2, self.digest_id);
         let data = &Tlv::new(TAG_3, self.data);
@@ -4121,7 +4121,7 @@ impl<'data> Se05XResponse<'data> for DigestFinalResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for DigestFinal<'data> {
+impl<W: Writer> Se05XCommand<W> for DigestFinal<'_> {
     type Response<'rdata> = DigestFinalResponse<'rdata>;
 }
 
@@ -4136,7 +4136,7 @@ pub struct DigestOneShot<'data> {
     pub data: &'data [u8],
 }
 
-impl<'data> DataSource for DigestOneShot<'data> {
+impl DataSource for DigestOneShot<'_> {
     fn len(&self) -> usize {
         let algo = &Tlv::new(TAG_1, self.algo);
         let data = &Tlv::new(TAG_2, self.data);
@@ -4156,7 +4156,7 @@ impl<'data> DataSource for DigestOneShot<'data> {
         false
     }
 }
-impl<'data, W: Writer> DataStream<W> for DigestOneShot<'data> {
+impl<W: Writer> DataStream<W> for DigestOneShot<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {
         let algo = &Tlv::new(TAG_1, self.algo);
         let data = &Tlv::new(TAG_2, self.data);
@@ -4187,7 +4187,7 @@ impl<'data> Se05XResponse<'data> for DigestOneShotResponse<'data> {
     }
 }
 
-impl<'data, W: Writer> Se05XCommand<W> for DigestOneShot<'data> {
+impl<W: Writer> Se05XCommand<W> for DigestOneShot<'_> {
     type Response<'rdata> = DigestOneShotResponse<'rdata>;
 }
 

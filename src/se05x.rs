@@ -93,7 +93,7 @@ pub trait Se05XCommand<W: Writer>: DataStream<W> {
     type Response<'a>: Se05XResponse<'a>;
 }
 
-impl<'b, W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &'b C {
+impl<W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &'_ C {
     type Response<'a> = C::Response<'a>;
 }
 
@@ -1750,7 +1750,7 @@ where
     Ok((value.map(TryInto::try_into).transpose()?, rem))
 }
 
-impl<'a> commands::ReadEcCurveListResponse<'a> {
+impl commands::ReadEcCurveListResponse<'_> {
     pub fn is_set(&self, curve: EcCurve) -> bool {
         let id: u8 = curve.into();
         if id >= 0x40 {

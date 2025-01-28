@@ -132,12 +132,16 @@ for command, v in data.items():
                 break
 
     payload_lifetime = ""
+    payload_lifetime_inferred = ""
     if payload_has_lifetime:
         payload_lifetime = "<'data>"
+        payload_lifetime_inferred = "<'_>"
 
     response_lifetime = ""
+    response_lifetime_inferred = ""
     if response_has_lifetime:
         response_lifetime = "<'data>"
+        response_lifetime_inferred = "<'_>"
 
 
     outfile.write("#[derive(Clone, Debug, PartialEq, Eq)]\n")
@@ -207,7 +211,7 @@ for command, v in data.items():
     if force_extended:
         command_builder = f'{command_builder}.force_extended()'
 
-    outfile.write(f'impl{payload_lifetime} DataSource for {name}{payload_lifetime} {{\n')
+    outfile.write(f'impl DataSource for {name}{payload_lifetime_inferred} {{\n')
     outfile.write('    fn len(&self) -> usize {\n')
     outfile.write(f'        {slice_val_pre}')
     outfile.write(f'        let __data: &[&dyn DataSource] = {slice_val};\n')
@@ -222,12 +226,8 @@ for command, v in data.items():
     outfile.write('    }\n')
     outfile.write("}\n")
 
-    bound = "<W: Writer>"
-    if payload_has_lifetime:
-        bound = "<'data, W: Writer>"
-        
 
-    outfile.write(f'impl{bound} DataStream<W> for {name}{payload_lifetime} {{\n')
+    outfile.write(f'impl<W: Writer> DataStream<W> for {name}{payload_lifetime_inferred} {{\n')
     outfile.write('    fn to_writer(&self, writer: &mut W) -> Result<(), <W as iso7816::command::Writer>::Error> {\n')
     outfile.write(f'        {slice_val_pre}')
     outfile.write(f'        let __data: &[&dyn DataStream<W>] = {slice_val};\n')
@@ -264,7 +264,7 @@ for command, v in data.items():
         outfile.write("}\n")
 
     outfile.write("\n")
-    outfile.write(f'impl{bound} Se05XCommand<W> for {name}{payload_lifetime} {{\n')
+    outfile.write(f'impl<W: Writer> Se05XCommand<W> for {name}{payload_lifetime_inferred} {{\n')
     if "response" not in v: 
         outfile.write(f'    type Response<\'rdata> = ();\n')
     elif response_has_lifetime:
