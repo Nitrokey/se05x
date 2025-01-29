@@ -118,7 +118,7 @@ impl Policy {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct PolicySet<'a>(pub &'a [Policy]);
 
-impl<'a> PolicySet<'a> {
+impl PolicySet<'_> {
     pub fn to_bytes(self, buffer: &mut [u8]) -> Option<&[u8]> {
         let mut offset = 0;
         for i in self.0 {
@@ -136,13 +136,13 @@ impl<'a> PolicySet<'a> {
     }
 }
 
-impl<'a> DataSource for PolicySet<'a> {
+impl DataSource for PolicySet<'_> {
     fn len(&self) -> usize {
         self.0.iter().map(|p| p.to_bytes().len() + 1).sum()
     }
 }
 
-impl<'a, W: Writer> DataStream<W> for PolicySet<'a> {
+impl<W: Writer> DataStream<W> for PolicySet<'_> {
     fn to_writer(&self, writer: &mut W) -> Result<(), <W as Writer>::Error> {
         for p in self.0 {
             let b = p.to_bytes();

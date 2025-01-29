@@ -1,3 +1,5 @@
+// Copyright (C) 2023 Nitrokey GmbH
+// SPDX-License-Identifier: LGPL-3.0-only
 // utilities for doctests
 //
 // Not included in the crate, meant to be used with `include!`

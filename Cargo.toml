@@ -35,6 +35,7 @@ serde = ["dep:serde", "serde_bytes"]
 builder = ["typed-builder"]
 
 log-all = []
+log-trace = []
 log-debug = []
 log-info = []
 log-warn = []
