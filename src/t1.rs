@@ -42,7 +42,7 @@ pub struct Atr<'a> {
     pub historical_bytes: &'a [u8],
 }
 
-impl<'a> Default for Atr<'a> {
+impl Default for Atr<'_> {
     fn default() -> Self {
         Self {
             pver: 1,
@@ -810,6 +810,7 @@ impl<'writer, Twi: I2CForT1, D: Delay> FrameSender<'writer, Twi, D> {
         Ok(())
     }
 }
+
 
 impl<'writer, Twi: I2CForT1, D: Delay> Writer for FrameSender<'writer, Twi, D> {
     type Error = Error;
