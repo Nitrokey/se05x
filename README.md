@@ -84,7 +84,6 @@ It is implemented for the NRF and LPC55 Hals in `src/t1/i2cimpl.rs`, gated by th
 
 This may not be necessary with future releases of `embedded-hal`, which [adds the missing information](https://docs.rs/embedded-hal/1.0.0-alpha.11/embedded_hal/i2c/enum.ErrorKind.html).
 
-
 ### Iso7816
 
 This driver uses the [`iso7816`](https://docs.rs/iso7816/latest/iso7816/) crate to implement serialization of APDUs.

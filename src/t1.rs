@@ -1,8 +1,6 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
-use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use hex_literal::hex;
 use iso7816::command::writer::IntoWriter;
 use iso7816::command::Writer;
@@ -12,6 +10,10 @@ pub type Crc = crc16::State<crc16::X_25>;
 use core::fmt::{self, Debug};
 use core::ops::Not;
 
+use crate::embedded_hal::{
+    i2c::{Read, Write, WriteRead},
+    Delay,
+};
 use crate::macros::enum_u8;
 
 mod i2cimpl;
@@ -384,7 +386,7 @@ pub enum DataReceived {
 
 const DEFAULT_RETRY_COUNT: u32 = 1024;
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
+impl<Twi: I2CForT1, D: Delay> T1oI2C<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         // Default MPOT value.
         // TODO: get from ATR
@@ -653,7 +655,7 @@ pub struct FrameSender<'writer, Twi, D> {
     current_frame_buffer: [u8; MAX_FRAME_LEN],
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
+impl<'writer, Twi: I2CForT1, D: Delay> FrameSender<'writer, Twi, D> {
     fn current_offset(&self) -> usize {
         debug_assert!(self.written - self.sent <= MAX_FRAME_LEN);
         self.written - self.sent
@@ -809,14 +811,14 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     }
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> Writer for FrameSender<'writer, Twi, D> {
+impl<'writer, Twi: I2CForT1, D: Delay> Writer for FrameSender<'writer, Twi, D> {
     type Error = Error;
     fn write(&mut self, data: &[u8]) -> Result<usize, Self::Error> {
         self.write_data(data)
     }
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> IntoWriter for &'writer mut T1oI2C<Twi, D> {
+impl<'writer, Twi: I2CForT1, D: Delay> IntoWriter for &'writer mut T1oI2C<Twi, D> {
     type Writer = FrameSender<'writer, Twi, D>;
     fn into_writer(self, to_write: usize) -> Result<Self::Writer, <Self::Writer as Writer>::Error> {
         Ok(FrameSender::new(self, to_write))

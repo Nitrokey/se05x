@@ -116,6 +116,7 @@ extern crate delog;
 delog::generate_macros!();
 
 mod macros;
+pub mod embedded_hal;
 
 pub mod se05x;
 pub mod t1;
