@@ -297,6 +297,7 @@ where
     type Error = <T as Read<u8>>::Error;
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,
