@@ -1,8 +1,6 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
-use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use hex_literal::hex;
 use iso7816::command::writer::IntoWriter;
 use iso7816::command::Writer;
@@ -12,6 +10,10 @@ pub type Crc = crc16::State<crc16::X_25>;
 use core::fmt::{self, Debug};
 use core::ops::Not;
 
+use crate::embedded_hal::{
+    i2c::{Read, Write, WriteRead},
+    Delay,
+};
 use crate::macros::enum_u8;
 
 mod i2cimpl;
@@ -297,7 +299,6 @@ where
     type Error = <T as Read<u8>>::Error;
 }
 
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,
@@ -385,7 +386,41 @@ pub enum DataReceived {
 
 const DEFAULT_RETRY_COUNT: u32 = 1024;
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> T1oI2C<Twi, D> {
+#[cfg(feature = "embedded-hal-v0.2.7")]
+impl<M, N, E> T1oI2C<crate::embedded_hal::Hal027<M>, crate::embedded_hal::Hal027<N>>
+where
+    N: embedded_hal_v0_2_7::blocking::delay::DelayUs<u32>,
+    M: embedded_hal_v0_2_7::blocking::i2c::Write<Error = E>
+        + embedded_hal_v0_2_7::blocking::i2c::Read<Error = E>
+        + embedded_hal_v0_2_7::blocking::i2c::WriteRead<Error = E>,
+    E: I2CErrorNack,
+{
+    pub fn new_hal_027(twi: M, se_address: u8, delay: N) -> Self {
+        Self::new(
+            crate::embedded_hal::Hal027(twi),
+            se_address,
+            crate::embedded_hal::Hal027(delay),
+        )
+    }
+}
+
+#[cfg(feature = "embedded-hal-v1.0")]
+impl<M, N, E> T1oI2C<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
+where
+    N: embedded_hal_v1_0::delay::DelayNs,
+    M: embedded_hal_v1_0::i2c::I2c<Error = E>,
+    E: I2CErrorNack,
+{
+    pub fn new_hal_10(twi: M, se_address: u8, delay: N) -> Self {
+        Self::new(
+            crate::embedded_hal::Hal10(twi),
+            se_address,
+            crate::embedded_hal::Hal10(delay),
+        )
+    }
+}
+
+impl<Twi: I2CForT1, D: Delay> T1oI2C<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         // Default MPOT value.
         // TODO: get from ATR
@@ -654,7 +689,7 @@ pub struct FrameSender<'writer, Twi, D> {
     current_frame_buffer: [u8; MAX_FRAME_LEN],
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
+impl<'writer, Twi: I2CForT1, D: Delay> FrameSender<'writer, Twi, D> {
     fn current_offset(&self) -> usize {
         debug_assert!(self.written - self.sent <= MAX_FRAME_LEN);
         self.written - self.sent
@@ -810,14 +845,14 @@ impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> FrameSender<'writer, Twi, D> {
     }
 }
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> Writer for FrameSender<'_, Twi, D> {
+impl<Twi: I2CForT1, D: Delay> Writer for FrameSender<'_, Twi, D> {
     type Error = Error;
     fn write(&mut self, data: &[u8]) -> Result<usize, Self::Error> {
         self.write_data(data)
     }
 }
 
-impl<'writer, Twi: I2CForT1, D: DelayUs<u32>> IntoWriter for &'writer mut T1oI2C<Twi, D> {
+impl<'writer, Twi: I2CForT1, D: Delay> IntoWriter for &'writer mut T1oI2C<Twi, D> {
     type Writer = FrameSender<'writer, Twi, D>;
     fn into_writer(self, to_write: usize) -> Result<Self::Writer, <Self::Writer as Writer>::Error> {
         Ok(FrameSender::new(self, to_write))

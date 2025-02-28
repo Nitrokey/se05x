@@ -4,8 +4,8 @@
 //
 // Not included in the crate, meant to be used with `include!`
 
-use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+use se05x::embedded_hal::i2c::{Read, Write, WriteRead};
+use se05x::embedded_hal::Delay;
 
 #[derive(Debug)]
 pub struct DummyI2c;
@@ -43,7 +43,7 @@ impl WriteRead<u8> for DummyI2c {
 #[derive(Debug)]
 pub struct DummyDelay;
 
-impl DelayUs<u32> for DummyDelay {
+impl Delay for DummyDelay {
     fn delay_us(&mut self, _: u32) {
         unimplemented!()
     }
@@ -54,7 +54,7 @@ pub fn get_i2c() -> impl se05x::t1::I2CForT1 {
     DummyI2c
 }
 
-pub fn get_delay() -> impl DelayUs<u32> {
+pub fn get_delay() -> impl Delay {
     unimplemented!();
     DummyDelay
 }

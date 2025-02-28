@@ -18,7 +18,9 @@ verify-commands:
 check: src/se05x/commands.rs
 	cargo c
 	cargo c --features builder
-	cargo c --features defmt
+	cargo c --features builder,embedded-hal-v0.2.7
+	cargo c --features builder,embedded-hal-v1.0
+	cargo c --features builder,embedded-hal-v0.2.7,embedded-hal-v1.0
 	cargo c --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
 	cargo c --features lpc55-v0.3 --target thumbv8m.main-none-eabi
 	cargo c --features lpc55-v0.4 --target thumbv8m.main-none-eabi
@@ -30,6 +32,8 @@ lint: src/se05x/commands.rs verify-commands
 	cargo c
 	cargo fmt --check
 	cargo clippy
+	cargo clippy --features builder,embedded-hal-v0.2.7
+	cargo clippy --features builder,embedded-hal-v1.0
 	cargo clippy --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
 	cargo clippy --features lpc55-v0.3 --target thumbv8m.main-none-eabi
 	cargo clippy --features lpc55-v0.4 --target thumbv8m.main-none-eabi
@@ -38,24 +42,26 @@ lint: src/se05x/commands.rs verify-commands
 .PHONY: test
 test:
 	cargo t
-	cargo t --features builder,serde_bytes,defmt
-	cargo t --no-default-features
+	cargo t --features builder,serde_bytes,embedded-hal-v0.2.7,embedded-hal-v1.0
+	cargo t --no-default-features 
 
 .PHONY: semver-checks
 semver-checks:
+	 cargo semver-checks --only-explicit-features --features aes-session,builder,embedded-hal-v0.2.7,embedded-hal-v1.0
 	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55
-	 cargo semver-checks --only-explicit-features --features defmt
+	 cargo semver-checks --only-explicit-features --features aes-session,builder,nrf,nrf-hal-common/52840
 
 README.md: src/lib.rs Makefile
 	# REUSE-IgnoreStart
 	echo '<!-- Copyright (C) 2023 Nitrokey GmbH -->' > README.md
 	echo '<!-- SPDX-License-Identifier: LGPL-3.0-only -->' >> README.md
+	echo "" >> README.md
 	# REUSE-IgnoreEnd
 	grep '//!' src/lib.rs |grep -v '//! # ' | sed 's/^...//g' | sed 's/^ //g' >> README.md
 
 .PHONY: ci
 ci: export RUSTFLAGS=-Dwarnings
 ci: export RUSTDOCFLAGS=-Dwarnings
-ci: check lint
+ci: test lint
 	$(MAKE) --always-make $(GENERATED_FILES)
 	git diff --exit-code -- $(GENERATED_FILES)

@@ -79,13 +79,17 @@ Architecture
 This driver communicates with the se05x over the T=1 protocol over I2C, as described in [UM11225](https://www.nxp.com/webapp/Download?colCode=UM11225).
 
 To do so and be compatible with most embedded controlers, it depends on the I2C [Read](https://docs.rs/embedded-hal/latest/embedded_hal/blocking/i2c/trait.Read.html) and [Write](https://docs.rs/embedded-hal/latest/embedded_hal/blocking/i2c/trait.Write.html) from [embedded-hal](https://docs.rs/embedded-hal/latest/embedded_hal).
-However these traits do not expose the enough, as the T=1 protocol requires detecting I2C NACKs, which are not exposed in this protocol.
+
+#### Embedded HAL v0.2
+
+The traits do not expose the protocol enough, as the T=1 protocol requires detecting I2C NACKs, which are not exposed in this version.
 
 Nacks are exposed in the `Error` types for each `HAL` crate. As such an extension to the embedded-hal traits is defined as `I2CErrorNack`, exposing the missing information.
 It is implemented for the NRF and LPC55 Hals in `src/t1/i2cimpl.rs`, gated by the features `nrf` and `lpc55` respectively.
 
-This may not be necessary with future releases of `embedded-hal`, which [adds the missing information](https://docs.rs/embedded-hal/1.0.0-alpha.11/embedded_hal/i2c/enum.ErrorKind.html).
+#### Embedded HAL v1.0
 
+This version exposes the required I2C NACKs. There is no need to use the `nrf` and `lpc55` features.
 
 ### Iso7816
 
