@@ -34,6 +34,12 @@ lint: src/se05x/commands.rs verify-commands
 	cargo clippy --features lpc55-v0.4 --target thumbv8m.main-none-eabi
 	cargo doc --features aes-session,builder,serde --no-deps
 
+.PHONY: test
+test:
+	cargo t
+	cargo t --features builder,serde_bytes
+	cargo t --no-default-features
+
 README.md: src/lib.rs Makefile
 	# REUSE-IgnoreStart
 	echo '<!-- Copyright (C) 2023 Nitrokey GmbH -->' > README.md
