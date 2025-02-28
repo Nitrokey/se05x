@@ -41,6 +41,10 @@ test:
 	cargo t --features builder,serde_bytes
 	cargo t --no-default-features
 
+.PHONY: semver-checks
+semver-checks:
+	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55
+
 README.md: src/lib.rs Makefile
 	# REUSE-IgnoreStart
 	echo '<!-- Copyright (C) 2023 Nitrokey GmbH -->' > README.md

@@ -32,7 +32,7 @@ defmt = { version = "0.3", optional = true }
 
 [features]
 default = ["aes-session"]
-serde = ["dep:serde", "serde_bytes"]
+serde = ["dep:serde", "dep:serde_bytes"]
 builder = ["typed-builder"]
 defmt = ["dep:defmt"]
 
