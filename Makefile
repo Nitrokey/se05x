@@ -18,6 +18,7 @@ verify-commands:
 check: src/se05x/commands.rs
 	cargo c
 	cargo c --features builder
+	cargo c --features defmt
 	cargo c --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
 	cargo c --features lpc55-v0.3 --target thumbv8m.main-none-eabi
 	cargo c --features lpc55-v0.4 --target thumbv8m.main-none-eabi
