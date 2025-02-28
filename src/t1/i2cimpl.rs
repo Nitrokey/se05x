@@ -1,7 +1,7 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#[cfg(all(feature = "nrf", feature = "embedded-hal-v0.2.7"))]
+#[cfg(feature = "nrf")]
 mod nrf52832 {
     use crate::t1::I2CErrorNack;
 
@@ -17,7 +17,7 @@ mod nrf52832 {
     }
 }
 
-#[cfg(all(feature = "lpc55-v0.3", feature = "embedded-hal-v0.2.7"))]
+#[cfg(feature = "lpc55-v0.3")]
 mod lpc55_03 {
     use crate::t1::I2CErrorNack;
 
@@ -33,7 +33,7 @@ mod lpc55_03 {
     }
 }
 
-#[cfg(all(feature = "lpc55-v0.4", feature = "embedded-hal-v0.2.7"))]
+#[cfg(feature = "lpc55-v0.4")]
 mod lpc55_04 {
     use crate::t1::I2CErrorNack;
 

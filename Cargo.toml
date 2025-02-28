@@ -46,8 +46,8 @@ log-warn = []
 log-error = []
 log-none = []
 
-nrf = ["nrf-hal-common"]
-lpc55 = ["lpc55-v0.3"]
+nrf = ["nrf-hal-common", "dep:embedded-hal-v0_2_7"]
+lpc55 = ["lpc55-v0.3", "dep:embedded-hal-v0_2_7"]
 "lpc55-v0.3" = ["dep:lpc55-hal"]
 "lpc55-v0.4" = ["dep:lpc55-hal-04"]
 
