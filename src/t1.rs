@@ -386,6 +386,40 @@ pub enum DataReceived {
 
 const DEFAULT_RETRY_COUNT: u32 = 1024;
 
+#[cfg(feature = "embedded-hal-v0.2.7")]
+impl<M, N, E> T1oI2C<crate::embedded_hal::Hal027<M>, crate::embedded_hal::Hal027<N>>
+where
+    N: embedded_hal_v0_2_7::blocking::delay::DelayUs<u32>,
+    M: embedded_hal_v0_2_7::blocking::i2c::Write<Error = E>
+        + embedded_hal_v0_2_7::blocking::i2c::Read<Error = E>
+        + embedded_hal_v0_2_7::blocking::i2c::WriteRead<Error = E>,
+    E: I2CErrorNack,
+{
+    pub fn new_hal_027(twi: M, se_address: u8, delay: N) -> Self {
+        Self::new(
+            crate::embedded_hal::Hal027(twi),
+            se_address,
+            crate::embedded_hal::Hal027(delay),
+        )
+    }
+}
+
+#[cfg(feature = "embedded-hal-v1.0")]
+impl<M, N, E> T1oI2C<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
+where
+    N: embedded_hal_v1_0::delay::DelayNs,
+    M: embedded_hal_v1_0::i2c::I2c<Error = E>,
+    E: I2CErrorNack,
+{
+    pub fn new_hal_10(twi: M, se_address: u8, delay: N) -> Self {
+        Self::new(
+            crate::embedded_hal::Hal10(twi),
+            se_address,
+            crate::embedded_hal::Hal10(delay),
+        )
+    }
+}
+
 impl<Twi: I2CForT1, D: Delay> T1oI2C<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         // Default MPOT value.
@@ -810,7 +844,6 @@ impl<'writer, Twi: I2CForT1, D: Delay> FrameSender<'writer, Twi, D> {
         Ok(())
     }
 }
-
 
 impl<'writer, Twi: I2CForT1, D: Delay> Writer for FrameSender<'writer, Twi, D> {
     type Error = Error;
