@@ -133,13 +133,11 @@ for command, v in data.items():
 
     payload_lifetime = ""
     payload_lifetime_inferred = ""
-    payload_lifetime_inferred = ""
     if payload_has_lifetime:
         payload_lifetime = "<'data>"
         payload_lifetime_inferred = "<'_>"
 
     response_lifetime = ""
-    response_lifetime_inferred = ""
     response_lifetime_inferred = ""
     if response_has_lifetime:
         response_lifetime = "<'data>"
