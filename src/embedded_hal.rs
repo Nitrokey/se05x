@@ -1,3 +1,6 @@
+// Copyright (C) 2023 Nitrokey GmbH
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /// wrapper struct for embedded_hal v0.2.7 that implements the required internal traits
 pub struct Hal027<T>(pub T);
 
