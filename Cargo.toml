@@ -34,7 +34,7 @@ defmt = { version = "0.3", optional = true }
 default = ["aes-session"]
 serde = ["dep:serde", "dep:serde_bytes"]
 builder = ["typed-builder"]
-defmt = ["dep:defmt"]
+defmt = ["dep:defmt", "iso7816/defmt"]
 
 log-all = []
 log-trace = []
