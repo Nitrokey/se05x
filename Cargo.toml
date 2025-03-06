@@ -3,7 +3,7 @@
 
 [package]
 name = "se05x"
-version = "0.1.8"
+version = "0.2.0"
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
 
 edition = "2021"
@@ -52,7 +52,6 @@ lpc55 = ["lpc55-v0.3", "embedded-hal-v0.2.7"]
 "lpc55-v0.4" = ["dep:lpc55-hal-04"]
 
 aes-session = ["aes", "cmac", "rand"]
-serde_bytes = ["dep:serde_bytes"]
 
 [package.metadata.docs.rs]
 features = ["aes-session", "builder", "serde"]

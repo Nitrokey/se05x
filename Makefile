@@ -42,7 +42,7 @@ lint: src/se05x/commands.rs verify-commands
 .PHONY: test
 test:
 	cargo t
-	cargo t --features builder,serde_bytes,embedded-hal-v0.2.7,embedded-hal-v1.0
+	cargo t --features builder,embedded-hal-v0.2.7,embedded-hal-v1.0
 	cargo t --no-default-features 
 
 .PHONY: semver-checks
