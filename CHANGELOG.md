@@ -5,6 +5,11 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+
+## [v0.1.8][] (2025-03-06)
+
+- Add support for `defmt` behind a `defmt` feature
+
 ## [v0.1.7][] (2024-10-25)
 
 - Add support for `lpc55-hal` 0.4 behind a `lpc55-v0.4` feature

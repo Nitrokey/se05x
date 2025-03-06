@@ -3,7 +3,7 @@
 
 [package]
 name = "se05x"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
 
 edition = "2021"
@@ -28,11 +28,13 @@ rand = { version = "0.8.5", optional = true, default-features = false }
 serde = { version = "1.0.185", default-features = false, features = ["derive"], optional = true }
 serde_bytes = { version = "0.11.14", optional = true, default-features = false }
 typed-builder = { version = "0.20.0", optional = true }
+defmt = { version = "0.3", optional = true }
 
 [features]
 default = ["aes-session"]
 serde = ["dep:serde", "dep:serde_bytes"]
 builder = ["typed-builder"]
+defmt = ["dep:defmt", "iso7816/defmt"]
 
 log-all = []
 log-trace = []
