@@ -44,6 +44,7 @@ test:
 .PHONY: semver-checks
 semver-checks:
 	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55
+	 cargo semver-checks --only-explicit-features --features defmt
 
 README.md: src/lib.rs Makefile
 	# REUSE-IgnoreStart
