@@ -195,7 +195,7 @@ for command, v in data.items():
             outfile.write(f'    /// Serialized to remaining data\n')
 
         if "optional" in arg and arg["optional"] == True:
-            outfile.write("    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option)))]\n")
+            outfile.write(f'    #[cfg_attr(feature = \"builder\", builder(default, setter(strip_option(fallback = {arg["name"] + "_opt"}))))]\n')
         elif "default" in arg:
             outfile.write(f'    #[cfg_attr(feature = "builder", builder(default={arg["default"]}))]\n')
             
