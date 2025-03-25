@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 #![cfg_attr(not(test), no_std)]
 
-//!
 //! SE05X driver
 //! ===========
 //!
@@ -12,7 +11,7 @@
 //! ```rust,no_run
 //! # include!("doc_utils.rs");
 //! # #[cfg(feature = "builder")]
-//! # fn main() -> Result<(), se05x::se05x::Error>{
+//! # fn main() -> Result<(), se05x::se05x::Error> {
 //! use se05x::se05x::commands::*;
 //! use se05x::se05x::policies::*;
 //! use se05x::se05x::*;
@@ -88,13 +87,17 @@
 //! This driver communicates with the se05x over the T=1 protocol over I2C, as described in [UM11225](https://www.nxp.com/webapp/Download?colCode=UM11225).
 //!
 //! To do so and be compatible with most embedded controlers, it depends on the I2C [Read](https://docs.rs/embedded-hal/latest/embedded_hal/blocking/i2c/trait.Read.html) and [Write](https://docs.rs/embedded-hal/latest/embedded_hal/blocking/i2c/trait.Write.html) from [embedded-hal](https://docs.rs/embedded-hal/latest/embedded_hal).
-//! However these traits do not expose the enough, as the T=1 protocol requires detecting I2C NACKs, which are not exposed in this protocol.
+//!
+//! #### Embedded HAL v0.2
+//!
+//! The traits do not expose the protocol enough, as the T=1 protocol requires detecting I2C NACKs, which are not exposed in this version.
 //!
 //! Nacks are exposed in the `Error` types for each `HAL` crate. As such an extension to the embedded-hal traits is defined as `I2CErrorNack`, exposing the missing information.
 //! It is implemented for the NRF and LPC55 Hals in `src/t1/i2cimpl.rs`, gated by the features `nrf` and `lpc55` respectively.
 //!
-//! This may not be necessary with future releases of `embedded-hal`, which [adds the missing information](https://docs.rs/embedded-hal/1.0.0-alpha.11/embedded_hal/i2c/enum.ErrorKind.html).
+//! #### Embedded HAL v1.0
 //!
+//! This version exposes the required I2C NACKs. There is no need to use the `nrf` and `lpc55` features.
 //!
 //! ### Iso7816
 //!
@@ -112,9 +115,11 @@
 //! [<img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" width="200" alt="Logo NGI Assure: letterlogo shaped like a tag" hspace="20">](https://nlnet.nl/assure/)
 //!
 //! This project was funded through the [NGI Assure](https://nlnet.nl/assure/) Fund, a fund established by [NLnet](https://nlnet.nl/) with financial support from the European Commission's [Next Generation Internet programme](https://ngi.eu/), under the aegis of DG Communications Networks, Content and Technology under grant agreement No 957073.
+
 extern crate delog;
 delog::generate_macros!();
 
+pub mod embedded_hal;
 mod macros;
 
 pub mod se05x;

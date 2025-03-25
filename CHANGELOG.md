@@ -5,10 +5,21 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.2.0][] (2025-03-06)
+
+- Add support for `embedded-hal` 1.0 ([#27][])
+
+### Migration guide
+
+- Use either `new_hal_10` or `new_hal_027`, or wrap the `I2C` and `Delay` implementation in the `se05x::embedded_hal::Hal10` or `se05x::embedded_hal::Hal027`  structs
+
+[#27]: https://github.com/Nitrokey/se05x/pull/27
 
 ## [v0.1.8][] (2025-03-06)
 
-- Add support for `defmt` behind a `defmt` feature
+- Add support for `defmt` behind a `defmt` feature ([#24][])
+
+[#24]: https://github.com/Nitrokey/se05x/pull/24
 
 ## [v0.1.7][] (2024-10-25)
 

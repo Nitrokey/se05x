@@ -3,9 +3,9 @@
 
 use core::{array::TryFromSliceError, convert::Infallible, fmt::Debug};
 
+use crate::embedded_hal::Delay;
 use bitflags::bitflags;
 use delog::hexstr;
-use embedded_hal::blocking::delay::DelayUs;
 use hex_literal::hex;
 use iso7816::{
     command::{
@@ -32,7 +32,6 @@ pub struct Se05X<Twi, D> {
 
 pub const MAX_APDU_PAYLOAD_LENGTH: usize = 889;
 
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     Unknown,
@@ -99,7 +98,41 @@ impl<W: Writer, C: Se05XCommand<W>> Se05XCommand<W> for &C {
 
 pub const APP_ID: [u8; 0x10] = hex!("A0000003965453000000010300000000");
 
-impl<Twi: I2CForT1, D: DelayUs<u32>> Se05X<Twi, D> {
+#[cfg(feature = "embedded-hal-v0.2.7")]
+impl<M, N, E> Se05X<crate::embedded_hal::Hal027<M>, crate::embedded_hal::Hal027<N>>
+where
+    N: embedded_hal_v0_2_7::blocking::delay::DelayUs<u32>,
+    M: embedded_hal_v0_2_7::blocking::i2c::Write<Error = E>
+        + embedded_hal_v0_2_7::blocking::i2c::Read<Error = E>
+        + embedded_hal_v0_2_7::blocking::i2c::WriteRead<Error = E>,
+    E: crate::t1::I2CErrorNack,
+{
+    pub fn new_hal_027(twi: M, se_address: u8, delay: N) -> Self {
+        Self::new(
+            crate::embedded_hal::Hal027(twi),
+            se_address,
+            crate::embedded_hal::Hal027(delay),
+        )
+    }
+}
+
+#[cfg(feature = "embedded-hal-v1.0")]
+impl<M, N, E> Se05X<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
+where
+    N: embedded_hal_v1_0::delay::DelayNs,
+    M: embedded_hal_v1_0::i2c::I2c<Error = E>,
+    E: crate::t1::I2CErrorNack,
+{
+    pub fn new_hal_10(twi: M, se_address: u8, delay: N) -> Self {
+        Self::new(
+            crate::embedded_hal::Hal10(twi),
+            se_address,
+            crate::embedded_hal::Hal10(delay),
+        )
+    }
+}
+
+impl<Twi: I2CForT1, D: Delay> Se05X<Twi, D> {
     pub fn new(twi: Twi, se_address: u8, delay: D) -> Self {
         Self {
             t1: T1oI2C::new(twi, se_address, delay),

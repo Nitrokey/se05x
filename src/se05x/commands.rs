@@ -140,7 +140,7 @@ impl<W: Writer> Se05XCommand<W> for ExchangeSessionData<'_> {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct RefreshSession {
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<SessionPolicy>,
 }
 
@@ -466,21 +466,21 @@ pub struct WriteEcKey<'data> {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_type_opt))))]
     pub key_type: Option<P1KeyType>,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = max_attempts_opt))))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = curve_opt))))]
     pub curve: Option<EcCurve>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = private_key_opt))))]
     pub private_key: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = public_key_opt))))]
     pub public_key: Option<&'data [u8]>,
 }
 
@@ -575,39 +575,39 @@ pub struct WriteRsaKey<'data> {
     #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_format_opt))))]
     pub key_format: Option<RsaFormat>,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = max_attempts_opt))))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_size_opt))))]
     pub key_size: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = p_opt))))]
     pub p: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = q_opt))))]
     pub q: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_5`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = dp_opt))))]
     pub dp: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_6`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = dq_opt))))]
     pub dq: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_7`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = inv_q_opt))))]
     pub inv_q: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_8`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = e_opt))))]
     pub e: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_9`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = d_opt))))]
     pub d: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_10`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = n_opt))))]
     pub n: Option<&'data [u8]>,
 }
 
@@ -730,15 +730,15 @@ pub struct GenRsaKey<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
     pub is_auth: bool,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = max_attempts_opt))))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = key_size_opt))))]
     pub key_size: Option<Be<u16>>,
 }
 
@@ -810,15 +810,15 @@ pub struct WriteSymmKey<'data> {
     pub is_auth: bool,
     pub key_type: SymmKeyType,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = max_attempts_opt))))]
     pub max_attempts: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = kek_id_opt))))]
     pub kek_id: Option<ObjectId>,
     /// Serialized to TLV tag [`TAG_3`]()
     pub value: &'data [u8],
@@ -893,20 +893,20 @@ pub struct WriteBinary<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = offset_opt))))]
     pub offset: Option<Be<u16>>,
     /// Only when the object does not yet exists
     ///
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = file_length_opt))))]
     pub file_length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = data_opt))))]
     pub data: Option<&'data [u8]>,
 }
 
@@ -961,10 +961,10 @@ impl<W: Writer> Se05XCommand<W> for WriteBinary<'_> {
 #[cfg_attr(feature = "builder", derive(typed_builder::TypedBuilder))]
 pub struct WriteUserId<'data> {
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_MAX_ATTEMPTS`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = max_attempts_opt))))]
     pub max_attempts: Option<Be<u8>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
@@ -1029,15 +1029,15 @@ pub struct WriteCounter<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = data_opt))))]
     pub data: Option<CounterSize>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = value_opt))))]
     pub value: Option<Be<u64>>,
 }
 
@@ -1092,15 +1092,15 @@ pub struct WritePcr<'data> {
     #[cfg_attr(feature = "builder", builder(default))]
     pub transient: bool,
     /// Serialized to TLV tag [`TAG_POLICY`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = policy_opt))))]
     pub policy: Option<PolicySet<'data>>,
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = initial_value_opt))))]
     pub initial_value: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = extend_opt))))]
     pub extend: Option<&'data [u8]>,
 }
 
@@ -1159,7 +1159,7 @@ pub struct ImportObject<'data> {
     /// Unlike [`ExportObject::rsa_key_component`][], use None if not importing an RSA key
     ///
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = rsa_key_component_opt))))]
     pub rsa_key_component: Option<RsaKeyComponent>,
     /// Serialized to TLV tag [`TAG_3`]()
     pub serialized_object: &'data [u8],
@@ -1214,13 +1214,13 @@ pub struct ReadObject {
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = offset_opt))))]
     pub offset: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = length_opt))))]
     pub length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = rsa_key_component_opt))))]
     pub rsa_key_component: Option<RsaKeyComponent>,
 }
 
@@ -1291,15 +1291,15 @@ pub struct ReadAttestObject<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = offset_opt))))]
     pub offset: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = length_opt))))]
     pub length: Option<Be<u16>>,
     /// Either [`Mod`][RsaKeyComponent::Mod] or [`PubExp`][RsaKeyComponent::PubExp]
     ///
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = rsa_key_component_opt))))]
     pub rsa_key_component: Option<RsaKeyComponent>,
     /// Serialized to TLV tag [`TAG_5`]()
     pub attestation_object: ObjectId,
@@ -1423,13 +1423,13 @@ pub struct ReadAttributes<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = offset_opt))))]
     pub offset: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = length_opt))))]
     pub length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = rsa_key_component_opt))))]
     pub rsa_key_component: Option<&'data [u8]>,
 }
 
@@ -1488,20 +1488,20 @@ pub struct ReadAttributesAttest<'data> {
     /// Serialized to TLV tag [`TAG_1`]()
     pub object_id: ObjectId,
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = offset_opt))))]
     pub offset: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = length_opt))))]
     pub length: Option<Be<u16>>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = rsa_key_component_opt))))]
     pub rsa_key_component: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_5`]()
     pub attestation_object: ObjectId,
     /// Serialized to TLV tag [`TAG_6`]()
     pub attestation_algo: AttestationAlgo,
     /// Serialized to TLV tag [`TAG_7`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = freshness_random_opt))))]
     pub freshness_random: Option<&'data [u8; 16]>,
 }
 
@@ -3058,7 +3058,7 @@ pub struct CipherEncryptInit<'data> {
     /// Serialized to TLV tag [`TAG_2`]()
     pub cipher_id: CryptoObjectId,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = initialization_vector_opt))))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3101,7 +3101,7 @@ pub struct CipherDecryptInit<'data> {
     /// Serialized to TLV tag [`TAG_2`]()
     pub cipher_id: CryptoObjectId,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = initialization_vector_opt))))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3286,7 +3286,7 @@ pub struct CipherOneShotEncrypt<'data> {
     /// Serialized to TLV tag [`TAG_3`]()
     pub plaintext: &'data [u8],
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = initialization_vector_opt))))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3361,7 +3361,7 @@ pub struct CipherOneShotDecrypt<'data> {
     /// Serialized to TLV tag [`TAG_3`]()
     pub ciphertext: &'data [u8],
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = initialization_vector_opt))))]
     pub initialization_vector: Option<&'data [u8]>,
 }
 
@@ -3834,10 +3834,10 @@ pub struct Hkdf<'data> {
     /// up to 64 bytes
     ///
     /// Serialized to TLV tag [`TAG_3`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = salt_opt))))]
     pub salt: Option<&'data [u8]>,
     /// Serialized to TLV tag [`TAG_4`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = info_opt))))]
     pub info: Option<&'data [u8]>,
     /// Up to MAX_APDU_PAYLOAD_LENGTH (= 889)
     ///
@@ -3916,7 +3916,7 @@ pub struct Pbkdf2<'data> {
     /// up to 64 bytes
     ///
     /// Serialized to TLV tag [`TAG_2`]()
-    #[cfg_attr(feature = "builder", builder(default, setter(strip_option)))]
+    #[cfg_attr(feature = "builder", builder(default, setter(strip_option(fallback = salt_opt))))]
     pub salt: Option<&'data [u8]>,
     /// Up to 0x7FFF
     ///
