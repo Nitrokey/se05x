@@ -47,9 +47,8 @@ log-error = []
 log-none = []
 
 nrf = ["nrf-hal-common", "embedded-hal-v0.2.7"]
-lpc55 = ["lpc55-v0.3", "embedded-hal-v0.2.7"]
-"lpc55-v0.3" = ["dep:lpc55-hal"]
-"lpc55-v0.4" = ["dep:lpc55-hal-04"]
+"lpc55-v0.3" = ["dep:lpc55-hal", "embedded-hal-v0.2.7"]
+"lpc55-v0.4" = ["dep:lpc55-hal-04", "embedded-hal-v0.2.7"]
 
 aes-session = ["aes", "cmac", "rand"]
 
