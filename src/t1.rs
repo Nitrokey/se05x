@@ -1,6 +1,7 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#[cfg(feature = "embedded-hal-v1.0")]
 use embedded_hal_v1_0::i2c::{Error as _, ErrorKind, NoAcknowledgeSource};
 use hex_literal::hex;
 use iso7816::command::writer::IntoWriter;
@@ -276,6 +277,33 @@ impl Pcb {
 
         Err(Error::BadPcb)
     }
+}
+
+// enable successful build if no embedded-hal version is selected
+#[cfg(all(
+    not(feature = "embedded-hal-v1.0"),
+    not(feature = "embedded-hal-v0.2.7")
+))]
+pub trait I2CForT1:
+    Read<u8, Error = <Self as I2CForT1>::Error>
+    + Write<u8, Error = <Self as I2CForT1>::Error>
+    + WriteRead<u8, Error = <Self as I2CForT1>::Error>
+{
+    type Error;
+}
+
+// enable successful build if no embedded-hal version is selected
+#[cfg(all(
+    not(feature = "embedded-hal-v1.0"),
+    not(feature = "embedded-hal-v0.2.7")
+))]
+impl<T> I2CForT1 for T
+where
+    T: Read<u8>
+        + Write<u8, Error = <T as Read<u8>>::Error>
+        + WriteRead<u8, Error = <T as Read<u8>>::Error>,
+{
+    type Error = <T as Read<u8>>::Error;
 }
 
 #[cfg(feature = "embedded-hal-v0.2.7")]
