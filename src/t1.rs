@@ -1,6 +1,7 @@
 // Copyright (C) 2023 Nitrokey GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
+use embedded_hal_v1_0::i2c::{Error as _, ErrorKind, NoAcknowledgeSource};
 use hex_literal::hex;
 use iso7816::command::writer::IntoWriter;
 use iso7816::command::Writer;
@@ -277,10 +278,13 @@ impl Pcb {
     }
 }
 
+#[cfg(feature = "embedded-hal-v0.2.7")]
 pub trait I2CErrorNack: Debug {
     fn is_address_nack(&self) -> bool;
     fn is_data_nack(&self) -> bool;
 }
+
+#[cfg(feature = "embedded-hal-v0.2.7")]
 pub trait I2CForT1:
     Read<u8, Error = <Self as I2CForT1>::Error>
     + Write<u8, Error = <Self as I2CForT1>::Error>
@@ -289,12 +293,33 @@ pub trait I2CForT1:
     type Error: I2CErrorNack;
 }
 
+#[cfg(feature = "embedded-hal-v0.2.7")]
 impl<T> I2CForT1 for T
 where
     T: Read<u8>
         + Write<u8, Error = <T as Read<u8>>::Error>
         + WriteRead<u8, Error = <T as Read<u8>>::Error>,
     <T as Read<u8>>::Error: I2CErrorNack,
+{
+    type Error = <T as Read<u8>>::Error;
+}
+
+#[cfg(feature = "embedded-hal-v1.0")]
+pub trait I2CForT1:
+    Read<u8, Error = <Self as I2CForT1>::Error>
+    + Write<u8, Error = <Self as I2CForT1>::Error>
+    + WriteRead<u8, Error = <Self as I2CForT1>::Error>
+{
+    type Error: embedded_hal_v1_0::i2c::Error;
+}
+
+#[cfg(feature = "embedded-hal-v1.0")]
+impl<T> I2CForT1 for T
+where
+    T: Read<u8>
+        + Write<u8, Error = <T as Read<u8>>::Error>
+        + WriteRead<u8, Error = <T as Read<u8>>::Error>,
+    <T as Read<u8>>::Error: embedded_hal_v1_0::i2c::Error,
 {
     type Error = <T as Read<u8>>::Error;
 }
@@ -405,11 +430,10 @@ where
 }
 
 #[cfg(feature = "embedded-hal-v1.0")]
-impl<M, N, E> T1oI2C<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
+impl<M, N> T1oI2C<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
 where
     N: embedded_hal_v1_0::delay::DelayNs,
-    M: embedded_hal_v1_0::i2c::I2c<Error = E>,
-    E: I2CErrorNack,
+    M: embedded_hal_v1_0::i2c::I2c<Error = ErrorKind>,
 {
     pub fn new_hal_10(twi: M, se_address: u8, delay: N) -> Self {
         Self::new(
@@ -445,7 +469,17 @@ impl<Twi: I2CForT1, D: Delay> T1oI2C<Twi, D> {
         trace!("Writing");
         match self.twi.write(self.se_address, data) {
             Ok(_) => Ok(()),
+            #[cfg(feature = "embedded-hal-v1.0")]
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address) => {
+                Err(Error::AddressNack)
+            }
+            #[cfg(feature = "embedded-hal-v1.0")]
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data) => {
+                Err(Error::DataNack)
+            }
+            #[cfg(feature = "embedded-hal-v0.2.7")]
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
+            #[cfg(feature = "embedded-hal-v0.2.7")]
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(_err) => {
                 warn!("Got error: {:?}", _err);
@@ -457,7 +491,17 @@ impl<Twi: I2CForT1, D: Delay> T1oI2C<Twi, D> {
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         match self.twi.read(self.se_address, buffer) {
             Ok(_) => Ok(()),
+            #[cfg(feature = "embedded-hal-v1.0")]
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address) => {
+                Err(Error::AddressNack)
+            }
+            #[cfg(feature = "embedded-hal-v1.0")]
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data) => {
+                Err(Error::DataNack)
+            }
+            #[cfg(feature = "embedded-hal-v0.2.7")]
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
+            #[cfg(feature = "embedded-hal-v0.2.7")]
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(_err) => {
                 warn!("Got error: {:?}", _err);
@@ -470,7 +514,17 @@ impl<Twi: I2CForT1, D: Delay> T1oI2C<Twi, D> {
     pub fn write_read(&mut self, data: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
         match self.twi.write_read(self.se_address, data, buffer) {
             Ok(_) => Ok(()),
+            #[cfg(feature = "embedded-hal-v1.0")]
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address) => {
+                Err(Error::AddressNack)
+            }
+            #[cfg(feature = "embedded-hal-v1.0")]
+            Err(err) if err.kind() == ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data) => {
+                Err(Error::DataNack)
+            }
+            #[cfg(feature = "embedded-hal-v0.2.7")]
             Err(err) if err.is_address_nack() => Err(Error::AddressNack),
+            #[cfg(feature = "embedded-hal-v0.2.7")]
             Err(err) if err.is_data_nack() => Err(Error::DataNack),
             Err(_err) => {
                 warn!("Unknown error when writing & reading: {:?}", _err);

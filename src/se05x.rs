@@ -117,11 +117,10 @@ where
 }
 
 #[cfg(feature = "embedded-hal-v1.0")]
-impl<M, N, E> Se05X<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
+impl<M, N> Se05X<crate::embedded_hal::Hal10<M>, crate::embedded_hal::Hal10<N>>
 where
     N: embedded_hal_v1_0::delay::DelayNs,
-    M: embedded_hal_v1_0::i2c::I2c<Error = E>,
-    E: crate::t1::I2CErrorNack,
+    M: embedded_hal_v1_0::i2c::I2c,
 {
     pub fn new_hal_10(twi: M, se_address: u8, delay: N) -> Self {
         Self::new(
