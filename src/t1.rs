@@ -306,7 +306,6 @@ where
     type Error = <T as Read<u8>>::Error;
 }
 
-#[cfg(feature = "embedded-hal-v0.2.7")]
 pub trait I2CErrorNack: Debug {
     fn is_address_nack(&self) -> bool;
     fn is_data_nack(&self) -> bool;
