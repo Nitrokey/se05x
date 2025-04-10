@@ -48,23 +48,3 @@ mod lpc55_04 {
         }
     }
 }
-
-#[cfg(feature = "embedded-hal-v1.0")]
-impl crate::t1::I2CErrorNack for embedded_hal_v1_0::i2c::ErrorKind {
-    fn is_address_nack(&self) -> bool {
-        matches!(
-            self,
-            embedded_hal_v1_0::i2c::ErrorKind::NoAcknowledge(
-                embedded_hal_v1_0::i2c::NoAcknowledgeSource::Address
-            )
-        )
-    }
-    fn is_data_nack(&self) -> bool {
-        matches!(
-            self,
-            embedded_hal_v1_0::i2c::ErrorKind::NoAcknowledge(
-                embedded_hal_v1_0::i2c::NoAcknowledgeSource::Data
-            )
-        )
-    }
-}
