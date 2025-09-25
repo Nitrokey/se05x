@@ -3,7 +3,7 @@
 
 [package]
 name = "se05x"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Nitrokey GmbH <info@nitrokey.com>"]
 
 edition = "2021"

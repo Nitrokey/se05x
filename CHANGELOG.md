@@ -5,9 +5,18 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.3.0][] (2025-09-25)
+
+- Add support for `heapless` 0.9 ([#32][])
+- Add support for `iso7816` 0.2 ([#32][])
+
+[#32]: https://github.com/Nitrokey/se05x/pull/32
+[v0.3.0]: https://github.com/Nitrokey/se05x/releases/tag/v0.3.0
+
 ## [v0.2.0][] (2025-03-06)
 
 - Add support for `embedded-hal` 1.0 ([#27][])
+[v0.2.0]: https://github.com/Nitrokey/se05x/releases/tag/v0.2.0
 
 ### Migration guide
 
@@ -20,6 +29,7 @@ SPDX-License-Identifier: CC0-1.0
 - Add support for `defmt` behind a `defmt` feature ([#24][])
 
 [#24]: https://github.com/Nitrokey/se05x/pull/24
+[v0.1.8]: https://github.com/Nitrokey/se05x/releases/tag/v0.1.8
 
 ## [v0.1.7][] (2024-10-25)
 
