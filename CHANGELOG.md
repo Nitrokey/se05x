@@ -5,6 +5,13 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.2.1][] (2025-10-13)
+
+- Close sessions after failed authentication attempt ([#34][])
+
+[#34]: https://github.com/Nitrokey/se05x/pull/34
+[v0.2.1]: https://github.com/Nitrokey/se05x/releases/tag/v0.2.1
+
 ## [v0.2.0][] (2025-03-06)
 
 - Add support for `embedded-hal` 1.0 ([#27][])
