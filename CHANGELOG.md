@@ -5,6 +5,21 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## [v0.3.1][] (2025-10-14)
+
+
+- Close sessions after failed authentication attempt ([#35][])
+
+[#35]: https://github.com/Nitrokey/se05x/pull/35
+[v0.3.1]: https://github.com/Nitrokey/se05x/releases/tag/v0.3.1
+
+## [v0.2.1][] (2025-10-13)
+
+- Close sessions after failed authentication attempt ([#34][])
+
+[#34]: https://github.com/Nitrokey/se05x/pull/34
+[v0.2.1]: https://github.com/Nitrokey/se05x/releases/tag/v0.2.1
+
 ## [v0.3.0][] (2025-09-25)
 
 - Add support for `heapless` 0.9 ([#32][])
