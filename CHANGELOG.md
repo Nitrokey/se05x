@@ -5,6 +5,10 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
+## Unreleased
+
+- Update type-builder to 0.23
+
 ## [v0.3.0][] (2025-09-25)
 
 - Add support for `heapless` 0.9 ([#32][])
