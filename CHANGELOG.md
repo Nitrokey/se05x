@@ -7,7 +7,13 @@ SPDX-License-Identifier: CC0-1.0
 
 ## Unreleased
 
+-
+
+## [v0.4.0][] (2026-03-20)
+
 - Add the `lpc55-v0.5` feature and remove the `lpc55-v0.3` and `lpc55-v0.4` features
+
+[v0.4.0]: https://github.com/Nitrokey/se05x/releases/tag/v0.4.0
 
 ## [v0.3.1][] (2025-10-14)
 
