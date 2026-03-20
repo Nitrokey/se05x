@@ -366,11 +366,13 @@ impl<Twi: I2CForT1, D: Delay> Se05X<Twi, D> {
         mac.update(&dda);
         let calculated_card_cryptogram: [u8; 16] = mac.finalize().into_bytes().into();
         if calculated_card_cryptogram[..8] != chal.se05x_challenge.card_cryptogram {
+            use crate::se05x::commands::CloseSession;
             debug_now!(
                 "{dda:02x?} {host_challenge:02x?} {:02x?} {:02x?} {calculated_card_cryptogram:02x?}",
                 chal.se05x_challenge.card_challenge,
                 chal.se05x_challenge.card_cryptogram
             );
+            self.run_session_command(session_id, &CloseSession {}, &mut buf)?;
             return Ok(false);
         }
 
