@@ -23,8 +23,7 @@ embedded-hal-v1_0 = { package = "embedded-hal", version = "1.0", optional = true
 heapless = "0.9"
 hex-literal = "0.4.1"
 iso7816 = "0.2.0"
-lpc55-hal = { version = "0.3.0", optional = true }
-lpc55-hal-04 = { package = "lpc55-hal", version = "0.4.0", optional = true }
+lpc55-hal-05 = { package = "lpc55-hal", version = "0.5.0", optional = true }
 nrf-hal-common = { version = "0.15.0", optional = true }
 rand = { version = "0.8.5", optional = true, default-features = false }
 serde = { version = "1.0.185", default-features = false, features = ["derive"], optional = true }
@@ -47,13 +46,9 @@ log-error = []
 log-none = []
 
 nrf = ["nrf-hal-common", "embedded-hal-v0.2.7"]
-"lpc55-v0.3" = ["dep:lpc55-hal", "embedded-hal-v0.2.7"]
-"lpc55-v0.4" = ["dep:lpc55-hal-04", "embedded-hal-v0.2.7"]
+"lpc55-v0.5" = ["dep:lpc55-hal-05", "embedded-hal-v0.2.7"]
 
 aes-session = ["aes", "cmac", "rand"]
 
 [package.metadata.docs.rs]
 features = ["aes-session", "builder", "serde"]
-
-[patch.crates-io]
-lpc55-hal = { git = "https://github.com/Nitrokey/lpc55-hal", tag = "v0.3.0-nitrokey.2" }

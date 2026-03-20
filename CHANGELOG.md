@@ -7,8 +7,9 @@ SPDX-License-Identifier: CC0-1.0
 
 ## Unreleased
 
-## [v0.3.1][] (2025-10-14)
+- Add the `lpc55-v0.5` feature and remove the `lpc55-v0.3` and `lpc55-v0.4` features
 
+## [v0.3.1][] (2025-10-14)
 
 - Update type-builder to 0.23
 - Close sessions after failed authentication attempt ([#35][])
