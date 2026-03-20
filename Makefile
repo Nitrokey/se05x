@@ -48,8 +48,11 @@ test:
 .PHONY: semver-checks
 semver-checks:
 	 cargo semver-checks --only-explicit-features --features aes-session,builder,embedded-hal-v0.2.7,embedded-hal-v1.0
-	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55
-	 cargo semver-checks --only-explicit-features --features aes-session,builder,nrf,nrf-hal-common/52840
+	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55-v0.3
+	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55-v0.4
+	 # TODO: re-introduce once https://github.com/obi1kenobi/cargo-semver-checks/issues/717 is fixed
+	 # Or script our way around it
+	 # cargo semver-checks --only-explicit-features --features aes-session,builder,nrf,nrf-hal-common/52840
 
 README.md: src/lib.rs Makefile
 	# REUSE-IgnoreStart
