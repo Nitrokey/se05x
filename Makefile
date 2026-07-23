@@ -23,6 +23,7 @@ check: src/se05x/commands.rs
 	cargo c --features builder,embedded-hal-v0.2.7,embedded-hal-v1.0
 	cargo c --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
 	cargo c --features lpc55-v0.5 --target thumbv8m.main-none-eabi
+	cargo c --features lpc55-v0.6 --target thumbv8m.main-none-eabi
 
 
 .PHONY: lint
@@ -35,6 +36,7 @@ lint: src/se05x/commands.rs verify-commands
 	cargo clippy --features builder,embedded-hal-v1.0
 	cargo clippy --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
 	cargo clippy --features lpc55-v0.5 --target thumbv8m.main-none-eabi
+	cargo clippy --features lpc55-v0.6 --target thumbv8m.main-none-eabi
 	cargo doc --features aes-session,builder,serde --no-deps
 
 .PHONY: test
@@ -47,6 +49,7 @@ test:
 semver-checks:
 	 cargo semver-checks --only-explicit-features --features aes-session,builder,embedded-hal-v0.2.7,embedded-hal-v1.0
 	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55-v0.5
+	 cargo semver-checks --only-explicit-features --features aes-session,builder,lpc55-v0.6
 	 # TODO: re-introduce once https://github.com/obi1kenobi/cargo-semver-checks/issues/717 is fixed
 	 # Or script our way around it
 	 # cargo semver-checks --only-explicit-features --features aes-session,builder,nrf,nrf-hal-common/52840

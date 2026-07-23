@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC0-1.0
 
 ## Unreleased
 
--
+- Add support for `lpc55-hal` v0.6 behind the `lpc55-v0.6` feature.
 
 ## [v0.4.0][] (2026-03-20)
 
