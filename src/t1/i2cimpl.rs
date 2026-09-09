@@ -49,6 +49,22 @@ mod lpc55_06 {
     }
 }
 
+#[cfg(feature = "lpc55-v0.7")]
+mod lpc55_07 {
+    use crate::t1::I2CErrorNack;
+
+    use lpc55_hal_07::drivers::i2c::Error;
+
+    impl I2CErrorNack for Error {
+        fn is_address_nack(&self) -> bool {
+            matches!(self, Error::NackAddress)
+        }
+        fn is_data_nack(&self) -> bool {
+            matches!(self, Error::NackData)
+        }
+    }
+}
+
 #[cfg(feature = "embedded-hal-v1.0")]
 impl crate::t1::I2CErrorNack for embedded_hal_v1_0::i2c::ErrorKind {
     fn is_address_nack(&self) -> bool {
