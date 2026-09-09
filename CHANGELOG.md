@@ -8,6 +8,7 @@ SPDX-License-Identifier: CC0-1.0
 ## Unreleased
 
 - Add support for `lpc55-hal` v0.7 behind the `lpc55-v0.7` feature.
+- Add support for `nrf-hal-common` v0.18 behind the `nrf-v0.18` feature.
 
 ## [v0.4.1][] (2026-07-23)
 

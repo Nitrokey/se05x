@@ -17,6 +17,22 @@ mod nrf52832 {
     }
 }
 
+#[cfg(feature = "nrf-v0.18")]
+mod nrf_018 {
+    use crate::t1::I2CErrorNack;
+
+    use nrf_hal_common_018::twim::Error;
+
+    impl I2CErrorNack for Error {
+        fn is_address_nack(&self) -> bool {
+            matches!(self, Error::AddressNack)
+        }
+        fn is_data_nack(&self) -> bool {
+            matches!(self, Error::DataNack)
+        }
+    }
+}
+
 #[cfg(feature = "lpc55-v0.5")]
 mod lpc55_05 {
     use crate::t1::I2CErrorNack;

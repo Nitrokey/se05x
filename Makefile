@@ -22,6 +22,7 @@ check: src/se05x/commands.rs
 	cargo c --features builder,embedded-hal-v1.0
 	cargo c --features builder,embedded-hal-v0.2.7,embedded-hal-v1.0
 	cargo c --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
+	cargo c --features nrf-v0.18,nrf-hal-common-018/52840 --target thumbv7em-none-eabihf
 	cargo c --features lpc55-v0.5 --target thumbv8m.main-none-eabi
 	cargo c --features lpc55-v0.6 --target thumbv8m.main-none-eabi
 	cargo c --features lpc55-v0.7 --target thumbv8m.main-none-eabi
@@ -36,6 +37,7 @@ lint: src/se05x/commands.rs verify-commands
 	cargo clippy --features builder,embedded-hal-v0.2.7
 	cargo clippy --features builder,embedded-hal-v1.0
 	cargo clippy --features nrf,nrf-hal-common/52840 --target thumbv7em-none-eabihf
+	cargo clippy --features nrf-v0.18,nrf-hal-common-018/52840 --target thumbv7em-none-eabihf
 	cargo clippy --features lpc55-v0.5 --target thumbv8m.main-none-eabi
 	cargo clippy --features lpc55-v0.6 --target thumbv8m.main-none-eabi
 	cargo clippy --features lpc55-v0.7 --target thumbv8m.main-none-eabi
@@ -56,6 +58,7 @@ semver-checks:
 	 # TODO: re-introduce once https://github.com/obi1kenobi/cargo-semver-checks/issues/717 is fixed
 	 # Or script our way around it
 	 # cargo semver-checks --only-explicit-features --features aes-session,builder,nrf,nrf-hal-common/52840
+	 # cargo semver-checks --only-explicit-features --features aes-session,builder,nrf-v0.18,nrf-hal-common-018/52840
 
 README.md: src/lib.rs Makefile
 	# REUSE-IgnoreStart
