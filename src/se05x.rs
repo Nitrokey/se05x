@@ -304,7 +304,7 @@ impl<Twi: I2CForT1, D: Delay> Se05X<Twi, D> {
         debug_now!("authenticating AES session");
         let mut buf = [0; 1024];
         use aes::Aes128;
-        use cmac::{Cmac, Mac};
+        use cmac::{Cmac, KeyInit, Mac};
         use rand::Rng;
 
         use crate::se05x::commands::{ScpExternalAuthenticate, ScpInitializeUpdate};
